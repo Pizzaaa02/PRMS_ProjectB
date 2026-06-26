@@ -71,7 +71,9 @@ function AuthProvider({ children }) {
       dispatch({ type: ACTIONS.CLEAR_ERROR });
       try {
         await authApi.register(data);
-        if (navigate) navigate('/login');
+        // After successful register, redirect to login page so user can authenticate
+        // Then the login function will redirect to the proper dashboard based on role
+        if (navigate) navigate('/dashboard');
         return { success: true };
       } catch (err) {
         const msg = getApiError(err);
