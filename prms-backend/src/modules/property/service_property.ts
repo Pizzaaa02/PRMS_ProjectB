@@ -2,7 +2,7 @@ import { prisma } from '../../db';
 
 export async function getAllProperties(page = 1, limit = 10) {
   const [properties, total] = await Promise.all([
-    prisma.property.findMany({ skip: (page - 1) * limit, take: limit, orderBy: { id: 'desc' }, include: { owner: { select: { id: true, full_name: true, email: true } }, amenities: true, images: true } }),
+    prisma.property.findMany({ skip: (page - 1) * limit, take: limit, orderBy: { id: 'desc' }, include: { owner: { select: { id: true, full_name: true, email: true } }, amenities: true, images: true, category: true } }),
     prisma.property.count(),
   ]);
   return { properties, total };
@@ -11,7 +11,7 @@ export async function getAllProperties(page = 1, limit = 10) {
 export async function getPropertyById(id: string) {
   return prisma.property.findUnique({
     where: { id },
-    include: { owner: true, amenities: true, images: true },
+    include: { owner: true, amenities: true, images: true, category: true },
   });
 }
 
@@ -32,13 +32,13 @@ export async function createProperty(data: any, ownerId: string) {
     await prisma.propertyImage.createMany({ data: imagesList.map((img: any) => ({ ...img, propertyId: property.id })) });
   }
 
-  return prisma.property.findUnique({ where: { id: property.id }, include: { amenities: true, images: true, owner: true } });
+  return prisma.property.findUnique({ where: { id: property.id }, include: { amenities: true, images: true, owner: true, category: true } });
 }
 
 export async function updateProperty(id: string, data: any) {
   return prisma.property.update({
     where: { id }, data,
-    include: { amenities: true, images: true, owner: true },
+    include: { amenities: true, images: true, owner: true, category: true },
   });
 }
 
@@ -57,6 +57,6 @@ export async function deleteImage(imageId: string) {
 export async function getLandlordProperties(landlordId: string) {
   return prisma.property.findMany({
     where: { ownerId: landlordId },
-    include: { amenities: true, images: true },
+    include: { amenities: true, images: true, category: true },
   });
 }

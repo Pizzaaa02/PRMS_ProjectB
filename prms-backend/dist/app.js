@@ -11,7 +11,6 @@ const auth_1 = require("firebase-admin/auth");
 const config_1 = require("./config");
 const db_1 = require("./db");
 const logging_1 = require("./middleware/logging");
-const rateLimit_1 = require("./middleware/rateLimit");
 const errorHandler_1 = require("./middleware/errorHandler");
 const routes_auth_1 = __importDefault(require("./modules/auth/routes_auth"));
 const routes_user_1 = __importDefault(require("./modules/user/routes_user"));
@@ -23,6 +22,7 @@ const routes_maintenance_1 = __importDefault(require("./modules/maintenance/rout
 const routes_communication_1 = __importDefault(require("./modules/communication/routes_communication"));
 const routes_admin_1 = __importDefault(require("./modules/admin/routes_admin"));
 const routes_reporting_1 = __importDefault(require("./modules/reporting/routes_reporting"));
+const routes_agent_1 = __importDefault(require("./modules/agent/routes_agent"));
 // Initialize Firebase if possible
 if ((0, app_1.getApps)().length === 0) {
     try {
@@ -65,7 +65,6 @@ router.post('/auth/verify', async (req, res) => {
         res.status(401).json({ error: 'Invalid Firebase token' });
     }
 });
-router.use(rateLimit_1.apiLimiter);
 router.use('/auth', routes_auth_1.default);
 router.use('/users', routes_user_1.default);
 router.use('/properties', routes_property_1.default);
@@ -76,6 +75,7 @@ router.use('/maintenance', routes_maintenance_1.default);
 router.use('/communication', routes_communication_1.default);
 router.use('/admin', routes_admin_1.default);
 router.use('/reports', routes_reporting_1.default);
+router.use('/agents', routes_agent_1.default);
 app.use(router);
 app.use(errorHandler_1.errorHandler);
 const server = app.listen(PORT, () => {

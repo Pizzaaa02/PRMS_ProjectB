@@ -45,6 +45,43 @@ enum MaintenancePriority {
   URGENT
 }
 
+model Agent {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id])
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+  agentProperties AgentProperty[]
+  @@map("agents")
+}
+
+model AgentProperty {
+  agentId    String
+  propertyId String
+  agent      Agent  @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  
+  @@id([agentId, propertyId])
+  @@map("agent_properties")
+}
+
+model PropertyCategory {
+  id             String     @id @default(uuid())
+  name           String     @unique
+  description    String?
+  isShared       Boolean    @default(true)
+  ownerId        String?
+  owner          User?      @relation("user_categories", fields: [ownerId], references: [id])
+  isDisabled     Boolean    @default(false)
+  created_at     DateTime   @default(now())
+  updated_at     DateTime   @updatedAt
+  properties     Property[]
+
+  @@index([isShared])
+  @@index([ownerId])
+  @@map("property_categories")
+}
+
 model User {
   id              String   @id @default(uuid())
   firebase_uid    String   @unique
@@ -69,6 +106,8 @@ model User {
   notifications Notification[]
   favorites   Favorite[]
   auditLogs   AuditLog[]
+  agents               Agent[]
+  personalCategories   PropertyCategory[] @relation("user_categories")
 
   @@index([email])
   @@map("users")
@@ -96,6 +135,8 @@ model Property {
   title          String
   address        String
   property_type  String    @default("apartment")
+  categoryId     String?
+  category       PropertyCategory? @relation(fields: [categoryId], references: [id])
   rent           Float
   status         PropertyStatus  @default(AVAILABLE)
   availableFrom  DateTime?
@@ -105,6 +146,7 @@ model Property {
   ownerId        String
   owner          User      @relation(fields: [ownerId], references: [id])
   amenities      Amenity[]
+  agentProperties AgentProperty[]
   images         PropertyImage[]
   bookings       Booking[]
   invoices       Invoice[]

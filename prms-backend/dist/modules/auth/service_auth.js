@@ -11,9 +11,9 @@ exports.verifyRefreshToken = verifyRefreshToken;
 exports.getCurrentUser = getCurrentUser;
 exports.updateUserProfile = updateUserProfile;
 exports.logoutUser = logoutUser;
+exports.changePassword = changePassword;
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const uuid_1 = require("uuid");
 const db_1 = require("../../db");
 const config_1 = require("../../config");
 async function registerUser(email, password, full_name, phone, role) {
@@ -21,7 +21,7 @@ async function registerUser(email, password, full_name, phone, role) {
     if (existing)
         throw new Error('Email already registered');
     const passwordHash = await bcryptjs_1.default.hash(password, 10);
-    const firebase_uid = (0, uuid_1.v4)();
+    const firebase_uid = "";
     const user = await db_1.prisma.user.create({
         data: {
             email,
@@ -78,14 +78,45 @@ async function getCurrentUser(userId) {
         where: { id: userId },
         select: {
             id: true, email: true, full_name: true, phone: true,
-            profile_img_url: true, is_active: true, created_at: true,
+            profile_img_url: true, firebase_uid: true, is_active: true, created_at: true,
             UserRole: { include: { role: true } },
         },
     });
 }
 async function updateUserProfile(userId, data) {
-    return db_1.prisma.user.update({ where: { id: userId }, data });
+    // If role is provided, update the UserRole association
+    if (data.role) {
+        await db_1.prisma.userRole.upsert({
+            where: { userId },
+            update: { role: { connect: { name: data.role } } },
+            create: {
+                userId,
+                role: { connect: { name: data.role } },
+            },
+        });
+    }
+    const { role, ...userFields } = data;
+    return db_1.prisma.user.update({
+        where: { id: userId },
+        data: userFields,
+        include: {
+            UserRole: { include: { role: true } },
+        },
+    });
 }
 async function logoutUser(userId) {
     await db_1.prisma.user.update({ where: { id: userId }, data: { refreshToken: null } });
+}
+async function changePassword(userId, currentPassword, newPassword) {
+    const user = await db_1.prisma.user.findUnique({ where: { id: userId } });
+    if (!user || !user.passwordHash)
+        throw new Error('Password-based account required');
+    const valid = await bcryptjs_1.default.compare(currentPassword, user.passwordHash);
+    if (!valid)
+        throw new Error('Current password is incorrect');
+    const newHash = await bcryptjs_1.default.hash(newPassword, 10);
+    return db_1.prisma.user.update({
+        where: { id: userId },
+        data: { passwordHash: newHash },
+    });
 }

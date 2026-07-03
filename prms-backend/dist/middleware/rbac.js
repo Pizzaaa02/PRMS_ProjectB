@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.adminOrLandlord = exports.tenantOnly = exports.landlordOnly = exports.adminOnly = void 0;
+exports.adminOrAgent = exports.adminOrLandlord = exports.agentOnly = exports.tenantOnly = exports.landlordOnly = exports.adminOnly = void 0;
 exports.authorize = authorize;
 function authorize(...allowedRoles) {
     return (req, res, next) => {
@@ -19,4 +19,6 @@ function authorize(...allowedRoles) {
 exports.adminOnly = authorize('Admin');
 exports.landlordOnly = authorize('Landlord');
 exports.tenantOnly = authorize('Tenant');
+exports.agentOnly = authorize('Agent');
 exports.adminOrLandlord = authorize('Admin', 'Landlord');
+exports.adminOrAgent = authorize('Admin', 'Agent');

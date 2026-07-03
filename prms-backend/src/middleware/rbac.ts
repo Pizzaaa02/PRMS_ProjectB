@@ -21,4 +21,6 @@ export function authorize(...allowedRoles: string[]) {
 export const adminOnly = authorize('Admin');
 export const landlordOnly = authorize('Landlord');
 export const tenantOnly = authorize('Tenant');
+export const agentOnly = authorize('Agent');
 export const adminOrLandlord = authorize('Admin', 'Landlord');
+export const adminOrAgent = authorize('Admin', 'Agent');

@@ -17,6 +17,7 @@ import NotFound from './pages/NotFound';
 /*  Admin  */
 import AdminLayout from './components/AdminLayout';
 import AdminDashboard from './pages/AdminDashboard';
+import AdminCategories from './pages/AdminCategories';
 import AdminSimplePage from './pages/AdminSimplePage';
 
 /*  Landlord  */
@@ -29,6 +30,12 @@ import TenantLayout from './components/TenantLayout';
 import TenantDashboard from './pages/TenantDashboard';
 import TenantSimplePage from './pages/TenantSimplePage';
 
+/*  Agent  */
+import AgentLayout from './components/AgentLayout';
+import AgentDashboard from './pages/AgentDashboard';
+import AgentCategories from './pages/AgentCategories';
+import AgentSimplePage from './pages/AgentSimplePage';
+
 /*  Shared  */
 import Properties from './pages/Properties';
 import Settings from './pages/Settings';
@@ -37,6 +44,10 @@ import AddProperty from './pages/AddProperty';
 import Profile from './pages/Profile';
 import SearchPage from './pages/SearchPage';
 import ErrorBoundary from './components/ErrorBoundary';
+import FinanceDashboard from './pages/FinanceDashboard';
+import LandlordHeatmap from './pages/LandlordHeatmap';
+import PaymentReceipt from './pages/PaymentReceipt';
+import CommunicationHub from './components/CommunicationHub';
 
 function AppRoutes() {
   const { loading, user } = useAuth();
@@ -111,10 +122,11 @@ function AppRoutes() {
         <Route path="profile" element={<Profile />} />
         <Route path="properties" element={<Properties />} />
         <Route path="bookings" element={<AdminSimplePage label="Booking Management" />} />
-        <Route path="finance" element={<AdminSimplePage label="Finance Console" />} />
+        <Route path="finance" element={<FinanceDashboard />} />
         <Route path="maintenance" element={<AdminSimplePage label="Maintenance Center" />} />
-        <Route path="messages" element={<AdminSimplePage label="Admin Messages" />} />
+        <Route path="messages" element={<CommunicationHub />} />
         <Route path="reports" element={<AdminSimplePage label="Reports & Audit" />} />
+        <Route path="categories" element={<AdminCategories />} />
         <Route path="settings" element={<Settings />} />
         <Route path="settings/customizer" element={<WebsiteCustomizer />} />
         <Route path="help" element={<AdminSimplePage label="Admin Help Center" />} />
@@ -136,9 +148,10 @@ function AppRoutes() {
         <Route path="properties" element={<Properties />} />
         <Route path="properties/add" element={<AddProperty />} />
         <Route path="bookings" element={<LandlordSimplePage label="My Bookings" />} />
-        <Route path="finance" element={<LandlordSimplePage label="Finance & Payments" />} />
+        <Route path="finance" element={<FinanceDashboard />} />
+        <Route path="heatmap" element={<LandlordHeatmap />} />
         <Route path="maintenance" element={<LandlordSimplePage label="Maintenance Requests" />} />
-        <Route path="messages" element={<LandlordSimplePage label="Messages" />} />
+        <Route path="messages" element={<CommunicationHub />} />
         <Route path="settings" element={<Settings />} />
         <Route path="settings/customizer" element={<WebsiteCustomizer />} />
         <Route path="help" element={<LandlordSimplePage label="Help Center" />} />
@@ -160,11 +173,33 @@ function AppRoutes() {
         <Route path="properties" element={<Properties />} />
         <Route path="bookings" element={<TenantSimplePage label="My Bookings" />} />
         <Route path="payments" element={<TenantSimplePage label="Payments" />} />
+        <Route path="payments/:id" element={<PaymentReceipt />} />
         <Route path="maintenance" element={<TenantSimplePage label="Maintenance Requests" />} />
-        <Route path="messages" element={<TenantSimplePage label="Messages" />} />
+        <Route path="messages" element={<TenantSimplePage label="Messages"><CommunicationHub /></TenantSimplePage>} />
         <Route path="settings" element={<Settings />} />
         <Route path="settings/customizer" element={<WebsiteCustomizer />} />
         <Route path="help" element={<TenantSimplePage label="Help Center" />} />
+      </Route>
+
+      {/*  Agent routes (AUTH-006: role-protected)  */}
+      <Route
+        path="/agent/*"
+        element={
+          <ProtectedRoute allowedRoles={['Agent']}>
+            <ErrorBoundary>
+              <AgentLayout />
+            </ErrorBoundary>
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<AgentDashboard />} />
+        <Route path="profile" element={<Profile />} />
+        <Route path="properties" element={<AgentSimplePage label="Assigned Properties" />} />
+        <Route path="bookings" element={<AgentSimplePage label="My Bookings" />} />
+        <Route path="maintenance" element={<AgentSimplePage label="Maintenance Requests" />} />
+        <Route path="categories" element={<AgentCategories />} />
+        <Route path="settings" element={<Settings />} />
+        <Route path="help" element={<AgentSimplePage label="Help Center" />} />
       </Route>
 
       {/*  Search page (public)  */}

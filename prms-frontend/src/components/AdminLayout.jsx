@@ -20,6 +20,7 @@ function getTopbarTitle(activePage) {
     maintenance: 'Maintenance Center',
     messages: 'Admin Messages',
     reports: 'Reports & Audit',
+    categories: 'Category Management',
     settings: 'Admin Settings',
     help: 'Admin Help Center',
   }

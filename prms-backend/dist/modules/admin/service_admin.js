@@ -18,7 +18,18 @@ async function getSystemSettings() {
     return db_1.prisma.systemSetting.findMany({ orderBy: { key: 'asc' } });
 }
 async function updateSystemSetting(key, value) {
-    return db_1.prisma.systemSetting.update({ where: { key }, data: { value } });
+    if (!key || key === 'undefined') {
+        throw new Error('Setting key is required');
+    }
+    if (value === undefined || value === null) {
+        value = '';
+    }
+    const category = String(key).split('_')[0] ?? 'general';
+    return db_1.prisma.systemSetting.upsert({
+        where: { key: String(key) },
+        update: { value: String(value) },
+        create: { key: String(key), value: String(value), category },
+    });
 }
 async function addSystemSetting(key, value, category = 'general', description) {
     return db_1.prisma.systemSetting.create({ data: { key, value, category, description } });

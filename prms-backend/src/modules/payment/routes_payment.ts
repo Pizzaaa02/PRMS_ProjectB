@@ -8,6 +8,7 @@ const ctrl = new PaymentController();
 
 router.use(authenticate);
 router.get('/', adminOrLandlord, ctrl.list);
+router.get('/summary', ctrl.summary);
 router.get('/:id', ctrl.getById);
 router.post('/', ctrl.create);
 router.patch('/:id/mark-paid', adminOrLandlord, ctrl.markPaid);

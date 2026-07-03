@@ -5,6 +5,7 @@ export const ROLE_ROUTES: Record<string, string> = {
   admin: '/admin',
   landlord: '/landlord',
   tenant: '/tenant',
+  agent: '/agent',
 };
 
 /** List of all valid role names */

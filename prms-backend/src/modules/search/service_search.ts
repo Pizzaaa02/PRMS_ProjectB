@@ -15,7 +15,7 @@ export async function searchProperties(query: { location?: string; property_type
   const limit = parseInt(query.limit || '10');
 
   const [properties, total] = await Promise.all([
-    prisma.property.findMany({ where, include: { owner: { select: { id: true, full_name: true, email: true } }, amenities: true, images: { take: 3 } }, skip: (page - 1) * limit, take: limit, orderBy: { id: 'desc' } }),
+    prisma.property.findMany({ where, include: { owner: { select: { id: true, full_name: true, email: true } }, amenities: true, images: { take: 3 }, category: true }, skip: (page - 1) * limit, take: limit, orderBy: { id: 'desc' } }),
     prisma.property.count({ where }),
   ]);
   return { properties, total, page, limit, totalPages: Math.ceil(total / limit) };

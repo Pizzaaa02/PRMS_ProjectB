@@ -76,7 +76,13 @@ class AuthController {
                 const tokens = authService.generateTokens(user.id);
                 await authService.saveRefreshToken(user.id, tokens.refreshToken);
                 res.json((0, response_1.successResponse)({
-                    user: { id: user.id, email: user.email, full_name: user.full_name, role: user.UserRole[0]?.role.name },
+                    user: {
+                        id: user.id,
+                        email: user.email,
+                        full_name: user.full_name,
+                        firebase_uid: user.firebase_uid,
+                        role: user.UserRole[0]?.role.name,
+                    },
                     tokens,
                 }, 'Login successful'));
             }
@@ -114,6 +120,7 @@ class AuthController {
                     full_name: user.full_name,
                     phone: user.phone,
                     profile_img_url: user.profile_img_url,
+                    firebase_uid: user.firebase_uid,
                     role: user.UserRole[0]?.role.name || 'Tenant',
                 }));
             }
@@ -139,34 +146,99 @@ class AuthController {
                 res.status(400).json({ success: false, error: { message: error.message } });
             }
         };
+        this.changePassword = async (req, res) => {
+            try {
+                const { currentPassword, newPassword } = req.body;
+                if (!currentPassword || !newPassword) {
+                    return res.status(400).json({ success: false, error: { message: 'Current and new password required' } });
+                }
+                await authService.changePassword(req.user.id, currentPassword, newPassword);
+                res.json((0, response_1.successResponse)(null, 'Password changed successfully'));
+            }
+            catch (error) {
+                res.status(400).json({ success: false, error: { message: error.message } });
+            }
+        };
         /* AUTH-009: Google OAuth login */
         this.googleLogin = async (req, res) => {
             try {
-                const { idToken } = req.body;
-                if (!idToken)
-                    throw new Error('Firebase ID token required');
-                // Verify the Firebase ID token (Google provider)
-                const firebaseUid = await (0, firebase_auth_1.verifyFirebaseToken)(idToken);
-                // Find or create user by firebase_uid
+                const { idToken, email, displayName } = req.body;
+                let isNewUser = false;
+                let firebaseUid;
+                if (config_1.env.ENABLE_FIREBASE_VERIFY === true) {
+                    if (!idToken) {
+                        throw new Error('Firebase ID token required');
+                    }
+                    firebaseUid = await (0, firebase_auth_1.verifyFirebaseToken)(idToken);
+                }
+                else {
+                    console.warn('[DEV MODE] Firebase verification disabled');
+                    if (!email) {
+                        throw new Error('Email is required when Firebase verification is disabled');
+                    }
+                    firebaseUid = `dev-${email.toLowerCase()}`;
+                }
+                // Step 1: find by firebase_uid
                 let user = await db_1.prisma.user.findUnique({
                     where: { firebase_uid: firebaseUid },
-                    include: { UserRole: { include: { role: true } } },
+                    include: {
+                        UserRole: {
+                            include: { role: true },
+                        },
+                    },
                 });
+                // Step 2: not found, find by email
+                if (!user && email) {
+                    user = await db_1.prisma.user.findUnique({
+                        where: { email },
+                        include: {
+                            UserRole: {
+                                include: { role: true },
+                            },
+                        },
+                    });
+                    // Existing email account
+                    if (user) {
+                        // Already linked to another Google account?
+                        if (user.firebase_uid && user.firebase_uid !== firebaseUid) {
+                            throw new Error('Google account already linked');
+                        }
+                        // Link Google account
+                        user = await db_1.prisma.user.update({
+                            where: { id: user.id },
+                            data: { firebase_uid: firebaseUid },
+                            include: {
+                                UserRole: {
+                                    include: { role: true },
+                                },
+                            },
+                        });
+                    }
+                }
+                // Step 3: create new user
                 if (!user) {
-                    // Auto-register new Google user as Tenant
+                    isNewUser = true;
                     user = await db_1.prisma.user.create({
                         data: {
                             firebase_uid: firebaseUid,
-                            email: req.body.email || '',
-                            full_name: req.body.displayName || '',
+                            email,
+                            full_name: displayName || '',
                             passwordHash: null,
                             UserRole: {
                                 create: {
-                                    role: { connect: { name: 'Tenant' } },
+                                    role: {
+                                        connect: {
+                                            name: 'Tenant',
+                                        },
+                                    },
                                 },
                             },
                         },
-                        include: { UserRole: { include: { role: true } } },
+                        include: {
+                            UserRole: {
+                                include: { role: true },
+                            },
+                        },
                     });
                 }
                 if (!user.is_active)
@@ -183,6 +255,7 @@ class AuthController {
                         role: user.UserRole[0]?.role.name || 'Tenant',
                     },
                     tokens,
+                    isNewUser: !!isNewUser,
                 }));
             }
             catch (error) {

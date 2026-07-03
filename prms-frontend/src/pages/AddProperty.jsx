@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { propertyApi } from '../api';
+import { categoryApi } from '../api/categories';
 import {
   ArrowLeft,
   Check,
@@ -39,11 +40,23 @@ export default function AddProperty() {
   const [success, setSuccess] = useState(false);
   const [amenityInput, setAmenityInput] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data } = await categoryApi.shared();
+        setCategories(data?.data ?? []);
+      } catch (e) {
+        console.error('Failed to load categories', e);
+      }
+    })();
+  }, []);
 
   const [form, setForm] = useState({
     title: '',
     address: '',
-    property_type: 'apartment',
+    categoryId: '',
     rent: '',
     city: '',
     state: '',
@@ -215,13 +228,14 @@ export default function AddProperty() {
                 </label>
 
                 <label>
-                  Property type
+                  Category
                   <select
-                    value={form.property_type}
-                    onChange={(e) => change('property_type', e.target.value)}
+                    value={form.categoryId || ''}
+                    onChange={(e) => change('categoryId', e.target.value)}
                   >
-                    {PROPERTY_TYPES.map((t) => (
-                      <option key={t.value} value={t.value}>{t.label}</option>
+                    <option value="">Select a category...</option>
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
                   </select>
                 </label>

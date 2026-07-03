@@ -39,3 +39,27 @@ export async function cancelBooking(id: string) {
 export async function getMyBookings(userId: string) {
   return prisma.booking.findMany({ where: { userId }, include: { property: true } });
 }
+
+export async function checkOverlap(
+  propertyId: string,
+  startDate: string,
+  endDate: string,
+  excludeBookingId?: string,
+): Promise<{ hasOverlap: boolean; overlapping: any[] }> {
+  const overlaps = await prisma.booking.findMany({
+    where: {
+      propertyId,
+      status: { notIn: ['CANCELLED', 'EXPIRED'] },
+      id: excludeBookingId ? { not: excludeBookingId } : undefined,
+      OR: [
+        {
+          start_date: { lte: new Date(endDate) },
+          end_date: { gte: new Date(startDate) },
+        },
+      ],
+    },
+    include: { user: { select: { id: true, full_name: true } } },
+  });
+
+  return { hasOverlap: overlaps.length > 0, overlapping: overlaps };
+}

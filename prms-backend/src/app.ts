@@ -17,6 +17,8 @@ import maintenanceRoutes from './modules/maintenance/routes_maintenance';
 import communicationRoutes from './modules/communication/routes_communication';
 import adminRoutes from './modules/admin/routes_admin';
 import reportingRoutes from './modules/reporting/routes_reporting';
+import agentRoutes from './modules/agent/routes_agent';
+import categoryRoutes from './modules/category/routes_category';
 
 // Initialize Firebase if possible
 if (getApps().length === 0) {
@@ -70,6 +72,8 @@ router.use('/maintenance', maintenanceRoutes);
 router.use('/communication', communicationRoutes);
 router.use('/admin', adminRoutes);
 router.use('/reports', reportingRoutes);
+router.use('/agents', agentRoutes);
+router.use('/categories', categoryRoutes);
 
 app.use(router);
 app.use(errorHandler);

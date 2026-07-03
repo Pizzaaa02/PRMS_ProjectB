@@ -10,12 +10,15 @@ import {
   CircleHelp,
   Users,
   FileText,
+  Tag,
+  BarChart3,
 } from 'lucide-react'
 
 const roleRoutes = {
   Tenant:    { prefix: '/tenant',   pages: ['dashboard', 'properties', 'bookings', 'payments', 'maintenance', 'messages', 'settings'] },
-  Landlord:  { prefix: '/landlord', pages: ['dashboard', 'properties', 'bookings', 'finance', 'maintenance', 'messages', 'settings'] },
-  Admin:     { prefix: '/admin',    pages: ['dashboard', 'users', 'properties', 'bookings', 'finance', 'maintenance', 'messages', 'reports', 'settings'] },
+  Landlord:  { prefix: '/landlord', pages: ['dashboard', 'properties', 'bookings', 'finance', 'heatmap', 'maintenance', 'messages', 'settings'] },
+  Agent:     { prefix: '/agent',    pages: ['dashboard', 'properties', 'bookings', 'maintenance', 'categories', 'settings'] },
+  Admin:     { prefix: '/admin',    pages: ['dashboard', 'users', 'properties', 'bookings', 'finance', 'maintenance', 'messages', 'reports', 'categories', 'settings'] },
 }
 
 const pageMeta = {
@@ -24,9 +27,11 @@ const pageMeta = {
   bookings:   { label: 'Bookings',        icon: CalendarDays },
   payments:   { label: 'Payments',        icon: WalletCards },
   finance:    { label: 'Finance',         icon: WalletCards },
+  heatmap:    { label: 'Heatmap',         icon: BarChart3 },
   maintenance:{ label: 'Maintenance',     icon: Wrench },
   messages:   { label: 'Messages',        icon: MessageCircle },
   settings:   { label: 'Settings',        icon: Settings },
+  categories: { label: 'Categories',      icon: Tag },
   users:      { label: 'Users',           icon: Users },
   reports:    { label: 'Reports',         icon: FileText },
   help:       { label: 'Help',            icon: CircleHelp },

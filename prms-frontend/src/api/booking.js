@@ -19,4 +19,12 @@ export const bookingApi = {
   cancel(id) {
     return apiClient.patch(`/bookings/${id}/cancel`);
   },
+  /**
+   * Check for date overlap on a property.
+   * Expects params: { propertyId, startDate, endDate }
+   * Returns { hasOverlap: boolean, conflictingBookings: Booking[] }
+   */
+  checkOverlap(params) {
+    return apiClient.get('/booking/check-overlap', { params });
+  },
 };

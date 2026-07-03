@@ -9,7 +9,7 @@ const prisma = new PrismaClient({ adapter });
 
 async function main() {
   console.log('Seeding roles...');
-  for (const name of ['Admin', 'Landlord', 'Tenant']) {
+  for (const name of ['Admin', 'Landlord', 'Tenant', 'Agent']) {
     await prisma.role.upsert({ where: { name }, create: { name }, update: {} });
   }
 
@@ -47,6 +47,17 @@ async function main() {
       UserRole: { create: [{ role: { connect: { name: 'Tenant' } } }] },
     },
     update: { passwordHash: await hash('Tenant123!') },
+  });
+
+  const agent = await prisma.user.upsert({
+    where: { email: 'agent@prms.com' },
+    create: {
+      email: 'agent@prms.com', passwordHash: await hash('Agent123!'),
+      firebase_uid: 'agent-001', full_name: 'Sam Agent',
+      phone: '+199****5678', is_active: true,
+      UserRole: { create: [{ role: { connect: { name: 'Agent' } } }] },
+    },
+    update: { passwordHash: await hash('Agent123!') },
   });
 
   console.log('Seeding properties...');
@@ -89,6 +100,25 @@ async function main() {
   await prisma.systemSetting.upsert({
     where: { key: 'currency' },
     create: { key: 'currency', value: 'USD', category: 'general', description: 'Default currency' },
+    update: {},
+  });
+
+  console.log('Seeding agent records...');
+  const agentRecord = await prisma.agent.upsert({
+    where: { userId: agent.id },
+    create: { userId: agent.id },
+    update: {},
+  });
+
+  console.log('Seeding agent-property assignments...');
+  await prisma.agentProperty.upsert({
+    where: { agentId_propertyId: { agentId: agentRecord.id, propertyId: prop1.id } },
+    create: { agentId: agentRecord.id, propertyId: prop1.id },
+    update: {},
+  });
+  await prisma.agentProperty.upsert({
+    where: { agentId_propertyId: { agentId: agentRecord.id, propertyId: prop2.id } },
+    create: { agentId: agentRecord.id, propertyId: prop2.id },
     update: {},
   });
 

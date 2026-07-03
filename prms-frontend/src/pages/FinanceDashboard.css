@@ -1,0 +1,258 @@
+.finance-dashboard {
+  padding: 8px 0;
+}
+
+.finance-loading {
+  padding: 32px;
+  text-align: center;
+  color: var(--muted, #64748b);
+}
+
+.finance-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.finance-header h1 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.finance-export-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: #f8fafc;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 8px;
+  font-size: 0.84rem;
+  color: var(--muted, #64748b);
+  cursor: pointer;
+}
+
+.finance-export-btn:hover {
+  background: #e2e8f0;
+}
+
+/* Summary cards */
+.finance-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.finance-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 12px;
+}
+
+.finance-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.finance-card-icon.total {
+  background: linear-gradient(135deg, #eef2ff, #e0e7ff);
+  color: #6366f1;
+}
+
+.finance-card-icon.pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.finance-card-icon.paid {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.finance-card-icon.trend {
+  background: #fce7f3;
+  color: #9d174d;
+}
+
+.finance-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.finance-card-label {
+  font-size: 0.78rem;
+  color: var(--muted, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 500;
+}
+
+.finance-card-value {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--body, #334155);
+}
+
+/* Chart section */
+.finance-chart-section {
+  margin-bottom: 28px;
+  padding: 20px;
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 12px;
+}
+
+.finance-chart-section h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 16px;
+}
+
+.finance-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.finance-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.finance-bar-label {
+  min-width: 130px;
+  font-size: 0.84rem;
+  color: var(--body, #334155);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.finance-bar-track {
+  flex: 1;
+  height: 10px;
+  background: #f1f5f9;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.finance-bar-fill {
+  height: 100%;
+  background: #6366f1;
+  border-radius: 5px;
+  transition: width 0.4s ease;
+}
+
+.finance-bar-amount {
+  min-width: 70px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  text-align: right;
+  color: var(--body, #334155);
+}
+
+/* Payment history table */
+.finance-payments-section {
+  padding: 20px;
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 12px;
+}
+
+.finance-payments-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.finance-payments-header h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.finance-filter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.finance-filter select {
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.84rem;
+  background: #fff;
+  color: var(--body, #334155);
+}
+
+.finance-table-wrap {
+  overflow-x: auto;
+}
+
+.finance-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.86rem;
+}
+
+.finance-table th {
+  text-align: left;
+  padding: 10px 8px;
+  font-weight: 600;
+  color: var(--muted, #64748b);
+  border-bottom: 1px solid var(--border, #e2e8f0);
+}
+
+.finance-table td {
+  padding: 10px 8px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.finance-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-badge.paid {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-badge.pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-badge.overdue {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.status-badge.cancelled {
+  background: #e5e7eb;
+  color: #374151;
+}

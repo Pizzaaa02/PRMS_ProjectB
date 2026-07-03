@@ -34,4 +34,11 @@ export class PaymentController {
       res.json(successResponse(payment, 'Payment marked as paid'));
     } catch (error: any) { res.status(400).json({ success: false, error: { message: error.message } }); }
   };
+
+  summary = async (req: AuthRequest, res: Response) => {
+    try {
+      const summary = await paymentService.getFinanceSummary(req.user!.id);
+      res.json(successResponse(summary));
+    } catch (error: any) { res.status(500).json({ success: false, error: { message: error.message } }); }
+  };
 }

@@ -31,6 +31,6 @@ export async function updateTicket(id: string, data: { status?: string; assigned
 
 export async function resolveTicket(id: string) {
   return prisma.maintenanceTicket.update({
-    where: { id }, data: { status: 'resolved', resolved_at: new Date() },
+    where: { id }, data: { status: 'RESOLVED', resolved_at: new Date() },
   });
 }

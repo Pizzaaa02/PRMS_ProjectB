@@ -9,7 +9,7 @@ const rbac_1 = require("../../middleware/rbac");
 const controller_reporting_1 = require("./controller_reporting");
 const router = express_1.default.Router();
 const ctrl = new controller_reporting_1.ReportingController();
-router.use(auth_1.authenticate, rbac_1.adminOnly);
+router.use(auth_1.authenticate, rbac_1.adminOrLandlord);
 router.get('/dashboard', ctrl.dashboard);
 router.get('/revenue', ctrl.revenue);
 router.get('/properties', ctrl.properties);

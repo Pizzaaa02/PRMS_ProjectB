@@ -33,6 +33,13 @@ function RoleSelection() {
       path: '/landlord',
     },
     {
+      key: 'agent',
+      title: 'Agent',
+      description: 'I represent landlords and help tenants find homes.',
+      icon: Building2,
+      path: '/agent',
+    },
+    {
       key: 'admin',
       title: 'Admin',
       description: 'Manage users, system security, and platform operations.',

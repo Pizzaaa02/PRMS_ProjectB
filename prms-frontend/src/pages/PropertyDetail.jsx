@@ -30,8 +30,10 @@ import {
   Check,
   Clock,
 } from 'lucide-react';
-import { propertyApi, bookingApi } from '../api';
+import { propertyApi } from '../api';
 import { useAuth } from '../contexts/AuthContext';
+import AvailabilityCalendar from '../components/AvailabilityCalendar';
+import TenantBookingModal from '../components/TenantBookingModal';
 import './PropertyDetail.css';
 
 function amenityIcon(name) {
@@ -77,13 +79,6 @@ function PropertyDetail() {
 
   /* Booking modal state */
   const [showBookingModal, setShowBookingModal] = useState(false);
-  const [bookingForm, setBookingForm] = useState({
-    start_date: '',
-    end_date: '',
-    notes: '',
-  });
-  const [submitting, setSubmitting] = useState(false);
-  const [submitResult, setSubmitResult] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -105,40 +100,7 @@ function PropertyDetail() {
     return () => { cancelled = true; };
   }, [id]);
 
-  /* ---- Booking submit handler ---- */
-  async function handleSubmitBooking(e) {
-    e.preventDefault();
-    setSubmitting(true);
-    setSubmitResult(null);
-    try {
-      const payload = {
-        propertyId: id,
-        start_date: bookingForm.start_date,
-        end_date: bookingForm.end_date,
-        notes: bookingForm.notes,
-      };
-      const res = await bookingApi.create(payload);
-      const newBooking = res?.data?.data ?? res?.data;
-      setSubmitResult({
-        booking: newBooking,
-        message: 'Booking request submitted successfully!',
-      });
-      /* Reset form after short delay */
-      setTimeout(() => {
-        setShowBookingModal(false);
-        setBookingForm({ start_date: '', end_date: '', notes: '' });
-        setSubmitResult(null);
-      }, 2500);
-    } catch (err) {
-      setSubmitResult({
-        error: true,
-        message: err.response?.data?.error?.message || 'Failed to submit booking request',
-      });
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
+  /* ---- Booking button handler ---- */
   function handleBookClick() {
     if (property.status === 'OCCUPIED' || property.status === 'MAINTENANCE') return;
     if (!isAuthenticated) {
@@ -150,6 +112,19 @@ function PropertyDetail() {
 
   /* Compute minimum start_date as today */
   const todayStr = new Date().toISOString().slice(0, 10);
+
+  /* Placeholder booked dates */
+  const placeholderBookedDates = [
+    `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-03`,
+    `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-07`,
+    `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-12`,
+    `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-14`,
+    `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-15`,
+    `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-20`,
+    `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-21`,
+    `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-22`,
+    `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-28`,
+  ];
 
   if (loading) {
     return (
@@ -324,6 +299,10 @@ function PropertyDetail() {
           </div>
 
           {/* Action button */}
+          <AvailabilityCalendar
+            bookedDates={placeholderBookedDates}
+            month={new Date()}
+          />
           <div className="property-action-bar">
             <motion.button
               type="button"
@@ -346,101 +325,11 @@ function PropertyDetail() {
       </motion.div>
 
       {/* ========== BOOKING MODAL ========== */}
-      {showBookingModal && (
-        <div className="booking-modal-overlay">
-          <div className="booking-modal-content">
-            <button
-              type="button"
-              className="booking-modal-close"
-              onClick={() => setShowBookingModal(false)}
-            >
-              <X size={20} />
-            </button>
-
-            {submitResult ? (
-              /* ---- Submit result ---- */
-              <div className="booking-result">
-                {submitResult.error ? (
-                  <>
-                    <X size={40} style={{ color: '#ef4444' }} />
-                    <h3>Booking Failed</h3>
-                    <p>{submitResult.message}</p>
-                  </>
-                ) : (
-                  <>
-                    <Check size={40} style={{ color: '#22c55e' }} />
-                    <h3>Booking Submitted!</h3>
-                    <p>{submitResult.message}</p>
-                    <div className="booking-status-display">
-                      <BookingStatusBadge status={submitResult.booking?.status || 'PENDING'} />
-                    </div>
-                  </>
-                )}
-              </div>
-            ) : (
-              /* ---- Booking form ---- */
-              <form onSubmit={handleSubmitBooking} className="booking-form">
-                <h2>Book this property</h2>
-                <p className="booking-property-name">{property.title}</p>
-
-                <label className="booking-form-label">
-                  Check-in date
-                  <input
-                    type="date"
-                    required
-                    min={todayStr}
-                    max={new Date(Date.now() + 365 * 86400000).toISOString().slice(0, 10)}
-                    value={bookingForm.start_date}
-                    onChange={(e) =>
-                      setBookingForm((f) => ({ ...f, start_date: e.target.value }))
-                    }
-                  />
-                </label>
-
-                <label className="booking-form-label">
-                  Check-out date
-                  <input
-                    type="date"
-                    required
-                    min={bookingForm.start_date || todayStr}
-                    max={new Date(Date.now() + 365 * 86400000).toISOString().slice(0, 10)}
-                    value={bookingForm.end_date}
-                    onChange={(e) =>
-                      setBookingForm((f) => ({ ...f, end_date: e.target.value }))
-                    }
-                  />
-                </label>
-
-                <label className="booking-form-label">
-                  Notes
-                  <textarea
-                    rows={3}
-                    placeholder="Message for the landlord..."
-                    value={bookingForm.notes}
-                    onChange={(e) =>
-                      setBookingForm((f) => ({ ...f, notes: e.target.value }))
-                    }
-                  />
-                </label>
-
-                <button
-                  type="submit"
-                  className="booking-submit-btn"
-                  disabled={submitting || !bookingForm.start_date || !bookingForm.end_date}
-                >
-                  {submitting ? (
-                    <>
-                      <Loader2 size={18} className="spin" /> Submitting...
-                    </>
-                  ) : (
-                    'Submit Request'
-                  )}
-                </button>
-              </form>
-            )}
-          </div>
-        </div>
-      )}
+      <TenantBookingModal
+        property={property}
+        isOpen={showBookingModal}
+        onClose={() => setShowBookingModal(false)}
+      />
     </main>
   );
 }
