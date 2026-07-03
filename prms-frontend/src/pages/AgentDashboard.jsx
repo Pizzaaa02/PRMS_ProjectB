@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { useAgent } from '../contexts/agentContext';
+import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import './AgentDashboard.css';
 
 const AgentDashboard = () => {
-  const { agent, loading } = useAgent();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [assignedProperties, setAssignedProperties] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [maintenanceRequests, setMaintenanceRequests] = useState([]);
 
   useEffect(() => {
-    if (!agent) {
+    if (!user) {
       navigate('/login');
       return;
     }
@@ -60,13 +60,13 @@ const AgentDashboard = () => {
     };
 
     fetchData();
-  }, [agent, navigate]);
+  }, [user, navigate]);
 
   if (loading) {
     return <div className="loading">Loading dashboard...</div>;
   }
 
-  if (!agent) {
+  if (!user) {
     return <div className="error">Please log in to view dashboard</div>;
   }
 
@@ -74,7 +74,7 @@ const AgentDashboard = () => {
     <div className="agent-dashboard">
       <header className="dashboard-header">
         <h1>Agent Dashboard</h1>
-        <p>Welcome back, {agent.fullName}</p>
+        <p>Welcome back, {user.full_name}</p>
       </header>
 
       <div className="dashboard-content">
