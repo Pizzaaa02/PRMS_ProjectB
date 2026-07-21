@@ -25,7 +25,7 @@ export async function createPayment(data: { bookingId: string; userId: string; a
 export async function markAsPaid(id: string) {
   return prisma.payment.update({
     where: { id },
-    data: { status: 'paid', paid_at: new Date() },
+    data: { status: 'PAID', paid_at: new Date() },
   });
 }
 

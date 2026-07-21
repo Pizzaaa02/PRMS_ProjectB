@@ -19,10 +19,6 @@ function FinanceDashboard() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('');
 
-  useEffect(() => {
-    load();
-  }, []);
-
   async function load() {
     try {
       const [summaryRes, paymentsRes] = await Promise.all([
@@ -37,6 +33,10 @@ function FinanceDashboard() {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    load();
+  }, []);
 
   const filtered = statusFilter
     ? payments.filter((p) => p.status === statusFilter)

@@ -15,14 +15,14 @@ export async function getTicketById(id: string) {
   return prisma.maintenanceTicket.findUnique({ where: { id }, include: { user: true } });
 }
 
-export async function createTicket(data: { title: string; description: string; priority?: string; }, userId: string) {
+export async function createTicket(data: { title: string; description: string; priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'; }, userId: string) {
   return prisma.maintenanceTicket.create({
     data: { ...data, user: { connect: { id: userId } } },
     include: { user: true },
   });
 }
 
-export async function updateTicket(id: string, data: { status?: string; assignedTo?: string; }) {
+export async function updateTicket(id: string, data: { status?: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED'; assignedTo?: string; }) {
   return prisma.maintenanceTicket.update({
     where: { id }, data,
     include: { user: true },

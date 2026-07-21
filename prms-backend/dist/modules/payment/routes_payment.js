@@ -11,6 +11,7 @@ const router = express_1.default.Router();
 const ctrl = new controller_payment_1.PaymentController();
 router.use(auth_1.authenticate);
 router.get('/', rbac_1.adminOrLandlord, ctrl.list);
+router.get('/summary', ctrl.summary);
 router.get('/:id', ctrl.getById);
 router.post('/', ctrl.create);
 router.patch('/:id/mark-paid', rbac_1.adminOrLandlord, ctrl.markPaid);

@@ -5,19 +5,19 @@ export async function getDashboardStats() {
     prisma.user.count(),
     prisma.property.count(),
     prisma.booking.count(),
-    prisma.payment.aggregate({ where: { status: 'paid' }, _sum: { amount: true } }),
+    prisma.payment.aggregate({ where: { status: 'PAID' }, _sum: { amount: true } }),
   ]);
   
   return {
     totalUsers,
     totalProperties,
     totalBookings,
-    totalRevenue: totalRevenue._sum.amount || 0,
+    totalRevenue: totalRevenue._sum?.amount || 0,
   };
 }
 
 export async function getRevenueReport(month?: string, year?: string) {
-  const where: any = { status: 'paid' };
+  const where: any = { status: 'PAID' };
   if (month && year) {
     const start = new Date(`${year}-${month}-01`);
     const end = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59);
@@ -52,7 +52,7 @@ export async function getPropertyReport() {
 
 export async function getOccupancyReport() {
   const totalProperties = await prisma.property.count();
-  const activeBookings = await prisma.booking.count({ where: { status: { in: ['active', 'confirmed'] } } });
+  const activeBookings = await prisma.booking.count({ where: { status: { in: ['CONFIRMED', 'CHECKED_IN'] } } });
   
   return {
     totalProperties,

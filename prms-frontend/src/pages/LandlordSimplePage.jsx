@@ -123,6 +123,7 @@ export default function LandlordSimplePage({ type = 'properties' }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
+   
   useEffect(() => {
     let cancelled = false
     setLoading(true)

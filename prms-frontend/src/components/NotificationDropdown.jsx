@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react'
-import { ChevronDown, Check, X, Bell } from 'lucide-react'
+import { Check, X, Bell } from 'lucide-react'
 import { adminApi } from '../api/admin'
 import './NotificationDropdown.css'
 

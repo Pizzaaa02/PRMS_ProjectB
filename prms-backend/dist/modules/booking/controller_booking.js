@@ -97,6 +97,16 @@ class BookingController {
                 res.status(500).json({ success: false, error: { message: error.message } });
             }
         };
+        this.checkOverlap = async (req, res) => {
+            try {
+                const { propertyId, startDate, endDate, excludeBookingId } = req.query;
+                const result = await bookingService.checkOverlap(String(propertyId), String(startDate), String(endDate), excludeBookingId ? String(excludeBookingId) : undefined);
+                res.json((0, response_1.successResponse)(result));
+            }
+            catch (error) {
+                res.status(500).json({ success: false, error: { message: error.message } });
+            }
+        };
     }
 }
 exports.BookingController = BookingController;

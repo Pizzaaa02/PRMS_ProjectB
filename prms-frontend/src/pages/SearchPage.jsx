@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { searchApi } from '../api/search'
+import { ROUTES } from '../config/routes'
 import {
   ArrowRight,
   Building2,
@@ -88,7 +89,7 @@ function SearchPage() {
   return (
     <div className="search-page">
       {/* Search Header */}
-      <div className="search-header">
+      <div className="search-header" data-customize-id="search.header">
         <div className="search-header-content">
           <h1>Find Your Next Home</h1>
           <p>Search verified rental properties across Malaysia</p>
@@ -212,7 +213,7 @@ function SearchPage() {
               <article
                 key={property.id}
                 className="result-card"
-                onClick={() => navigate(`/property/${property.id}`)}
+                onClick={() => navigate(ROUTES.public.propertyDetails(property.id))}
               >
                 <div className="result-image">
                   {property.images?.[0]?.url ? (

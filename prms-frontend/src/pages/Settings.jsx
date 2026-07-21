@@ -1,5 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useSettings } from '../contexts/SettingsContext'
+import { useAuth } from '../contexts/AuthContext'
+import { ROUTES, roleToPath } from '../config/routes'
 import {
   Bell,
   Building2,
@@ -16,8 +18,22 @@ import './Settings.css'
 function Settings() {
   const navigate = useNavigate()
   const { settings, updateSetting } = useSettings()
-  const dashboardPath = localStorage.getItem('prmsDashboardPath') || '/admin'
+  const { user } = useAuth()
+  const dashboardPath = user?.role ? roleToPath(user.role) : ROUTES.admin.dashboard
   const siteName = settings?.branding_site_name || 'PRMS'
+
+  /* Role-aware property route */
+  const propertyPath = user?.role?.toLowerCase().includes('admin') ? ROUTES.admin.properties :
+    user?.role?.toLowerCase().includes('landlord') ? ROUTES.landlord.properties :
+    user?.role?.toLowerCase().includes('tenant') ? ROUTES.tenant.properties :
+    user?.role?.toLowerCase().includes('agent') ? ROUTES.agent.properties :
+    ROUTES.landlord.properties
+
+  /* Role-aware customizer route */
+  const customizerPath = user?.role?.toLowerCase().includes('admin') ? ROUTES.admin.customizer :
+    user?.role?.toLowerCase().includes('landlord') ? ROUTES.landlord.customizer :
+    user?.role?.toLowerCase().includes('tenant') ? ROUTES.tenant.customizer :
+    ROUTES.admin.customizer
 
   return (
     <main className="admin-shell">
@@ -26,7 +42,7 @@ function Settings() {
           <Grid2X2 size={28} />
         </div>
 
-        <div className="side-icon" onClick={() => navigate('/properties')}>
+        <div className="side-icon" onClick={() => navigate(propertyPath)}>
           <Building2 size={26} />
         </div>
 
@@ -47,7 +63,7 @@ function Settings() {
         </div>
 
         <div className="side-bottom">
-          <div className="side-icon logout" onClick={() => navigate('/login')}>
+          <div className="side-icon logout" onClick={() => navigate(ROUTES.public.login)}>
             <LogOut size={25} />
           </div>
         </div>
@@ -117,10 +133,7 @@ function Settings() {
               <h2>System Preferences</h2>
               <p>Adjust dashboard layout, property display, language, and system theme.</p>
 
-              <button type="button" onClick={() => {
-                const base = dashboardPath === '/tenant' ? '/tenant' : dashboardPath === '/landlord' ? '/landlord' : '/admin';
-                navigate(`${base}/settings/customizer`);
-              }}>Manage Preferences</button>
+              <button type="button" onClick={() => navigate(customizerPath)}>Manage Preferences</button>
             </div>
           </section>
         </div>

@@ -15,4 +15,5 @@ router.get('/:id', auth_1.authenticate, ctrl.getById);
 router.post('/', auth_1.authenticate, ctrl.create);
 router.put('/:id', auth_1.authenticate, rbac_1.adminOrLandlord, ctrl.update);
 router.patch('/:id/cancel', auth_1.authenticate, ctrl.cancel);
+router.get('/check-overlap', auth_1.authenticate, ctrl.checkOverlap);
 exports.default = router;

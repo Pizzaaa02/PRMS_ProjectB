@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { ROUTES } from '../config/routes'
 import { Heart, Home, WalletCards, Wrench } from 'lucide-react'
 import './TenantDashboard.css'
 
@@ -77,7 +78,7 @@ function TenantDashboard() {
 
           <div className="payment-line"></div>
 
-          <button type="button" onClick={() => navigate('/tenant/payments')}>
+          <button type="button" onClick={() => navigate(ROUTES.tenant.payments)}>
             View Breakdown
           </button>
 
@@ -112,7 +113,7 @@ function TenantDashboard() {
       <section className="saved-panel">
         <div className="saved-header">
           <h3>Saved Properties</h3>
-          <button type="button" onClick={() => navigate('/tenant/properties')}>
+          <button type="button" onClick={() => navigate(ROUTES.tenant.properties)}>
             View All
           </button>
         </div>
@@ -140,7 +141,7 @@ function TenantDashboard() {
         <div className="payment-history-panel">
           <div className="panel-title-row">
             <h3>Payment Activity</h3>
-            <button type="button" onClick={() => navigate('/tenant/payments')}>
+            <button type="button" onClick={() => navigate(ROUTES.tenant.payments)}>
               See All
             </button>
           </div>
@@ -171,7 +172,7 @@ function TenantDashboard() {
         <div className="maintenance-panel">
           <div className="panel-title-row">
             <h3>Maintenance Updates</h3>
-            <button type="button" onClick={() => navigate('/tenant/maintenance')}>
+            <button type="button" onClick={() => navigate(ROUTES.tenant.maintenance)}>
               New Request
             </button>
           </div>

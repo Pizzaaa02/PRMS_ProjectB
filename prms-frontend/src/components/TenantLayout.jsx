@@ -10,6 +10,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { buildNavItems, resolveActivePage } from './NavigationConfig'
 import NotificationDropdown from './NotificationDropdown'
 import ProfileDropdown from './ProfileDropdown'
+import ThemeSwitcher from './ThemeSwitcher'
 import './TenantLayout.css'
 
 function TenantLayout() {
@@ -20,11 +21,6 @@ function TenantLayout() {
   const role = user?.role || 'Tenant'
   const navItems = buildNavItems(role)
   const activePage = resolveActivePage(location.pathname, role)
-
-  const initials = user
-    ? (user.full_name || user.name || 'AT').split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)
-    : 'AT'
-  const displayName = user?.full_name || user?.name || '—'
 
   function safeNavigate(path) {
     if (location.pathname !== path) navigate(path)
@@ -95,6 +91,7 @@ function TenantLayout() {
 
           <div className="tenant-layout-actions">
             <NotificationDropdown />
+            <ThemeSwitcher />
             <ProfileDropdown prefix="/tenant" />
           </div>
         </header>

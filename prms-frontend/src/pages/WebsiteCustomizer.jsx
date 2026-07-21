@@ -1,9 +1,13 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useSettings } from '../contexts/SettingsContext';
+import { useCustomization } from '../contexts/CustomizationContext';
+import CustomizationPanel from '../components/CustomizationPanel';
+import useElementPicker from '../hooks/useElementPicker';
 import {
   Palette, Building2, Type, LayoutTemplate,
   Palette as ThemeIcon, Globe, ToggleLeft, CheckCircle2,
-  Save, RotateCcw
+  Save, RotateCcw, Sun, Moon, Pencil, PencilOff,
+  Undo, Redo, Trash2
 } from 'lucide-react';
 import './WebsiteCustomizer.css';
 
@@ -258,12 +262,115 @@ function LivePreviewPanel({ settings }) {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Bottom toolbar (undo / redo / reset / save / publish / discard)   */
+/* ------------------------------------------------------------------ */
+
+function BottomToolbar() {
+  const {
+    undo, redo, historyPast, historyFuture,
+    resetElement, discardChanges,
+    saveDraft, publish, saving, publishing,
+    factoryReset,
+  } = useCustomization();
+
+  return (
+    <div className="wc-bottom-toolbar">
+      <div className="wc-toolbar-group">
+        <button
+          type="button"
+          className="wc-toolbar-btn"
+          disabled={historyPast.length === 0}
+          onClick={undo}
+          title="Undo"
+        >
+          <Undo size={16} />
+          <span>Undo</span>
+        </button>
+
+        <button
+          type="button"
+          className="wc-toolbar-btn"
+          disabled={historyFuture.length === 0}
+          onClick={redo}
+          title="Redo"
+        >
+          <Redo size={16} />
+          <span>Redo</span>
+        </button>
+
+        <button
+          type="button"
+          className="wc-toolbar-btn"
+          onClick={resetElement}
+          title="Reset selected element"
+        >
+          <RotateCcw size={16} />
+          <span>Reset Element</span>
+        </button>
+
+        <button
+          type="button"
+          className="wc-toolbar-btn wc-toolbar-btn-discard"
+          onClick={discardChanges}
+          title="Discard all unsaved changes"
+        >
+          <Trash2 size={16} />
+          <span>Discard Changes</span>
+        </button>
+      </div>
+
+      <div className="wc-toolbar-group">
+        <button
+          type="button"
+          className="wc-toolbar-btn wc-toolbar-btn-save"
+          disabled={saving}
+          onClick={() => saveDraft('default')}
+          title="Save draft"
+        >
+          <Save size={16} />
+          <span>{saving ? 'Saving…' : 'Save Draft'}</span>
+        </button>
+
+        <button
+          type="button"
+          className="wc-toolbar-btn wc-toolbar-btn-publish"
+          disabled={publishing}
+          onClick={() => publish('default')}
+          title="Publish theme"
+        >
+          <CheckCircle2 size={16} />
+          <span>{publishing ? 'Publishing…' : 'Publish'}</span>
+        </button>
+
+        <button
+          type="button"
+          className="wc-toolbar-btn factory-reset"
+          onClick={factoryReset}
+          title="Factory Reset"
+        >
+          <RotateCcw size={16} />
+          <span>Factory Reset</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /*  Main customizer page                                               */
 /* ------------------------------------------------------------------ */
 
 function WebsiteCustomizer() {
   const { settings, updateSetting, loadSettings } = useSettings();
+  const {
+    isEditMode, setIsEditMode,
+    editingTheme, setEditingTheme,
+  } = useCustomization();
+
   const [activeTab, setActiveTab] = useState('theme');
+
+  /* Activate element picker when edit mode is on */
+  useElementPicker();
 
   const handleChange = useCallback(async (key, value) => {
     await updateSetting(key, value);
@@ -273,62 +380,142 @@ function WebsiteCustomizer() {
     await loadSettings('public');
   }, [loadSettings]);
 
+  /* Toggle edit mode and theme together */
+  const toggleEditMode = useCallback(() => {
+    setIsEditMode(prev => !prev);
+  }, [setIsEditMode]);
+
   return (
     <div className="wc-page">
       {/* Header */}
       <div className="wc-header">
         <div>
           <h1 className="wc-title">Website Customizer</h1>
-          <p className="wc-subtitle">Customise the look and feel of your PRMS website in real-time. Changes apply instantly.</p>
+          <p className="wc-subtitle">
+            {isEditMode
+              ? 'Click any highlighted element to edit its styles.'
+              : 'Customise the look and feel of your PRMS website in real-time. Changes apply instantly.'}
+          </p>
         </div>
-        <button type="button" className="wc-reset-btn" onClick={handleReset}>
-          <RotateCcw size={16} />
-          <span>Reset to Server</span>
-        </button>
+
+        {isEditMode ? (
+          <div className="wc-header-controls">
+            {/* Theme mode selector */}
+            <div className="wc-theme-toggle">
+              <button
+                type="button"
+                className={`wc-theme-btn ${editingTheme === 'light' ? 'wc-theme-btn-active' : ''}`}
+                onClick={() => setEditingTheme('light')}
+                title="Edit Light theme"
+              >
+                <Sun size={16} />
+                <span>Light</span>
+              </button>
+              <button
+                type="button"
+                className={`wc-theme-btn ${editingTheme === 'dark' ? 'wc-theme-btn-active' : ''}`}
+                onClick={() => setEditingTheme('dark')}
+                title="Edit Dark theme"
+              >
+                <Moon size={16} />
+                <span>Dark</span>
+              </button>
+            </div>
+
+            {/* Edit mode toggle */}
+            <button
+              type="button"
+              className="wc-edit-toggle-btn"
+              onClick={toggleEditMode}
+            >
+              <PencilOff size={16} />
+              <span>Exit Edit Mode</span>
+            </button>
+          </div>
+        ) : (
+          <div className="wc-header-controls">
+            <button
+              type="button"
+              className="wc-reset-btn"
+              onClick={handleReset}
+            >
+              <RotateCcw size={16} />
+              <span>Reset to Server</span>
+            </button>
+
+            <button
+              type="button"
+              className="wc-edit-toggle-btn wc-edit-toggle-on"
+              onClick={toggleEditMode}
+            >
+              <Pencil size={16} />
+              <span>Edit Mode</span>
+            </button>
+          </div>
+        )}
       </div>
 
-      <div className="wc-body">
-        {/* Left: Editor Panel */}
-        <div className="wc-editor-panel">
-          {/* Tab bar */}
-          <div className="wc-tab-bar">
-            {TABS.map(tab => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  type="button"
-                  className={`wc-tab ${isActive ? 'wc-tab-active' : ''}`}
-                  onClick={() => setActiveTab(tab.id)}
-                >
-                  <Icon size={18} />
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
+      {isEditMode ? (
+        /* ---- EDIT MODE LAYOUT ---- */
+        <div className="wc-edit-body">
+          {/* Left: Preview area */}
+          <div className="wc-edit-preview">
+            <div className="wc-preview-sticky">
+              <LivePreviewPanel settings={settings} />
+            </div>
           </div>
 
-          {/* Tab content */}
-          <div className="wc-tab-content">
-            {FIELDS[activeTab] && FIELDS[activeTab].map(field => (
-              <SettingField
-                key={field.key}
-                field={field}
-                value={settings[field.key] || ''}
-                onChange={handleChange}
-              />
-            ))}
-          </div>
-        </div>
+          {/* Right: Customization Panel */}
+          <CustomizationPanel />
 
-        {/* Right: Live Preview */}
-        <div className="wc-preview-panel">
-          <div className="wc-preview-sticky">
-            <LivePreviewPanel settings={settings} />
+          {/* Bottom: Toolbar */}
+          <BottomToolbar />
+        </div>
+      ) : (
+        /* ---- CLASSIC TAB LAYOUT ---- */
+        <div className="wc-body">
+          {/* Left: Editor Panel */}
+          <div className="wc-editor-panel">
+            {/* Tab bar */}
+            <div className="wc-tab-bar">
+              {TABS.map(tab => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    className={`wc-tab ${isActive ? 'wc-tab-active' : ''}`}
+                    onClick={() => setActiveTab(tab.id)}
+                  >
+                    <Icon size={18} />
+                    <span>{tab.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Tab content */}
+            <div className="wc-tab-content">
+              {FIELDS[activeTab] && FIELDS[activeTab].map(field => (
+                <SettingField
+                  key={field.key}
+                  field={field}
+                  value={settings[field.key] || ''}
+                  onChange={handleChange}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Right: Live Preview */}
+          <div className="wc-preview-panel">
+            <div className="wc-preview-sticky">
+              <LivePreviewPanel settings={settings} />
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

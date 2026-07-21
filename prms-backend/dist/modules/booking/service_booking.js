@@ -6,6 +6,7 @@ exports.createBooking = createBooking;
 exports.updateBooking = updateBooking;
 exports.cancelBooking = cancelBooking;
 exports.getMyBookings = getMyBookings;
+exports.checkOverlap = checkOverlap;
 const db_1 = require("../../db");
 async function getBookings(page = 1, limit = 10, userId, status) {
     const where = {};
@@ -38,8 +39,25 @@ async function updateBooking(id, data) {
     return db_1.prisma.booking.update({ where: { id }, data, include: { user: true, property: true } });
 }
 async function cancelBooking(id) {
-    return db_1.prisma.booking.update({ where: { id }, data: { status: 'cancelled' } });
+    return db_1.prisma.booking.update({ where: { id }, data: { status: 'CANCELLED' } });
 }
 async function getMyBookings(userId) {
     return db_1.prisma.booking.findMany({ where: { userId }, include: { property: true } });
+}
+async function checkOverlap(propertyId, startDate, endDate, excludeBookingId) {
+    const overlaps = await db_1.prisma.booking.findMany({
+        where: {
+            propertyId,
+            status: { notIn: ['CANCELLED'] },
+            id: excludeBookingId ? { not: excludeBookingId } : undefined,
+            OR: [
+                {
+                    start_date: { lte: new Date(endDate) },
+                    end_date: { gte: new Date(startDate) },
+                },
+            ],
+        },
+        include: { user: { select: { id: true, full_name: true } } },
+    });
+    return { hasOverlap: overlaps.length > 0, overlapping: overlaps };
 }

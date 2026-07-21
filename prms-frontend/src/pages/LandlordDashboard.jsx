@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { ROUTES } from '../config/routes'
 import {
   Bell,
   Download,
@@ -34,11 +35,6 @@ function LandlordDashboard() {
   const [approvals, setApprovals] = useState([])
   const [propertiesList, setPropertiesList] = useState([])
   const [revenueBars, setRevenueBars] = useState([])
-
-  useEffect(() => {
-    localStorage.setItem('prmsDashboardPath', '/landlord')
-    loadDashboard()
-  }, [])
 
   async function loadDashboard() {
     setLoading(true)
@@ -177,7 +173,7 @@ function LandlordDashboard() {
           <button
             type="button"
             className="landlord-new-listing-btn"
-            onClick={() => navigate('/landlord/properties')}
+            onClick={() => navigate(ROUTES.landlord.properties)}
           >
             <Plus size={22} />
             New Listing

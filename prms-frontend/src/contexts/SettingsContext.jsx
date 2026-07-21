@@ -79,6 +79,8 @@ export function SettingsProvider({ children }) {
   const [settingsRaw, setSettingsRaw] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [resolvedTheme, setResolvedTheme] = useState({});
+  const [currentThemeId, setCurrentThemeId] = useState(null);
 
   /* Convert flat key-value object to CSS variables applied to <html> */
   const applyCssVariables = useCallback((settings) => {
@@ -144,6 +146,29 @@ export function SettingsProvider({ children }) {
       setSettingsObj(flat);
       setSettingsRaw(data);
       applyCssVariables(flat);
+
+      // Fetch published theme
+      try {
+        const themeResp = await adminApi.getTheme();
+        if (themeResp?.data?.data) {
+          setCurrentThemeId(themeResp.data.data.id);
+          // Resolve light/dark based on data-theme on html
+          const htmlEl = document.documentElement;
+          const themeAttr = htmlEl.getAttribute('data-theme') || 'light';
+          const latestVersion = themeResp.data.data.versions?.[0];
+          if (latestVersion) {
+            const themeConfig = themeAttr === 'dark' ? latestVersion.darkConfig : latestVersion.lightConfig;
+            // Merge theme config over flat settings
+            const merged = { ...flat };
+            for (const [k, v] of Object.entries(themeConfig)) {
+              merged[k] = v;
+            }
+            setResolvedTheme(merged);
+          }
+        }
+      } catch (e) {
+        // Theme fetch failed — continue with flat settings
+      }
     } catch (err) {
       setError(err.message || 'Failed to load settings');
       /* Still apply defaults */
@@ -197,6 +222,7 @@ export function SettingsProvider({ children }) {
   }, [settingsObj, applyCssVariables]);
 
   /* Load settings on mount */
+   
   useEffect(() => {
     loadSettings('public');
   }, [loadSettings]);
@@ -209,13 +235,13 @@ export function SettingsProvider({ children }) {
     updateSetting,
     bulkUpdateSettings,
     loadSettings,
-    get: (key, fallback = '') => settingsObj[key] ?? fallback,
+    get: (key, fallback = '') => resolvedTheme[key] ?? settingsObj[key] ?? fallback,
     getBool: (key, fallback = false) => {
       const val = settingsObj[key];
       if (val === undefined) return fallback;
       return String(val).toLowerCase() === 'true';
     },
-  }), [settingsObj, settingsRaw, loading, error, updateSetting, bulkUpdateSettings, loadSettings]);
+  }), [settingsObj, settingsRaw, loading, error, resolvedTheme, currentThemeId, updateSetting, bulkUpdateSettings, loadSettings]);
 
   return (
     <SettingsContext.Provider value={value}>

@@ -28,12 +28,12 @@ export async function createBooking(data: { propertyId: string; start_date: stri
   });
 }
 
-export async function updateBooking(id: string, data: { status?: string; totalAmount?: number; }) {
+export async function updateBooking(id: string, data: { status?: 'PENDING' | 'CONFIRMED' | 'CHECKED_IN' | 'CHECKED_OUT' | 'CANCELLED'; totalAmount?: number; }) {
   return prisma.booking.update({ where: { id }, data, include: { user: true, property: true } });
 }
 
 export async function cancelBooking(id: string) {
-  return prisma.booking.update({ where: { id }, data: { status: 'cancelled' } });
+  return prisma.booking.update({ where: { id }, data: { status: 'CANCELLED' } });
 }
 
 export async function getMyBookings(userId: string) {
@@ -49,7 +49,7 @@ export async function checkOverlap(
   const overlaps = await prisma.booking.findMany({
     where: {
       propertyId,
-      status: { notIn: ['CANCELLED', 'EXPIRED'] },
+      status: { notIn: ['CANCELLED'] },
       id: excludeBookingId ? { not: excludeBookingId } : undefined,
       OR: [
         {

@@ -69,6 +69,56 @@ const seedSettings = [
 
 async function seed() {
   console.log('Seeding system_settings...');
+
+  // Seed default theme if not exists
+  const existingTheme = await prisma.theme.findFirst();
+  if (!existingTheme) {
+    const theme = await prisma.theme.create({
+      data: {
+        name: 'Default Theme',
+        isPublished: true,
+      },
+    });
+
+    // Read all existing SystemSetting values for theme-related keys
+    const themeSettings = await prisma.systemSetting.findMany({
+      where: { category: 'theme' },
+    });
+    const headerSettings = await prisma.systemSetting.findMany({
+      where: { category: 'header' },
+    });
+    const footerSettings = await prisma.systemSetting.findMany({
+      where: { category: 'footer' },
+    });
+
+    // Build initial configs from flat settings
+    const lightConfig: Record<string, string> = {};
+    const darkConfig: Record<string, string> = {};
+    for (const s of [...themeSettings, ...headerSettings, ...footerSettings]) {
+      lightConfig[s.key] = s.value;
+      darkConfig[s.key] = s.value;
+    }
+
+    await prisma.themeVersion.create({
+      data: {
+        themeId: theme.id,
+        version: 1,
+        lightConfig,
+        darkConfig,
+      },
+    });
+
+    await prisma.themeDraft.create({
+      data: {
+        themeId: theme.id,
+        lightConfig,
+        darkConfig,
+      },
+    });
+
+    console.log('Default theme created with version 1 and draft');
+  }
+
   let count = 0;
   for (const s of seedSettings) {
     const existing = await prisma.systemSetting.findUnique({ where: { key: s.key } });

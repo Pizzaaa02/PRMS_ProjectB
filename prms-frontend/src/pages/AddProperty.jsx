@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { propertyApi } from '../api';
+import { ROUTES, getPropertyRoute, roleToPath } from '../config/routes';
 import { categoryApi } from '../api/categories';
 import {
   ArrowLeft,
@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import './AddProperty.css';
 
-const PROPERTY_TYPES = [
+const UNDEAD_PROPERTY_TYPES = [
   { value: 'apartment', label: 'Apartment' },
   { value: 'condo', label: 'Condo / Apartment' },
   { value: 'serviced residence', label: 'Serviced Residence' },
@@ -156,7 +156,7 @@ export default function AddProperty() {
       const res = await propertyApi.create(payload);
       if (res?.data?.success) {
         setSuccess(true);
-        setTimeout(() => navigate('/landlord/properties'), 1200);
+        setTimeout(() => navigate(getPropertyRoute(user?.role)), 1200);
       } else {
         setError(res?.data?.error?.message || 'Property creation failed');
       }
@@ -173,14 +173,14 @@ export default function AddProperty() {
     <div className="add-property-page">
       <header className="add-property-header">
         <div className="add-property-header-left">
-          <Link to="/landlord/properties" className="back-link">
+          <Link to={getPropertyRoute(user?.role)} className="back-link">
             <ArrowLeft size={20} />
             Properties
           </Link>
           <h1>Add a new property</h1>
         </div>
         <div className="add-property-header-right">
-          <Link to="/landlord" className="close-link">
+          <Link to={roleToPath(user?.role)} className="close-link">
             <X size={20} />
           </Link>
         </div>
@@ -426,7 +426,7 @@ export default function AddProperty() {
 
           {/* Submit bar */}
           <div className="submit-bar">
-            <Link to="/landlord/properties" className="cancel-btn">
+            <Link to={getPropertyRoute(user?.role)} className="cancel-btn">
               Cancel
             </Link>
             <button type="submit" className="save-btn" disabled={loading}>

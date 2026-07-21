@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 import { motion } from 'framer-motion'
 import {
   Building2,
@@ -18,6 +19,7 @@ import {
   ChevronRight,
 } from 'lucide-react'
 import { propertyApi, getApiError } from '../api'
+import { ROUTES, getAddPropertyRoute } from '../config/routes'
 
 const PROPERTY_TYPES = [
   { key: 'all', label: 'All Types', icon: Building2 },
@@ -28,6 +30,7 @@ const PROPERTY_TYPES = [
 
 function Properties() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [properties, setProperties] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -61,9 +64,10 @@ function Properties() {
     }
   }
 
+   
   useEffect(() => {
     fetchProperties()
-  }, [currentPage, activeType])
+  }, [currentPage, activeType, fetchProperties])
 
   /* Debounced search */
   useEffect(() => {
@@ -72,7 +76,7 @@ function Properties() {
       fetchProperties()
     }, 400)
     return () => clearTimeout(timer)
-  }, [searchTerm])
+  }, [searchTerm, fetchProperties])
 
   function handleSearch(e) {
     if (e) e.preventDefault()
@@ -100,15 +104,21 @@ function Properties() {
           <p>Browse and manage all property listings in your portfolio.</p>
         </div>
 
-        <motion.button
-          type="button"
-          className="btn-primary"
-          onClick={() => navigate('add')}
-          whileHover={{ y: -2 }}
-          whileTap={{ scale: 0.97 }}
-        >
-          <Plus size={18} /> Add Property
-        </motion.button>
+        {/* Only Landlord and Admin can add properties */}
+        {getAddPropertyRoute(user?.role) && (
+          <motion.button
+            type="button"
+            className="btn-primary"
+            onClick={() => {
+              const addRoute = getAddPropertyRoute(user?.role);
+              if (addRoute) navigate(addRoute);
+            }}
+            whileHover={{ y: -2 }}
+            whileTap={{ scale: 0.97 }}
+          >
+            <Plus size={18} /> Add Property
+          </motion.button>
+        )}
       </div>
 
       {/* ── Filters ── */}

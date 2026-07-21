@@ -82,13 +82,12 @@ export async function updateUserProfile(
 ) {
   // If role is provided, update the UserRole association
   if (data.role) {
+    const role = await prisma.role.findUnique({ where: { name: data.role } });
+    if (!role) throw new Error(`Role ${data.role} not found`);
     await prisma.userRole.upsert({
-      where: { userId },
-      update: { role: { connect: { name: data.role } } },
-      create: {
-        userId,
-        role: { connect: { name: data.role } },
-      },
+      where: { userId_roleId: { userId, roleId: role.id } },
+      update: {},
+      create: { userId, roleId: role.id },
     });
   }
 

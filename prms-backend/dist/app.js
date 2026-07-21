@@ -23,6 +23,8 @@ const routes_communication_1 = __importDefault(require("./modules/communication/
 const routes_admin_1 = __importDefault(require("./modules/admin/routes_admin"));
 const routes_reporting_1 = __importDefault(require("./modules/reporting/routes_reporting"));
 const routes_agent_1 = __importDefault(require("./modules/agent/routes_agent"));
+const routes_category_1 = __importDefault(require("./modules/category/routes_category"));
+const routes_theme_1 = __importDefault(require("./modules/theme/routes_theme"));
 // Initialize Firebase if possible
 if ((0, app_1.getApps)().length === 0) {
     try {
@@ -76,6 +78,8 @@ router.use('/communication', routes_communication_1.default);
 router.use('/admin', routes_admin_1.default);
 router.use('/reports', routes_reporting_1.default);
 router.use('/agents', routes_agent_1.default);
+router.use('/categories', routes_category_1.default);
+router.use('/themes', routes_theme_1.default);
 app.use(router);
 app.use(errorHandler_1.errorHandler);
 const server = app.listen(PORT, () => {

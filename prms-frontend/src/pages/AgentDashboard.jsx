@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../config/routes';
 import './AgentDashboard.css';
 
 const AgentDashboard = () => {
@@ -102,7 +103,7 @@ const AgentDashboard = () => {
                 <p>{property.address}</p>
                 <p>Rent: ${property.rent}/month</p>
                 <p>Status: <span className={`status ${property.status.toLowerCase()}`}>{property.status}</span></p>
-                <button onClick={() => navigate(`/properties/${property.id}`)}>
+                <button onClick={() => navigate(ROUTES.agent.properties)}>
                   View Details
                 </button>
               </div>
@@ -119,7 +120,7 @@ const AgentDashboard = () => {
                 <p>Tenant: {booking.tenant}</p>
                 <p>Period: {booking.startDate} to {booking.endDate}</p>
                 <p>Status: <span className={`status ${booking.status.toLowerCase()}`}>{booking.status}</span></p>
-                <button onClick={() => navigate(`/bookings/${booking.id}`)}>
+                <button onClick={() => navigate(ROUTES.agent.bookings)}>
                   View Details
                 </button>
               </div>
@@ -136,7 +137,7 @@ const AgentDashboard = () => {
                 <p>Property: {request.propertyTitle}</p>
                 <p>Priority: <span className={`priority ${request.priority.toLowerCase()}`}>{request.priority}</span></p>
                 <p>Status: <span className={`status ${request.status.toLowerCase()}`}>{request.status}</span></p>
-                <button onClick={() => navigate(`/maintenance/${request.id}`)}>
+                <button onClick={() => navigate(ROUTES.agent.maintenance)}>
                   View Details
                 </button>
               </div>

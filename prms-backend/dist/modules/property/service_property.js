@@ -11,7 +11,7 @@ exports.getLandlordProperties = getLandlordProperties;
 const db_1 = require("../../db");
 async function getAllProperties(page = 1, limit = 10) {
     const [properties, total] = await Promise.all([
-        db_1.prisma.property.findMany({ skip: (page - 1) * limit, take: limit, orderBy: { id: 'desc' }, include: { owner: { select: { id: true, full_name: true, email: true } }, amenities: true, images: true } }),
+        db_1.prisma.property.findMany({ skip: (page - 1) * limit, take: limit, orderBy: { id: 'desc' }, include: { owner: { select: { id: true, full_name: true, email: true } }, amenities: true, images: true, category: true } }),
         db_1.prisma.property.count(),
     ]);
     return { properties, total };
@@ -19,7 +19,7 @@ async function getAllProperties(page = 1, limit = 10) {
 async function getPropertyById(id) {
     return db_1.prisma.property.findUnique({
         where: { id },
-        include: { owner: true, amenities: true, images: true },
+        include: { owner: true, amenities: true, images: true, category: true },
     });
 }
 async function createProperty(data, ownerId) {
@@ -36,12 +36,12 @@ async function createProperty(data, ownerId) {
     if (imagesList && imagesList.length > 0) {
         await db_1.prisma.propertyImage.createMany({ data: imagesList.map((img) => ({ ...img, propertyId: property.id })) });
     }
-    return db_1.prisma.property.findUnique({ where: { id: property.id }, include: { amenities: true, images: true, owner: true } });
+    return db_1.prisma.property.findUnique({ where: { id: property.id }, include: { amenities: true, images: true, owner: true, category: true } });
 }
 async function updateProperty(id, data) {
     return db_1.prisma.property.update({
         where: { id }, data,
-        include: { amenities: true, images: true, owner: true },
+        include: { amenities: true, images: true, owner: true, category: true },
     });
 }
 async function deactivateProperty(id) {
@@ -56,6 +56,6 @@ async function deleteImage(imageId) {
 async function getLandlordProperties(landlordId) {
     return db_1.prisma.property.findMany({
         where: { ownerId: landlordId },
-        include: { amenities: true, images: true },
+        include: { amenities: true, images: true, category: true },
     });
 }

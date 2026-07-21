@@ -78,6 +78,15 @@ class PaymentController {
                 res.status(400).json({ success: false, error: { message: error.message } });
             }
         };
+        this.summary = async (req, res) => {
+            try {
+                const summary = await paymentService.getFinanceSummary(req.user.id);
+                res.json((0, response_1.successResponse)(summary));
+            }
+            catch (error) {
+                res.status(500).json({ success: false, error: { message: error.message } });
+            }
+        };
     }
 }
 exports.PaymentController = PaymentController;

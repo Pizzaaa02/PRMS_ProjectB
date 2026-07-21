@@ -4,6 +4,7 @@ exports.getPayments = getPayments;
 exports.getPaymentById = getPaymentById;
 exports.createPayment = createPayment;
 exports.markAsPaid = markAsPaid;
+exports.getFinanceSummary = getFinanceSummary;
 const db_1 = require("../../db");
 async function getPayments(page = 1, limit = 10, userId, status) {
     const where = {};
@@ -29,6 +30,37 @@ async function createPayment(data, adminId) {
 async function markAsPaid(id) {
     return db_1.prisma.payment.update({
         where: { id },
-        data: { status: 'paid', paid_at: new Date() },
+        data: { status: 'PAID', paid_at: new Date() },
     });
+}
+async function getFinanceSummary(userId) {
+    const where = {};
+    if (userId)
+        where.userId = userId;
+    const [allPayments, totalBookings] = await Promise.all([
+        db_1.prisma.payment.findMany({ where, include: { booking: { include: { property: true } } } }),
+        db_1.prisma.booking.count(),
+    ]);
+    const totalRevenue = allPayments
+        .filter((p) => p.status === 'PAID')
+        .reduce((sum, p) => sum + Number(p.amount), 0);
+    const collected = allPayments
+        .filter((p) => p.status === 'PAID')
+        .reduce((sum, p) => sum + Number(p.amount), 0);
+    const pending = allPayments
+        .filter((p) => p.status === 'PENDING')
+        .reduce((sum, p) => sum + Number(p.amount), 0);
+    // Revenue by property
+    const byMap = {};
+    allPayments
+        .filter((p) => p.status === 'PAID')
+        .forEach((p) => {
+        const propName = p.booking?.property?.title ?? 'Unknown';
+        byMap[propName] = (byMap[propName] ?? 0) + Number(p.amount);
+    });
+    const byProperty = Object.entries(byMap).map(([property, amount]) => ({
+        property,
+        amount,
+    }));
+    return { totalRevenue, collected, pending, totalBookings, byProperty };
 }

@@ -62,6 +62,7 @@ function GuestProperties() {
     }
   }, []);
 
+   
   useEffect(() => {
     fetchProperties();
   }, [fetchProperties]);

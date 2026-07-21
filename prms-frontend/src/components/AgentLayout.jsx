@@ -8,6 +8,7 @@ import PageTransition from './PageTransition'
 import { useAuth } from '../contexts/AuthContext'
 import { buildNavItems, resolveActivePage } from './NavigationConfig'
 import NotificationDropdown from './NotificationDropdown'
+import ThemeSwitcher from './ThemeSwitcher'
 import './AgentLayout.css'
 
 function getTopbarTitle(activePage) {
@@ -100,6 +101,7 @@ function AgentLayout() {
 
           <div className="agent-layout-top-actions">
             <NotificationDropdown />
+            <ThemeSwitcher />
 
             <motion.div
               className="agent-layout-avatar"

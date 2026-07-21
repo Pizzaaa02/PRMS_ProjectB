@@ -1,6 +1,6 @@
-import { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
+import { createContext, useContext, useEffect, useReducer, useCallback } from 'react';
 import { authApi, getApiError } from '../api';
-import { roleToPath } from '../config/routes';
+import { ROUTES, roleToPath } from '../config/routes';
 
 /* ------ Actions ------ */
 
@@ -73,7 +73,7 @@ function AuthProvider({ children }) {
         await authApi.register(data);
         // After successful register, redirect to login page so user can authenticate
         // Then the login function will redirect to the proper dashboard based on role
-        if (navigate) navigate('/dashboard');
+        if (navigate) navigate(ROUTES.public.login);
         return { success: true };
       } catch (err) {
         const msg = getApiError(err);
@@ -274,4 +274,5 @@ function useAuth() {
   return ctx;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export { AuthProvider, useAuth, AuthContext };

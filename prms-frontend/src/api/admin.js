@@ -47,4 +47,23 @@ export const adminApi = {
   getRevenueReport() {
     return apiClient.get('/reports/revenue');
   },
+
+  /* Theme / Customization */
+  getTheme() {
+    return apiClient.get('/admin/themes');
+  },
+  saveDraft(themeId, lightConfig, darkConfig) {
+    return apiClient.put(`/admin/themes/${themeId}/draft`, { themeId, lightConfig, darkConfig });
+  },
+  publishTheme(themeId) {
+    return apiClient.post(`/admin/themes/${themeId}/publish`);
+  },
+  getVersions(themeId) {
+    return apiClient.get(`/admin/themes/${themeId}/versions`);
+  },
+  /* Theme / Published theme */
+  getThemeById(themeId) {
+    return apiClient.get(`/admin/themes/${themeId}`);
+  },
+
 };

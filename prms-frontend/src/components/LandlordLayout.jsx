@@ -10,6 +10,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { buildNavItems, resolveActivePage } from './NavigationConfig'
 import NotificationDropdown from './NotificationDropdown'
 import ProfileDropdown from './ProfileDropdown'
+import ThemeSwitcher from './ThemeSwitcher'
 import './LandlordLayout.css'
 
 function LandlordLayout() {
@@ -20,11 +21,6 @@ function LandlordLayout() {
   const role = user?.role || 'Landlord'
   const navItems = buildNavItems(role)
   const activePage = resolveActivePage(location.pathname, role)
-
-  const initials = user
-    ? (user.full_name || user.name || 'AS').split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)
-    : 'AS'
-  const displayName = user?.full_name || user?.name || '—'
 
   function safeNavigate(path) {
     if (location.pathname !== path) navigate(path)
@@ -95,6 +91,7 @@ function LandlordLayout() {
 
           <div className="landlord-layout-actions">
             <NotificationDropdown />
+            <ThemeSwitcher />
             <ProfileDropdown prefix="/landlord" />
           </div>
         </header>

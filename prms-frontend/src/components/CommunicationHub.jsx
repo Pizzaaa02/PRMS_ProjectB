@@ -4,7 +4,6 @@ import { apiClient } from '../api';
 import {
   Send,
   MessageCircle,
-  User,
   ChevronLeft,
 } from 'lucide-react';
 import './CommunicationHub.css';

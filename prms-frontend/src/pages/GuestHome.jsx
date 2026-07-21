@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useSettings } from '../contexts/SettingsContext'
+import ThemeSwitcher from '../components/ThemeSwitcher'
 import {
   ArrowRight,
   Banknote,
@@ -90,7 +91,7 @@ function GuestHome() {
 
   return (
     <main className="guest-page">
-      <header className="guest-navbar">
+      <header className="guest-navbar" data-customize-id="global.header">
         <Link to="/" className="guest-logo">
           PRMS
         </Link>
@@ -105,6 +106,7 @@ function GuestHome() {
         </nav>
 
         <div className="guest-nav-actions">
+          <ThemeSwitcher />
           <Link to="/login" className="guest-signin">
             Sign In
           </Link>
@@ -115,7 +117,7 @@ function GuestHome() {
         </div>
       </header>
 
-      <section className="guest-hero" id="find-home">
+      <section className="guest-hero" data-customize-id="home.hero" id="find-home">
         <div className="guest-hero-overlay"></div>
 
         <motion.div
@@ -152,6 +154,7 @@ function GuestHome() {
 
           <motion.div
             className="guest-search-box"
+            data-customize-id="home.search"
             initial={{ opacity: 0, y: 26, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ delay: 0.55, duration: 0.5 }}
@@ -163,6 +166,7 @@ function GuestHome() {
 
             <motion.button
               type="button"
+              data-customize-id="home.search.button"
               onClick={handleSearch}
               whileHover={{ y: -2, scale: 1.02 }}
               whileTap={{ scale: 0.96 }}
@@ -174,7 +178,7 @@ function GuestHome() {
         </motion.div>
       </section>
 
-      <section className="guest-trust-bar">
+      <section className="guest-trust-bar" data-customize-id="home.trust-bar">
         <div>
           <ShieldCheck size={20} />
           Bank-Level Security
@@ -211,6 +215,7 @@ function GuestHome() {
         <div className="guest-role-grid">
           <motion.article
             className="guest-role-card tenant"
+            data-customize-id="component.role-card"
             initial={{ opacity: 0, y: 28 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -239,6 +244,7 @@ function GuestHome() {
 
           <motion.article
             className="guest-role-card landlord"
+            data-customize-id="component.role-card"
             initial={{ opacity: 0, y: 28 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -274,7 +280,7 @@ function GuestHome() {
         </div>
       </section>
 
-      <section className="guest-section guest-listings-section">
+      <section className="guest-section guest-listings-section" data-customize-id="home.listings">
         <div className="guest-section-header">
           <div>
             <h2>Popular Homes in Kuala Lumpur</h2>
@@ -290,6 +296,7 @@ function GuestHome() {
           {homes.map((home, index) => (
             <motion.article
               className="guest-home-card"
+              data-customize-id="component.property-card"
               key={home.title}
               initial={{ opacity: 0, y: 26 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -372,7 +379,7 @@ function GuestHome() {
         </motion.div>
       </section>
 
-      <footer className="guest-footer" id="help">
+      <footer className="guest-footer" data-customize-id="global.footer" id="help">
         <h3>PRMS Malaysia</h3>
 
         <nav>

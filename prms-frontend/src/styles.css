@@ -21,8 +21,8 @@
 body {
   margin: 0;
   font-family: var(--font-family);
-  background: var(--background-color);
-  color: var(--text-color);
+  background: var(--page-bg);
+  color: var(--text-primary);
 }
 
 a {
@@ -34,6 +34,37 @@ a {
 button,
 input {
   font-family: inherit;
+}
+
+/* ================= THEME VARIABLES ================= */
+
+/* Independent light theme variables */
+:root,
+[data-theme="light"] {
+  --page-bg: #ffffff;
+  --surface: #f3f6fb;
+  --surface-hover: #e8ecf4;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --border-color: #e5e7eb;
+  --shadow-color: rgba(0, 0, 0, 0.08);
+  --card-bg: #ffffff;
+  --sidebar-bg: var(--secondary-color, #0f172a);
+  --sidebar-text: #ffffff;
+}
+
+/* Dark theme overrides */
+[data-theme="dark"] {
+  --page-bg: #121212;
+  --surface: #1e1e1e;
+  --surface-hover: #2a2a2a;
+  --text-primary: #f9fafb;
+  --text-secondary: #9ca3af;
+  --border-color: #374151;
+  --shadow-color: rgba(0, 0, 0, 0.3);
+  --card-bg: #1e1e1e;
+  --sidebar-bg: #0a0a0a;
+  --sidebar-text: #e5e7eb;
 }
 
 /* ================= LOGIN PAGE ================= */
@@ -1316,3 +1347,23 @@ form label {
 .properties-loading .spinner { width: 40px; height: 40px; border: 3px solid #e5e7eb; border-top-color: #9b3ee8; border-radius: 50%; animation: spin 0.7s linear infinite; }
 .properties-empty { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 64px; color: #9ca3af; }
 .properties-empty h2 { color: #4b5563; }
+
+/* ============================
+   Element Picker Styles
+   ============================ */
+
+body.customization-mode [data-customize-id] {
+  outline: 2px dashed rgba(138, 43, 226, 0.4) !important;
+  outline-offset: 2px;
+  transition: outline 0.1s ease;
+}
+
+body.customization-mode [data-customize-id].customization-hover {
+  outline: 2px solid rgba(138, 43, 226, 0.8) !important;
+  background: rgba(138, 43, 226, 0.05) !important;
+}
+
+[data-customize-id].selected {
+  outline: 3px solid #8a2be2 !important;
+  outline-offset: 2px;
+}

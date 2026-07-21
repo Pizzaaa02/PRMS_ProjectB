@@ -1,8 +1,8 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { SettingsProvider } from './contexts/SettingsContext';
+import { CustomizationProvider } from './contexts/CustomizationContext';
 import { ProtectedRoute, PublicRoute } from './components/ProtectedRoute';
-import PageTransition from './components/PageTransition';
 import PublicPageTransition from './components/PublicPageTransition';
 
 /*  Public pages  */
@@ -13,6 +13,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import RoleSelection from './pages/RoleSelection';
 import NotFound from './pages/NotFound';
+import Unauthorized from './pages/Unauthorized';
 
 /*  Admin  */
 import AdminLayout from './components/AdminLayout';
@@ -50,7 +51,7 @@ import PaymentReceipt from './pages/PaymentReceipt';
 import CommunicationHub from './components/CommunicationHub';
 
 function AppRoutes() {
-  const { loading, user } = useAuth();
+  const { loading } = useAuth();
 
   /* Block rendering routes until hydration is done */
   if (loading) {
@@ -206,6 +207,7 @@ function AppRoutes() {
       <Route path="/search" element={<SearchPage />} />
 
       {/*  Issue #30: Fallback to 404 NotFound  */}
+      <Route path="/unauthorized" element={<Unauthorized />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
@@ -216,9 +218,11 @@ function App() {
     <BrowserRouter>
       <ErrorBoundary>
         <SettingsProvider>
-          <AuthProvider>
-            <AppRoutes />
-          </AuthProvider>
+          <CustomizationProvider>
+            <AuthProvider>
+              <AppRoutes />
+            </AuthProvider>
+          </CustomizationProvider>
         </SettingsProvider>
       </ErrorBoundary>
     </BrowserRouter>

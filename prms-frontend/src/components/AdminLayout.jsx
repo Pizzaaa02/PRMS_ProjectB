@@ -8,6 +8,7 @@ import PageTransition from './PageTransition'
 import { useAuth } from '../contexts/AuthContext'
 import { buildNavItems, resolveActivePage } from './NavigationConfig'
 import NotificationDropdown from './NotificationDropdown'
+import ThemeSwitcher from './ThemeSwitcher'
 import './AdminLayout.css'
 
 function getTopbarTitle(activePage) {
@@ -50,7 +51,7 @@ function AdminLayout() {
 
   return (
     <main className="admin-layout-shell">
-      <aside className="admin-layout-sidebar">
+      <aside className="admin-layout-sidebar" data-customize-id="global.sidebar">
         {navItems.map((item) => {
           const Icon = item.icon
           const isActive = activePage === item.key
@@ -95,7 +96,7 @@ function AdminLayout() {
       </aside>
 
       <section className="admin-layout-main">
-        <header className="admin-layout-topbar">
+        <header className="admin-layout-topbar" data-customize-id="global.header">
           <div className="admin-layout-brand" onClick={() => safeNavigate('/admin')}>
             <h2>PRMS</h2>
             <span></span>
@@ -104,6 +105,7 @@ function AdminLayout() {
 
           <div className="admin-layout-top-actions">
             <NotificationDropdown />
+            <ThemeSwitcher />
 
             <motion.div
               className="admin-layout-avatar"
