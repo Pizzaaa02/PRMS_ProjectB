@@ -4,7 +4,6 @@ const seedSettings = [
   // === THEME ===
   { key: 'theme_primary_color', value: '#8a2be2', category: 'theme', description: 'Primary brand color used for buttons, links, and accents' },
   { key: 'theme_secondary_color', value: '#0f172a', category: 'theme', description: 'Secondary color used for headers, sidebars, and dark surfaces' },
-  { key: 'theme_accent_color', value: '#b84cff', category: 'theme', description: 'Accent color for highlights and active states' },
   { key: 'theme_background_color', value: '#f3f6fb', category: 'theme', description: 'Default page background color' },
   { key: 'theme_text_color', value: '#111827', category: 'theme', description: 'Default text color for body content' },
   { key: 'theme_font_family', value: 'Inter, Arial, sans-serif', category: 'theme', description: 'Default font family for the application' },

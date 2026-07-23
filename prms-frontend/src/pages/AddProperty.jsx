@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { propertyApi } from '../api';
 import { ROUTES, getPropertyRoute, roleToPath } from '../config/routes';
@@ -12,7 +12,8 @@ import {
   Save,
   X,
 } from 'lucide-react';
-import './AddProperty.css';
+import { AnimatePresence, motion } from 'framer-motion';
+
 
 const UNDEAD_PROPERTY_TYPES = [
   { value: 'apartment', label: 'Apartment' },

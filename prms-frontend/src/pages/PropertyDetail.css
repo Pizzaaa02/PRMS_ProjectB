@@ -390,3 +390,66 @@
   display: flex;
   justify-content: center;
 }
+
+/* ---------- Owner section ---------- */
+.property-owner-section {
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.property-owner-section h3 {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: #374151;
+}
+
+.property-owner-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.property-owner-avatar {
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+
+.property-owner-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.property-owner-name {
+  font-weight: 600;
+  color: #111827;
+  font-size: 15px;
+}
+
+.property-owner-email {
+  font-size: 13px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+.edit-property-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.edit-property-btn:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}

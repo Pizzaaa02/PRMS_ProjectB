@@ -6,6 +6,7 @@ import { getAuth } from 'firebase-admin/auth';
 import { env } from './config';
 import { prisma } from './db';
 import { requestLogger } from './middleware/logging';
+import { responseCache } from './middleware/responseCache';
 import { errorHandler } from './middleware/errorHandler';
 import authRoutes from './modules/auth/routes_auth';
 import userRoutes from './modules/user/routes_user';
@@ -39,6 +40,7 @@ const PORT = env.PORT;
 app.use(helmet());
 app.use(cors({ origin: env.CORS_ORIGIN }));
 app.use(express.json());
+app.use(responseCache);
 app.use(requestLogger);
 
 app.get('/health', async (req, res) => {

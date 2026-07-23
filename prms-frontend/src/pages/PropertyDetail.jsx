@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   CalendarDays,
   ChevronDown,
+  Edit,
   Globe2,
   Heart,
   Home,
@@ -30,8 +31,9 @@ import {
   Check,
   Clock,
 } from 'lucide-react';
-import { propertyApi } from '../api';
+import { propertyApi, getApiError } from '../api';
 import { useAuth } from '../contexts/AuthContext';
+import { getPropertyDetailPath, roleToPath, ROUTES } from '../config/routes';
 import AvailabilityCalendar from '../components/AvailabilityCalendar';
 import TenantBookingModal from '../components/TenantBookingModal';
 import './PropertyDetail.css';
@@ -159,6 +161,14 @@ function PropertyDetail() {
     );
   }
 
+  /* Compute whether current user can edit this property */
+  const currentUser = user;
+  const isPropertyOwner = property.owner && currentUser && (
+    property.owner.id === currentUser.id ||
+    currentUser?.role?.toLowerCase().includes('admin')
+  );
+
+  /* Hero image */
   const firstImage = property.images?.[0]?.url || '';
   /* Format rent as currency */
   const rentFormatted = new Intl.NumberFormat('ms-MY', {
@@ -264,6 +274,44 @@ function PropertyDetail() {
 
           {/* Details card */}
           <div className="property-details-card">
+            {/* Owner info */}
+            {property.owner && (
+              <div className="property-owner-section">
+                <h3>Property Owner</h3>
+                <div className="property-owner-info">
+                  <div className="property-owner-avatar">
+                    <UserCircle size={40} />
+                  </div>
+                  <div className="property-owner-details">
+                    <span className="property-owner-name">
+                      {property.owner.full_name || 'Property Owner'}
+                    </span>
+                    {property.owner.email && (
+                      <span className="property-owner-email">{property.owner.email}</span>
+                    )}
+                  </div>
+                </div>
+                {isPropertyOwner && (
+                  <motion.button
+                    type="button"
+                    className="edit-property-btn"
+                    onClick={() => {
+                      const lower = (user?.role || '').toLowerCase();
+                      const prefix = lower.includes('admin')
+                        ? '/admin/properties/edit'
+                        : lower.includes('landlord') ? '/landlord/properties/edit' : null;
+                      if (prefix) navigate(`${prefix}/${id}`);
+                    }}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.97 }}
+                  >
+                    <Edit size={16} />
+                    Edit Property
+                  </motion.button>
+                )}
+              </div>
+            )}
+
             <div className="property-detail-row">
               <Users size={18} />
               <span>{property.property_type || 'Apartment'}</span>

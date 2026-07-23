@@ -58,7 +58,6 @@ const FIELDS = {
         { value: '16px',    label: 'X-Large (16px)' },
         { value: '999px',   label: 'Full Round (999px)' },
       ]},
-    { key: 'theme_dark_mode',        label: 'Enable Dark Mode', type: 'toggle' },
   ],
 
   branding: [

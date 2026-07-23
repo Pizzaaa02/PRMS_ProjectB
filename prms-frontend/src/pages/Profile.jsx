@@ -50,7 +50,7 @@ function Profile() {
     navigate(`/${role}`);
   }
 
-  const rolePath = ['admin', 'landlord', 'tenant'].find((r) =>
+  const rolePath = ['admin', 'landlord', 'tenant', 'agent'].find((r) =>
     location.pathname.startsWith(`/${r}`)
   );
 

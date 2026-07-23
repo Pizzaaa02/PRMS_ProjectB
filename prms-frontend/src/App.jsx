@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { SettingsProvider } from './contexts/SettingsContext';
@@ -8,18 +9,28 @@ import PublicPageTransition from './components/PublicPageTransition';
 /*  Public pages  */
 import GuestHome from './pages/GuestHome';
 import GuestProperties from './pages/GuestProperties';
-import PropertyDetail from './pages/PropertyDetail';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import RoleSelection from './pages/RoleSelection';
 import NotFound from './pages/NotFound';
 import Unauthorized from './pages/Unauthorized';
+import SearchPage from './pages/SearchPage';
+
+/*  Lazy-loaded pages (code-split for performance)  */
+const PropertyDetail = lazy(() => import('./pages/PropertyDetail'));
+const Properties = lazy(() => import('./pages/Properties'));
+const FinanceDashboard = lazy(() => import('./pages/FinanceDashboard'));
+const AdminCategories = lazy(() => import('./pages/AdminCategories'));
+const WebsiteCustomizer = lazy(() => import('./pages/WebsiteCustomizer'));
+const UserManagement = lazy(() => import('./pages/UserManagement'));
 
 /*  Admin  */
 import AdminLayout from './components/AdminLayout';
 import AdminDashboard from './pages/AdminDashboard';
-import AdminCategories from './pages/AdminCategories';
 import AdminSimplePage from './pages/AdminSimplePage';
+import AddProperty from './pages/AddProperty';
+import EditProperty from './pages/EditProperty';
+import Settings from './pages/Settings';
 
 /*  Landlord  */
 import LandlordLayout from './components/LandlordLayout';
@@ -38,17 +49,17 @@ import AgentCategories from './pages/AgentCategories';
 import AgentSimplePage from './pages/AgentSimplePage';
 
 /*  Shared  */
-import Properties from './pages/Properties';
-import Settings from './pages/Settings';
-import WebsiteCustomizer from './pages/WebsiteCustomizer';
-import AddProperty from './pages/AddProperty';
 import Profile from './pages/Profile';
-import SearchPage from './pages/SearchPage';
-import ErrorBoundary from './components/ErrorBoundary';
-import FinanceDashboard from './pages/FinanceDashboard';
 import LandlordHeatmap from './pages/LandlordHeatmap';
 import PaymentReceipt from './pages/PaymentReceipt';
 import CommunicationHub from './components/CommunicationHub';
+import ErrorBoundary from './components/ErrorBoundary';
+
+const SuspenseWrapper = ({ children }) => (
+  <Suspense fallback={<div className="admin-shell center">Loading...</div>}>
+    {children}
+  </Suspense>
+);
 
 function AppRoutes() {
   const { loading } = useAuth();
@@ -71,8 +82,15 @@ function AppRoutes() {
       {/*  Issue #5: Public guest-properties route  */}
       <Route path="/properties" element={<GuestProperties />} />
 
-      {/*  Issue #12: PropertyDetail page  */}
-      <Route path="/properties/:id" element={<PropertyDetail />} />
+      {/*  Issue #12: PropertyDetail page (lazy-loaded)  */}
+      <Route
+        path="/properties/:id"
+        element={
+          <SuspenseWrapper>
+            <PropertyDetail />
+          </SuspenseWrapper>
+        }
+      />
 
       {/*  Public routes (auth-001: RoleSelection -> Register -> Login)  */}
       <Route
@@ -119,17 +137,54 @@ function AppRoutes() {
       >
         <Route index element={<AdminDashboard />} />
         <Route path="dashboard" element={<AdminDashboard />} />
-        <Route path="users" element={<AdminSimplePage label="User Management" />} />
+        <Route
+          path="users"
+          element={
+            <SuspenseWrapper>
+              <UserManagement />
+            </SuspenseWrapper>
+          }
+        />
         <Route path="profile" element={<Profile />} />
-        <Route path="properties" element={<Properties />} />
+        <Route
+          path="properties"
+          element={
+            <SuspenseWrapper>
+              <Properties />
+            </SuspenseWrapper>
+          }
+        />
+        <Route path="properties/add" element={<AddProperty />} />
+        <Route path="properties/edit/:id" element={<EditProperty />} />
         <Route path="bookings" element={<AdminSimplePage label="Booking Management" />} />
-        <Route path="finance" element={<FinanceDashboard />} />
+        <Route
+          path="finance"
+          element={
+            <SuspenseWrapper>
+              <FinanceDashboard />
+            </SuspenseWrapper>
+          }
+        />
         <Route path="maintenance" element={<AdminSimplePage label="Maintenance Center" />} />
         <Route path="messages" element={<CommunicationHub />} />
         <Route path="reports" element={<AdminSimplePage label="Reports & Audit" />} />
-        <Route path="categories" element={<AdminCategories />} />
+        <Route
+          path="categories"
+          element={
+            <SuspenseWrapper>
+              <AdminCategories />
+            </SuspenseWrapper>
+          }
+        />
         <Route path="settings" element={<Settings />} />
-        <Route path="settings/customizer" element={<WebsiteCustomizer />} />
+        <Route
+          path="settings/customizer"
+          element={
+            <SuspenseWrapper>
+              <WebsiteCustomizer />
+            </SuspenseWrapper>
+          }
+        />
         <Route path="help" element={<AdminSimplePage label="Admin Help Center" />} />
       </Route>
 
@@ -146,15 +201,37 @@ function AppRoutes() {
       >
         <Route index element={<LandlordDashboard />} />
         <Route path="profile" element={<Profile />} />
-        <Route path="properties" element={<Properties />} />
+        <Route
+          path="properties"
+          element={
+            <SuspenseWrapper>
+              <Properties />
+            </SuspenseWrapper>
+          }
+        />
         <Route path="properties/add" element={<AddProperty />} />
+        <Route path="properties/edit/:id" element={<EditProperty />} />
         <Route path="bookings" element={<LandlordSimplePage label="My Bookings" />} />
-        <Route path="finance" element={<FinanceDashboard />} />
+        <Route
+          path="finance"
+          element={
+            <SuspenseWrapper>
+              <FinanceDashboard />
+            </SuspenseWrapper>
+          }
+        />
         <Route path="heatmap" element={<LandlordHeatmap />} />
         <Route path="maintenance" element={<LandlordSimplePage label="Maintenance Requests" />} />
         <Route path="messages" element={<CommunicationHub />} />
         <Route path="settings" element={<Settings />} />
-        <Route path="settings/customizer" element={<WebsiteCustomizer />} />
+        <Route
+          path="settings/customizer"
+          element={
+            <SuspenseWrapper>
+              <WebsiteCustomizer />
+            </SuspenseWrapper>
+          }
+        />
         <Route path="help" element={<LandlordSimplePage label="Help Center" />} />
       </Route>
 
@@ -171,14 +248,28 @@ function AppRoutes() {
       >
         <Route index element={<TenantDashboard />} />
         <Route path="profile" element={<Profile />} />
-        <Route path="properties" element={<Properties />} />
+        <Route
+          path="properties"
+          element={
+            <SuspenseWrapper>
+              <Properties />
+            </SuspenseWrapper>
+          }
+        />
         <Route path="bookings" element={<TenantSimplePage label="My Bookings" />} />
         <Route path="payments" element={<TenantSimplePage label="Payments" />} />
         <Route path="payments/:id" element={<PaymentReceipt />} />
         <Route path="maintenance" element={<TenantSimplePage label="Maintenance Requests" />} />
         <Route path="messages" element={<TenantSimplePage label="Messages"><CommunicationHub /></TenantSimplePage>} />
         <Route path="settings" element={<Settings />} />
-        <Route path="settings/customizer" element={<WebsiteCustomizer />} />
+        <Route
+          path="settings/customizer"
+          element={
+            <SuspenseWrapper>
+              <WebsiteCustomizer />
+            </SuspenseWrapper>
+          }
+        />
         <Route path="help" element={<TenantSimplePage label="Help Center" />} />
       </Route>
 

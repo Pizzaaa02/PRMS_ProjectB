@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useOutletContext, Link as RouterLink } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { motion } from 'framer-motion'
+import { buildNavItems } from '../components/NavigationConfig'
+import './Properties.css'
 import {
   Building2,
   MapPin,
@@ -19,13 +21,21 @@ import {
   ChevronRight,
 } from 'lucide-react'
 import { propertyApi, getApiError } from '../api'
-import { ROUTES, getAddPropertyRoute } from '../config/routes'
+import { ROUTES, getAddPropertyRoute, getPropertyDetailPath } from '../config/routes'
 
 const PROPERTY_TYPES = [
   { key: 'all', label: 'All Types', icon: Building2 },
   { key: 'Residential', label: 'Residential', icon: Home },
   { key: 'Commercial', label: 'Commercial', icon: Briefcase },
   { key: 'Retail', label: 'Retail', icon: Store },
+]
+
+const STATUS_FILTERS = [
+  { key: 'all', label: 'All' },
+  { key: 'available', label: 'Available' },
+  { key: 'occupied', label: 'Occupied' },
+  { key: 'maintenance', label: 'Maintenance' },
+  { key: 'inactive', label: 'Inactive' },
 ]
 
 function Properties() {
@@ -36,6 +46,7 @@ function Properties() {
   const [error, setError] = useState(null)
   const [viewMode, setViewMode] = useState('grid')
   const [activeType, setActiveType] = useState('all')
+  const [activeStatus, setActiveStatus] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
@@ -95,6 +106,13 @@ function Properties() {
     return 'gray'
   }
 
+  /* Client-side status filtering */
+  const filteredProperties = properties.filter((p) => {
+    if (activeStatus === 'all') return true
+    const pStatus = (p.status || '').toLowerCase()
+    return pStatus === activeStatus.toLowerCase()
+  })
+
   return (
     <div className="properties-page">
       {/* ── Header ── */}
@@ -152,6 +170,23 @@ function Properties() {
             ))}
           </div>
 
+          <div className="properties-status-filters">
+            {STATUS_FILTERS.map((s) => (
+              <button
+                type="button"
+                key={s.key}
+                className={`btn-status ${activeStatus === s.key ? 'active' : ''}`}
+                onClick={() => {
+                  setActiveStatus(s.key)
+                  setCurrentPage(1)
+                }}
+              >
+                <span className={`status-dot status-${statusColor(s.key)}`} />
+                {s.label}
+              </button>
+            ))}
+          </div>
+
           <div className="properties-view-toggle">
             <button
               type="button"
@@ -189,7 +224,7 @@ function Properties() {
       {/* ── Grid / List ── */}
       {!loading && !error && (
         <>
-          {properties.length === 0 ? (
+          {filteredProperties.length === 0 ? (
             <div className="properties-empty">
               <Building2 size={56} />
               <h2>No properties found</h2>
@@ -197,8 +232,14 @@ function Properties() {
             </div>
           ) : (
             <>
-              <div className={`properties-${viewMode}`}>
-                {properties.map((p, i) => (
+              {/* Count of filtered results when a filter is active */}
+              {(activeStatus !== 'all' || activeType !== 'all' || searchTerm) && (
+                <div className="properties-filtered-count">
+                  Showing {filteredProperties.length} of {properties.length} properties
+                </div>
+              )}
+              <div className={`properties-${viewMode}`} role="list">
+                {filteredProperties.map((p, i) => (
                   <motion.div
                     key={p._id || p.id || i}
                     className="property-item"
@@ -206,6 +247,11 @@ function Properties() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.025 }}
                     whileHover={{ y: -4, scale: 1.01 }}
+                    onClick={() => navigate(getPropertyDetailPath(user?.role, p._id || p.id))}
+                    role="listitem"
+                    style={{ cursor: 'pointer' }}
+                    tabIndex={0}
+                    onKeyPress={(e) => e.key === 'Enter' && navigate(getPropertyDetailPath(user?.role, p._id || p.id))}
                   >
                     {/* Image card (grid) */}
                     <div className="property-card">

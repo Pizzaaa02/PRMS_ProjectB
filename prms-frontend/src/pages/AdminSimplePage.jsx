@@ -162,8 +162,14 @@ export default function AdminSimplePage({ type = 'users' }) {
     async function load() {
       try {
         if (type === 'users') {
-          const { data } = await userApi.list()
-          const items = data?.data || data || []
+          const { data: resp } = await userApi.list({ limit: 100 })
+          let items = resp?.data || resp || []
+          // Flatten backend structure: UserRole[0].role.name -> role
+          items = items.map((u) => {
+            const roleName = u.UserRole?.[0]?.role?.name || u.role || null
+            const hasKycDoc = u.kyc_document_url || u.kyc_verified || null
+            return { ...u, role: roleName, is_kyc_verified: hasKycDoc }
+          })
           setRows(items)
           setCards([
             { label: 'Total Users', value: items.length },

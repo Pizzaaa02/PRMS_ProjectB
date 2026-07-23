@@ -5,7 +5,7 @@ export const createUserBody = [
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
   body('full_name').optional().isString(),
   body('phone').optional().isString(),
-  body('role').optional().isIn(['Admin', 'Landlord', 'Tenant']),
+  body('role').optional().isIn(['Admin', 'Landlord', 'Tenant', 'Agent']),
 ];
 
 export const updateUserBody = [

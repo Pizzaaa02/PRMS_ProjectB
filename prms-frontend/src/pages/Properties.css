@@ -323,3 +323,61 @@
     min-height: 620px;
   }
 }
+
+/* ── Status filter buttons ── */
+.properties-status-filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 999px;
+  background: var(--color-bg-white);
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-status:hover {
+  border-color: #9333ea;
+  color: #9333ea;
+}
+
+.btn-status.active {
+  background: #9333ea;
+  color: white;
+  border-color: #9333ea;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-green { background: #22c55e; }
+.status-yellow { background: #eab308; }
+.status-blue { background: #3b82f6; }
+.status-red { background: #ef4444; }
+.status-gray { background: #9ca3af; }
+
+/* Filtered count banner */
+.properties-filtered-count {
+  padding: 10px 20px;
+  margin-bottom: 16px;
+  background: #f0f9ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  color: #1d4ed8;
+  font-size: 14px;
+  font-weight: 600;
+}

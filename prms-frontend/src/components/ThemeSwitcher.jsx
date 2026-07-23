@@ -1,36 +1,31 @@
 import { useState, useEffect } from 'react';
-import { Sun, Moon, Monitor } from 'lucide-react';
+import { Sun, Moon } from 'lucide-react';
 import './ThemeSwitcher.css';
 
 const MODES = [
   { id: 'light', icon: Sun, label: 'Light mode' },
   { id: 'dark', icon: Moon, label: 'Dark mode' },
-  { id: 'system', icon: Monitor, label: 'System preference' },
 ];
 
 export default function ThemeSwitcher() {
   const [mode, setMode] = useState(() => {
-    return localStorage.getItem('appearance') || 'system';
+    return localStorage.getItem('appearance') || 'light';
   });
 
   function applyTheme(selected) {
     const html = document.documentElement;
-    if (selected === 'system') {
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      html.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+    if (selected === 'light') {
+      html.setAttribute('data-theme', 'light');
+    } else if (selected === 'dark') {
+      html.setAttribute('data-theme', 'dark');
     } else {
-      html.setAttribute('data-theme', selected);
+      html.setAttribute('data-theme', 'light');
     }
   }
 
   useEffect(() => {
     localStorage.setItem('appearance', mode);
     applyTheme(mode);
-    // Listen for system preference changes
-    const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    const handler = () => applyTheme(mode);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
   }, [mode]);
 
   return (
