@@ -56,17 +56,21 @@ function Properties() {
     setLoading(true)
     setError(null)
     try {
-      const params = { page: currentPage, limit: perPage }
-      if (activeType !== 'all') params.type = activeType
-      if (searchTerm.trim()) params.search = searchTerm.trim()
-
-      const { data } = await propertyApi.list(params)
-      const list = data.properties || data.data || data
+      const { data } = await propertyApi.list({
+        page: currentPage,
+        limit: perPage,
+        type: activeType === 'all' ? undefined : activeType,
+        search: searchTerm.trim() || undefined,
+      })
+      const list = data?.data || data?.properties || data
       setProperties(Array.isArray(list) ? list : [])
 
-      const total =
-        data.totalCount ?? data.total ?? data.pagination?.total ?? list.length
-      setTotalCount(total)
+      setTotalCount(
+        data?.pagination?.total ??
+          data?.totalCount ??
+          data?.total ??
+          list.length
+      )
     } catch (err) {
       setError(getApiError(err))
       setProperties([])
@@ -75,19 +79,18 @@ function Properties() {
     }
   }
 
-   
+  // Fetch on mount, page change, or type filter change
   useEffect(() => {
     fetchProperties()
-  }, [currentPage, activeType, fetchProperties])
+  }, [currentPage, activeType])
 
-  /* Debounced search */
+  // Debounced search: reset page and trigger fetch via the above effect
   useEffect(() => {
     const timer = setTimeout(() => {
       setCurrentPage(1)
-      fetchProperties()
     }, 400)
     return () => clearTimeout(timer)
-  }, [searchTerm, fetchProperties])
+  }, [searchTerm])
 
   function handleSearch(e) {
     if (e) e.preventDefault()

@@ -156,6 +156,10 @@ function AppRoutes() {
         />
         <Route path="properties/add" element={<AddProperty />} />
         <Route path="properties/edit/:id" element={<EditProperty />} />
+        <Route
+          path="properties/:id"
+          element={<PropertyDetail />}
+        />
         <Route path="bookings" element={<AdminSimplePage label="Booking Management" />} />
         <Route
           path="finance"
@@ -211,6 +215,7 @@ function AppRoutes() {
         />
         <Route path="properties/add" element={<AddProperty />} />
         <Route path="properties/edit/:id" element={<EditProperty />} />
+        <Route path="properties/:id" element={<PropertyDetail />} />
         <Route path="bookings" element={<LandlordSimplePage label="My Bookings" />} />
         <Route
           path="finance"
@@ -256,6 +261,7 @@ function AppRoutes() {
             </SuspenseWrapper>
           }
         />
+        <Route path="properties/:id" element={<PropertyDetail />} />
         <Route path="bookings" element={<TenantSimplePage label="My Bookings" />} />
         <Route path="payments" element={<TenantSimplePage label="Payments" />} />
         <Route path="payments/:id" element={<PaymentReceipt />} />
@@ -287,6 +293,7 @@ function AppRoutes() {
         <Route index element={<AgentDashboard />} />
         <Route path="profile" element={<Profile />} />
         <Route path="properties" element={<AgentSimplePage label="Assigned Properties" />} />
+        <Route path="properties/:id" element={<PropertyDetail />} />
         <Route path="bookings" element={<AgentSimplePage label="My Bookings" />} />
         <Route path="maintenance" element={<AgentSimplePage label="Maintenance Requests" />} />
         <Route path="categories" element={<AgentCategories />} />
