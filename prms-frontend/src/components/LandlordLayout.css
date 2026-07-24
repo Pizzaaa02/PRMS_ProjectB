@@ -104,8 +104,8 @@
   grid-template-columns: 310px 430px 1fr;
   align-items: center;
   gap: 30px;
-  background: #f8fafc;
-  border-bottom: 2px solid #d7dce5;
+  background: var(--card-bg);
+  border-bottom: 2px solid var(--border-color);
 }
 
 .landlord-layout-brand {
@@ -125,12 +125,12 @@
 .landlord-layout-brand span {
   width: 1px;
   height: 34px;
-  background: #cbd5e1;
+  background: var(--border-color);
 }
 
 .landlord-layout-brand p {
   margin: 0;
-  color: #4b5563;
+  color: var(--text-secondary);
   font-size: 17px;
   font-weight: 800;
 }
@@ -138,9 +138,9 @@
 .landlord-layout-search {
   height: 56px;
   padding: 0 22px;
-  border: 2px solid #d7dce5;
+  border: 2px solid var(--border-color);
   border-radius: 999px;
-  background: #eaf1ff;
+  background: var(--surface);
   display: flex;
   align-items: center;
   gap: 14px;
@@ -188,7 +188,7 @@
 
 .landlord-layout-profile p {
   margin: 3px 0 0;
-  color: #6b7280;
+  color: var(--text-secondary);
   font-size: 14px;
 }
 

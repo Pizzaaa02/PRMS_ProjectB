@@ -16,7 +16,7 @@
 
 .landlord-page-title-row p {
   margin: 12px 0 0;
-  color: #4b5563;
+  color: var(--text-secondary);
   font-size: 20px;
 }
 
@@ -39,8 +39,8 @@
 }
 
 .landlord-export-btn {
-  border: 2px solid #d1d5db;
-  background: white;
+  border: 2px solid var(--border-color);
+  background: var(--card-bg);
   color: #111827;
 }
 
@@ -61,8 +61,8 @@
   min-height: 205px;
   padding: 28px;
   position: relative;
-  background: white;
-  border: 2px solid #d1d5db;
+  background: var(--card-bg);
+  border: 2px solid var(--border-color);
   border-radius: 16px;
   box-shadow: 0 8px 16px rgba(15, 23, 42, 0.04);
 }
@@ -93,7 +93,7 @@
 
 .landlord-stat-card p {
   margin: 0 0 14px;
-  color: #4b5563;
+  color: var(--text-secondary);
   font-size: 15px;
   font-weight: 800;
   text-transform: uppercase;
@@ -110,7 +110,7 @@
 .landlord-stat-card small {
   display: block;
   margin-top: 8px;
-  color: #6b7280;
+  color: var(--text-secondary);
   font-size: 16px;
 }
 
@@ -170,8 +170,8 @@
 
 .revenue-panel,
 .approval-panel {
-  background: white;
-  border: 2px solid #d1d5db;
+  background: var(--card-bg);
+  border: 2px solid var(--border-color);
   border-radius: 16px;
 }
 
@@ -194,17 +194,17 @@
 
 .panel-title p {
   margin: 8px 0 0;
-  color: #6b7280;
+  color: var(--text-secondary);
   font-size: 16px;
 }
 
 .panel-title button {
   height: 44px;
   padding: 0 18px;
-  border: 2px solid #d1d5db;
+  border: 2px solid var(--border-color);
   border-radius: 10px;
-  background: white;
-  color: #4b5563;
+  background: var(--card-bg);
+  color: var(--text-secondary);
   font-size: 16px;
   font-weight: 700;
 }
@@ -241,7 +241,7 @@
 }
 
 .bar-item span {
-  color: #6b7280;
+  color: var(--text-secondary);
   font-size: 14px;
   font-weight: 700;
 }
@@ -308,14 +308,14 @@
 }
 
 .approval-info span {
-  color: #64748b;
+  color: var(--text-secondary);
   font-size: 13px;
   font-weight: 700;
 }
 
 .approval-info p {
   margin: 4px 0 18px;
-  color: #4b5563;
+  color: var(--text-secondary);
   font-size: 16px;
 }
 
@@ -340,7 +340,7 @@
 }
 
 .decline-btn {
-  border: 2px solid #cbd5e1;
+  border: 2px solid var(--border-color);
   background: #eef2ff;
   color: #334155;
 }
@@ -358,8 +358,8 @@
   grid-template-columns: 110px 1fr auto;
   align-items: center;
   gap: 18px;
-  background: white;
-  border: 2px solid #d1d5db;
+  background: var(--card-bg);
+  border: 2px solid var(--border-color);
   border-radius: 16px;
 }
 
@@ -389,7 +389,7 @@
 
 .summary-card p {
   margin: 0;
-  color: #6b7280;
+  color: var(--text-secondary);
   font-size: 14px;
 }
 

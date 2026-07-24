@@ -103,8 +103,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #f8fafc;
-  border-bottom: 2px solid #d7dce5;
+  background: var(--card-bg);
+  border-bottom: 2px solid var(--border-color);
 }
 
 .admin-layout-brand {
@@ -124,14 +124,14 @@
 .admin-layout-brand span {
   width: 1px;
   height: 34px;
-  background: #cbd5e1;
+  background: var(--border-color);
 }
 
 .admin-layout-brand p {
   margin: 0;
   font-size: 21px;
   font-weight: 800;
-  color: #4b5563;
+  color: var(--text-secondary);
 }
 
 .admin-layout-top-actions {

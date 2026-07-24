@@ -73,7 +73,7 @@
 }
 
 .agent-layout-side-btn.active {
-  background: linear-gradient(135deg, #8a2be2, #5b6ee1);
+  background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
   color: white;
   box-shadow: 0 12px 24px rgba(138, 43, 226, 0.3);
 }
@@ -103,8 +103,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #f8fafc;
-  border-bottom: 2px solid #d7dce5;
+  background: var(--card-bg);
+  border-bottom: 2px solid var(--border-color);
 }
 
 .agent-layout-brand {
@@ -124,14 +124,14 @@
 .agent-layout-brand span {
   width: 1px;
   height: 34px;
-  background: #cbd5e1;
+  background: var(--border-color);
 }
 
 .agent-layout-brand p {
   margin: 0;
   font-size: 21px;
   font-weight: 800;
-  color: #4b5563;
+  color: var(--text-secondary);
 }
 
 .agent-layout-top-actions {

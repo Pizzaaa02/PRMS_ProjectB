@@ -16,7 +16,7 @@
 
 .admin-dash-hero p {
   margin: 10px 0 0;
-  color: #4b5563;
+  color: var(--text-secondary);
   font-size: 23px;
 }
 
@@ -40,9 +40,9 @@
 }
 
 .admin-dash-light-btn {
-  border: 2px solid #d1d5db;
-  background: white;
-  color: #374151;
+  border: 2px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-color);
 }
 
 .admin-dash-dark-btn {
@@ -61,9 +61,9 @@
 .admin-dash-metric-card {
   min-height: 114px;
   padding: 22px;
-  border: 2px solid #d1d5db;
+  border: 2px solid var(--border-color);
   border-radius: 16px;
-  background: white;
+  background: var(--card-bg);
   display: flex;
   align-items: center;
   gap: 20px;
@@ -100,7 +100,7 @@
 
 .admin-dash-metric-card p {
   margin: 0 0 5px;
-  color: #6b7280;
+  color: var(--text-secondary);
   font-size: 13px;
   font-weight: 900;
   text-transform: uppercase;
@@ -160,8 +160,8 @@
 
 .admin-dash-directory {
   min-height: 390px;
-  background: white;
-  border: 2px solid #d1d5db;
+  background: var(--card-bg);
+  border: 2px solid var(--border-color);
 }
 
 .admin-dash-panel-header {
@@ -182,9 +182,9 @@
   width: 300px;
   height: 44px;
   padding: 0 14px;
-  border: 2px solid #d1d5db;
+  border: 2px solid var(--border-color);
   border-radius: 10px;
-  background: #f8fafc;
+  background: var(--page-bg);
   display: flex;
   align-items: center;
   gap: 12px;
@@ -199,7 +199,7 @@
 }
 
 .admin-dash-table {
-  border-top: 2px solid #d1d5db;
+  border-top: 2px solid var(--border-color);
 }
 
 .admin-dash-table-head,
@@ -212,13 +212,13 @@
 .admin-dash-table-head {
   min-height: 50px;
   padding: 0 28px;
-  background: #f3f4f8;
-  border-bottom: 2px solid #d1d5db;
+  background: var(--page-bg);
+  border-bottom: 2px solid var(--border-color);
 }
 
 .admin-dash-table-head p {
   margin: 0;
-  color: #4b5563;
+  color: var(--text-secondary);
   font-size: 13px;
   font-weight: 900;
   text-transform: uppercase;
@@ -227,7 +227,7 @@
 .admin-dash-table-row {
   min-height: 86px;
   padding: 0 28px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .admin-dash-table-row:last-child {
@@ -258,7 +258,7 @@
 
 .admin-dash-user-cell p {
   margin: 0;
-  color: #64748b;
+  color: var(--text-secondary);
   font-size: 13px;
 }
 
@@ -275,7 +275,7 @@
 }
 
 .admin-dash-role.tenant {
-  color: #64748b;
+  color: var(--text-secondary);
   background: #f1f5f9;
 }
 
@@ -305,7 +305,7 @@
 
 .admin-dash-activity {
   margin: 0;
-  color: #4b5563;
+  color: var(--text-secondary);
   font-size: 14px;
 }
 
@@ -393,7 +393,7 @@
   min-height: 180px;
   padding: 24px;
   background: #eef3fb;
-  border: 2px solid #d1d5db;
+  border: 2px solid var(--border-color);
 }
 
 .admin-dash-notes h2 {
@@ -403,7 +403,7 @@
 
 .admin-dash-notes p {
   margin: 0 0 18px;
-  color: #64748b;
+  color: var(--text-secondary);
   font-size: 15px;
 }
 
@@ -416,14 +416,14 @@
   width: 62px;
   height: 58px;
   padding: 7px;
-  border: 2px solid #d1d5db;
+  border: 2px solid var(--border-color);
   border-radius: 8px;
-  background: white;
+  background: var(--card-bg);
 }
 
 .admin-dash-clusters span {
   display: block;
-  color: #64748b;
+  color: var(--text-secondary);
   font-size: 11px;
   font-weight: 900;
 }

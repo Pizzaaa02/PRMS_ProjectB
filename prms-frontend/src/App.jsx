@@ -21,7 +21,7 @@ const PropertyDetail = lazy(() => import('./pages/PropertyDetail'));
 const Properties = lazy(() => import('./pages/Properties'));
 const FinanceDashboard = lazy(() => import('./pages/FinanceDashboard'));
 const AdminCategories = lazy(() => import('./pages/AdminCategories'));
-const WebsiteCustomizer = lazy(() => import('./pages/WebsiteCustomizer'));
+const WebsiteCustomizer = lazy(() => import('./pages/Customize'));
 const UserManagement = lazy(() => import('./pages/UserManagement'));
 
 /*  Admin  */
