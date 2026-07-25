@@ -123,7 +123,7 @@ export default function Customize() {
   const applyThemeMode = (mode) => {
     setThemeMode(mode);
     localStorage.setItem('customizer-theme', mode);
-    document.documentElement.setAttribute('data-theme', mode === 'system' ? 'dark' : mode);
+    document.documentElement.setAttribute('data-theme', mode);
   };
 
   /* ---- actions ---- */
@@ -154,7 +154,6 @@ export default function Customize() {
             {[
               { id: 'light', icon: Sun, label: 'Light' },
               { id: 'dark', icon: Moon, label: 'Dark' },
-              { id: 'system', icon: Settings, label: 'System' },
             ].map((opt) => (
               <motion.button
                 key={opt.id}

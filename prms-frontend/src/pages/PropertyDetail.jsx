@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft,
@@ -73,6 +73,7 @@ function BookingStatusBadge({ status }) {
 function PropertyDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { isAuthenticated, user } = useAuth();
   const [property, setProperty] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -81,6 +82,11 @@ function PropertyDetail() {
 
   /* Booking modal state */
   const [showBookingModal, setShowBookingModal] = useState(false);
+
+  /* Detect if rendered inside a role-protected layout */
+  const isInRoleLayout = ['/admin/', '/landlord/', '/tenant/', '/agent/'].some(
+    (prefix) => location.pathname.startsWith(prefix)
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -187,46 +193,49 @@ function PropertyDetail() {
 
   return (
     <main className="property-detail-page">
-      <header className="guest-properties-navbar">
-        <Link to="/" className="guest-properties-logo">
-          <ArrowLeft size={18} />
-          PRMS
-        </Link>
-
-        <nav className="guest-properties-tabs">
-          <Link to="/properties" className="active">
-            <Home size={22} />
-            Homes
+      {/* Guest navbar: only show on public routes */}
+      {!isInRoleLayout && (
+        <header className="guest-properties-navbar">
+          <Link to="/" className="guest-properties-logo">
+            <ArrowLeft size={18} />
+            PRMS
           </Link>
-          <button type="button">
-            <Sparkles size={22} />
-            Experiences
-          </button>
-          <button type="button">
-            <Building2 size={22} />
-            Services
-          </button>
-        </nav>
 
-        <div className="guest-properties-actions">
-          <Link to="/register">Become a host</Link>
-          <button type="button" className="circle-btn">
-            <Globe2 size={21} />
-          </button>
-          <div className="guest-user-menu">
-            <button type="button" className="menu-btn">
-              <Menu size={22} />
-              <UserCircle size={28} />
+          <nav className="guest-properties-tabs">
+            <Link to="/properties" className="active">
+              <Home size={22} />
+              Homes
+            </Link>
+            <button type="button">
+              <Sparkles size={22} />
+              Experiences
             </button>
-            <div className="guest-menu-dropdown">
-              <Link to="/register">Join now</Link>
-              <Link to="/login">Log in</Link>
-              <span></span>
-              <a href="#">Help Center</a>
+            <button type="button">
+              <Building2 size={22} />
+              Services
+            </button>
+          </nav>
+
+          <div className="guest-properties-actions">
+            <Link to="/register">Become a host</Link>
+            <button type="button" className="circle-btn">
+              <Globe2 size={21} />
+            </button>
+            <div className="guest-user-menu">
+              <button type="button" className="menu-btn">
+                <Menu size={22} />
+                <UserCircle size={28} />
+              </button>
+              <div className="guest-menu-dropdown">
+                <Link to="/register">Join now</Link>
+                <Link to="/login">Log in</Link>
+                <span></span>
+                <a href="#">Help Center</a>
+              </div>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
+      )}
 
       <motion.div
         className="property-detail-content"

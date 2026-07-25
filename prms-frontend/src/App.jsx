@@ -76,8 +76,15 @@ function AppRoutes() {
 
   return (
     <Routes>
-      {/*  Issue #1: GuestHome is the default landing page  */}
-      <Route path="/" element={<GuestHome />} />
+      {/*  Issue #1: GuestHome is the default landing page — guests see it, signed-in users get redirected to their dashboard  */}
+      <Route
+        path="/"
+        element={
+          <PublicRoute>
+            <GuestHome />
+          </PublicRoute>
+        }
+      />
 
       {/*  Issue #5: Public guest-properties route  */}
       <Route path="/properties" element={<GuestProperties />} />
