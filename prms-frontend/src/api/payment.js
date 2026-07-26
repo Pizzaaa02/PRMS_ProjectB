@@ -13,4 +13,16 @@ export const paymentApi = {
   markPaid(id) {
     return apiClient.patch(`/payments/${id}/mark-paid`);
   },
+  getPaymentSummary() {
+    return apiClient.get('/payments/summary');
+  },
+  getInvoices(params) {
+    return apiClient.get('/payments/invoices', { params });
+  },
+  getInvoiceById(id) {
+    return apiClient.get(`/payments/invoices/${id}`);
+  },
+  payPayment(id) {
+    return apiClient.post(`/payments/${id}/pay`);
+  },
 };

@@ -36,11 +36,32 @@ export class BookingController {
     } catch (error: any) { res.status(400).json({ success: false, error: { message: error.message } }); }
   };
 
+  confirm = async (req: Request, res: Response) => {
+    try {
+      const booking = await bookingService.updateBooking(String(req.params.id), { status: 'CONFIRMED' });
+      res.json(successResponse(booking, 'Booking confirmed'));
+    } catch (error: any) { res.status(400).json({ success: false, error: { message: error.message } }); }
+  };
+
+  reject = async (req: Request, res: Response) => {
+    try {
+      const booking = await bookingService.updateBooking(String(req.params.id), { status: 'CANCELLED' });
+      res.json(successResponse(booking, 'Booking rejected'));
+    } catch (error: any) { res.status(400).json({ success: false, error: { message: error.message } }); }
+  };
+
   cancel = async (req: Request, res: Response) => {
     try {
       await bookingService.cancelBooking(String(req.params.id));
       res.json(successResponse(null, 'Booking cancelled'));
     } catch (error: any) { res.status(400).json({ success: false, error: { message: error.message } }); }
+  };
+
+  getSummary = async (req: Request, res: Response) => {
+    try {
+      const summary = await bookingService.getBookingSummary();
+      res.json(successResponse(summary));
+    } catch (error: any) { res.status(500).json({ success: false, error: { message: error.message } }); }
   };
 
   myBookings = async (req: AuthRequest, res: Response) => {

@@ -1,9 +1,13 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { RegistrationProvider } from './contexts/RegistrationContext';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { CustomizationProvider } from './contexts/CustomizationContext';
+import { UserPreferencesProvider } from './contexts/UserPreferencesContext';
+import { FeatureFlagsProvider } from './contexts/FeatureFlagsContext';
 import { ProtectedRoute, PublicRoute } from './components/ProtectedRoute';
+import RoleSelectionGuard from './components/RoleSelectionGuard';
 import PublicPageTransition from './components/PublicPageTransition';
 
 /*  Public pages  */
@@ -60,6 +64,17 @@ const SuspenseWrapper = ({ children }) => (
     {children}
   </Suspense>
 );
+
+/*  New pages (Module 2-3)  */
+const MyBookings = lazy(() => import('./pages/MyBookings'));
+const LandlordBookings = lazy(() => import('./pages/LandlordBookings'));
+const AdminBookings = lazy(() => import('./pages/AdminBookings'));
+const TenantPayments = lazy(() => import('./pages/TenantPayments'));
+const TenantMaintenance = lazy(() => import('./pages/TenantMaintenance'));
+const LandlordMaintenance = lazy(() => import('./pages/LandlordMaintenance'));
+const AgentMaintenance = lazy(() => import('./pages/AgentMaintenance'));
+const AdminReports = lazy(() => import('./pages/AdminReports'));
+const AdminAuditLogs = lazy(() => import('./pages/AdminAuditLogs'));
 
 function AppRoutes() {
   const { loading } = useAuth();
@@ -124,9 +139,11 @@ function AppRoutes() {
         path="/register"
         element={
           <PublicRoute>
-            <PublicPageTransition>
-              <Register />
-            </PublicPageTransition>
+            <RoleSelectionGuard>
+              <PublicPageTransition>
+                <Register />
+              </PublicPageTransition>
+            </RoleSelectionGuard>
           </PublicRoute>
         }
       />
@@ -167,7 +184,7 @@ function AppRoutes() {
           path="properties/:id"
           element={<PropertyDetail />}
         />
-        <Route path="bookings" element={<AdminSimplePage label="Booking Management" />} />
+        <Route path="bookings" element={<AdminBookings />} />
         <Route
           path="finance"
           element={
@@ -178,7 +195,8 @@ function AppRoutes() {
         />
         <Route path="maintenance" element={<AdminSimplePage label="Maintenance Center" />} />
         <Route path="messages" element={<CommunicationHub />} />
-        <Route path="reports" element={<AdminSimplePage label="Reports & Audit" />} />
+        <Route path="reports" element={<AdminReports />} />
+        <Route path="audit-logs" element={<AdminAuditLogs />} />
         <Route
           path="categories"
           element={
@@ -223,7 +241,7 @@ function AppRoutes() {
         <Route path="properties/add" element={<AddProperty />} />
         <Route path="properties/edit/:id" element={<EditProperty />} />
         <Route path="properties/:id" element={<PropertyDetail />} />
-        <Route path="bookings" element={<LandlordSimplePage label="My Bookings" />} />
+        <Route path="bookings" element={<LandlordBookings />} />
         <Route
           path="finance"
           element={
@@ -269,10 +287,10 @@ function AppRoutes() {
           }
         />
         <Route path="properties/:id" element={<PropertyDetail />} />
-        <Route path="bookings" element={<TenantSimplePage label="My Bookings" />} />
-        <Route path="payments" element={<TenantSimplePage label="Payments" />} />
+        <Route path="bookings" element={<MyBookings />} />
+        <Route path="payments" element={<TenantPayments />} />
         <Route path="payments/:id" element={<PaymentReceipt />} />
-        <Route path="maintenance" element={<TenantSimplePage label="Maintenance Requests" />} />
+        <Route path="maintenance" element={<TenantMaintenance />} />
         <Route path="messages" element={<TenantSimplePage label="Messages"><CommunicationHub /></TenantSimplePage>} />
         <Route path="settings" element={<Settings />} />
         <Route
@@ -302,7 +320,7 @@ function AppRoutes() {
         <Route path="properties" element={<AgentSimplePage label="Assigned Properties" />} />
         <Route path="properties/:id" element={<PropertyDetail />} />
         <Route path="bookings" element={<AgentSimplePage label="My Bookings" />} />
-        <Route path="maintenance" element={<AgentSimplePage label="Maintenance Requests" />} />
+        <Route path="maintenance" element={<AgentMaintenance />} />
         <Route path="categories" element={<AgentCategories />} />
         <Route path="settings" element={<Settings />} />
         <Route path="help" element={<AgentSimplePage label="Help Center" />} />
@@ -325,7 +343,13 @@ function App() {
         <SettingsProvider>
           <CustomizationProvider>
             <AuthProvider>
-              <AppRoutes />
+              <UserPreferencesProvider>
+                <FeatureFlagsProvider>
+                  <RegistrationProvider>
+                    <AppRoutes />
+                  </RegistrationProvider>
+                </FeatureFlagsProvider>
+              </UserPreferencesProvider>
             </AuthProvider>
           </CustomizationProvider>
         </SettingsProvider>

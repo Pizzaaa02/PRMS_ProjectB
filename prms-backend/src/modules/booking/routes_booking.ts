@@ -11,7 +11,10 @@ router.get('/my-bookings', authenticate, ctrl.myBookings);
 router.get('/:id', authenticate, ctrl.getById);
 router.post('/', authenticate, ctrl.create);
 router.put('/:id', authenticate, adminOrLandlord, ctrl.update);
+router.patch('/:id/confirm', authenticate, adminOrLandlord, ctrl.confirm);
+router.patch('/:id/reject', authenticate, adminOrLandlord, ctrl.reject);
 router.patch('/:id/cancel', authenticate, ctrl.cancel);
+router.get('/summary', authenticate, ctrl.getSummary);
 router.get('/check-overlap', authenticate, ctrl.checkOverlap);
 
 export default router;

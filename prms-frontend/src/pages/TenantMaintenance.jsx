@@ -1,0 +1,82 @@
+import { useState, useEffect, useCallback } from 'react';
+import Modal from '../components/Modal';
+import MaintenanceForm from '../components/MaintenanceForm';
+import { maintenanceApi } from '../api/maintenance';
+
+const STATUS_TABS = ['all', 'submitted', 'assigned', 'in_progress', 'resolved', 'closed'];
+
+export default function TenantMaintenance() {
+  const [tab, setTab] = useState('all');
+  const [tickets, setTickets] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await maintenanceApi.list({ status: tab === 'all' ? undefined : tab });
+      setTickets(res.data?.data || []);
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
+  }, [tab]);
+
+  useEffect(() => { load(); }, [load]);
+
+  return (
+    <div className="page-shell">
+      <div className="page-header">
+        <h1 className="page-title">Maintenance</h1>
+        <button className="btn btn-primary" onClick={() => setFormOpen(true)}>+ New Request</button>
+      </div>
+
+      <div className="card-table">
+        <div className="status-filter">
+          {STATUS_TABS.map(t => (
+            <button key={t} className={tab === t ? 'active' : ''} onClick={() => setTab(t)}>
+              {t.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase())}
+            </button>
+          ))}
+        </div>
+
+        {loading ? <p>Loading...</p> : (
+          <table className="table">
+            <thead>
+              <tr><th>Title</th><th>Property</th><th>Priority</th><th>Status</th><th>Created</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+              {tickets.map(t => (
+                <tr key={t._id || t.id}>
+                  <td>{t.title}</td>
+                  <td>{t.property?.title || 'N/A'}</td>
+                  <td><span className={`status-badge status-${t.priority ?? 'medium'}`}>{t.priority ?? 'medium'}</span></td>
+                  <td><span className={`status-badge status-${(t.status || '').toLowerCase()}`}>{t.status}</span></td>
+                  <td>{new Date(t.createdAt || t.created_at).toLocaleDateString()}</td>
+                  <td><button className="btn btn-sm btn-outline" onClick={() => setSelected(t)}>View</button></td>
+                </tr>
+              ))}
+              {!tickets.length && <tr><td colSpan={6}>No maintenance tickets.</td></tr>}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* Detail Modal */}
+      {selected && (
+        <Modal isOpen={!!selected} onOpenChange={v => setSelected(v ? null : selected)} title="Ticket Detail">
+          <p>{selected.description}</p>
+          <p><strong>Priority:</strong> {selected.priority} | <strong>Status:</strong> {selected.status}</p>
+          <div className="notes mt-2">
+            <h4>Notes</h4>
+            {(selected.notes || []).map((n, i) => (
+              <div key={i} className="note-item">{n.note || n.message}</div>
+            ))}
+          </div>
+        </Modal>
+      )}
+
+      {/* Create Form */}
+      {formOpen && <MaintenanceForm onSuccess={() => setFormOpen(false)} />}
+    </div>
+  );
+}

@@ -63,3 +63,13 @@ export async function checkOverlap(
 
   return { hasOverlap: overlaps.length > 0, overlapping: overlaps };
 }
+
+export async function getBookingSummary(): Promise<{ pending: number; confirmed: number; active: number; cancelled: number; total: number }> {
+  const [pending, confirmed, active, cancelled] = await Promise.all([
+    prisma.booking.count({ where: { status: 'PENDING' } }),
+    prisma.booking.count({ where: { status: 'CONFIRMED' } }),
+    prisma.booking.count({ where: { status: 'CHECKED_IN' } }),
+    prisma.booking.count({ where: { status: 'CANCELLED' } }),
+  ]);
+  return { pending, confirmed, active, cancelled, total: pending + confirmed + active + cancelled };
+}

@@ -7,13 +7,24 @@ export const maintenanceApi = {
   getById(id) {
     return apiClient.get(`/maintenance/${id}`);
   },
-  create(data) {
+  createTicket(data) {
     return apiClient.post('/maintenance', data);
   },
-  update(id, data) {
-    return apiClient.put(`/maintenance/${id}`, data);
+  getTicketsByStatus(status) {
+    return apiClient.get('/maintenance', { params: { status } });
   },
-  resolve(id) {
-    return apiClient.patch(`/maintenance/${id}/resolve`);
+  updateStatus(id, status) {
+    return apiClient.patch(`/maintenance/${id}/status`, { status });
+  },
+  assignToAgent(ticketId, agentId) {
+    return apiClient.patch(`/maintenance/${ticketId}/assign`, { agentId });
+  },
+  addNote(ticketId, note) {
+    return apiClient.post(`/maintenance/${ticketId}/notes`, { note });
+  },
+  addPhoto(ticketId, formData) {
+    return apiClient.post(`/maintenance/${ticketId}/photos`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
   },
 };

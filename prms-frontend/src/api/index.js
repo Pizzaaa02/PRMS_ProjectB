@@ -6,6 +6,7 @@ import { paymentApi } from './payment';
 import { userApi } from './user';
 import { searchApi } from './search';
 import { adminApi } from './admin';
+import { communicationApi } from './communication';
 import { apiClient, logoutUser, getApiError } from './ApiClient';
 
 export {
@@ -17,6 +18,7 @@ export {
   userApi,
   searchApi,
   adminApi,
+  communicationApi,
   apiClient,
   logoutUser,
   getApiError,

@@ -21,6 +21,7 @@ import reportingRoutes from './modules/reporting/routes_reporting';
 import agentRoutes from './modules/agent/routes_agent';
 import categoryRoutes from './modules/category/routes_category';
 import themeRoutes from './modules/theme/routes_theme';
+import favoriteRoutes from './modules/favorite/routes_favorite';
 
 // Initialize Firebase if possible
 if (getApps().length === 0) {
@@ -78,6 +79,9 @@ router.use('/reports', reportingRoutes);
 router.use('/agents', agentRoutes);
 router.use('/categories', categoryRoutes);
 router.use('/themes', themeRoutes);
+router.use('/favorites', favoriteRoutes);
+import notificationRoutes from './modules/notification/routes_notification';
+router.use('/notifications', notificationRoutes);
 
 app.use(router);
 app.use(errorHandler);
