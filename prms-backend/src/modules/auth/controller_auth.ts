@@ -2,11 +2,23 @@ import { Request, Response } from 'express';
 import { validationResult } from 'express-validator';
 import { AuthRequest } from '../../middleware/auth';
 import * as authService from './service_auth';
+import { recordAudit } from '../admin/service_audit';
 import { successResponse } from '../../utils/response';
 import { env } from '../../config';
 import jwt from 'jsonwebtoken';
 import { verifyFirebaseToken } from './firebase_auth';
 import { prisma } from '../../db';
+
+const HELPERS = (req: Request) => {
+  const ip = (req as any).ip || req.socket.remoteAddress || '';
+  const ua = req.headers['user-agent'];
+  const url = req.originalUrl;
+  const method = req.method;
+  const log = async (ctx: { userId?: string; username?: string | null; userRole?: string; action: string; entity: string; entityId?: string; description?: string; status?: string; level?: string; errorMessage?: string }) => {
+    await recordAudit({ ...ctx, username: ctx.username || undefined, ipAddress: ip, userAgent: ua, requestUrl: url, httpMethod: method, module: 'Authentication' });
+  };
+  return { log };
+};
 
 export class AuthController {
   register = async (req: Request, res: Response) => {
@@ -19,11 +31,13 @@ export class AuthController {
       const user = await authService.registerUser(email, password, full_name, phone, role);
       const tokens = authService.generateTokens(user.id);
       await authService.saveRefreshToken(user.id, tokens.refreshToken);
+      HELPERS(req).log({ userId: user.id, username: user.email, userRole: role || 'Tenant', action: 'USER_REGISTRATION', entity: 'User', entityId: user.id, description: `New user registered with role ${role || 'Tenant'}`, status: 'Success', level: 'info' });
       res.status(201).json(successResponse({
         user: { id: user.id, email: user.email, full_name: user.full_name },
         tokens,
       }, 'Registration successful'));
     } catch (error: any) {
+      HELPERS(req).log({ action: 'USER_REGISTRATION', entity: 'User', description: `Registration failed: ${error.message}`, status: 'Failed', level: 'error', errorMessage: error.message });
       res.status(400).json({ success: false, error: { message: error.message } });
     }
   };
@@ -38,6 +52,7 @@ export class AuthController {
       const user = await authService.loginUser(email, password);
       const tokens = authService.generateTokens(user.id);
       await authService.saveRefreshToken(user.id, tokens.refreshToken);
+      HELPERS(req).log({ userId: user.id, username: user.email, userRole: user.UserRole[0]?.role.name, action: 'USER_LOGIN', entity: 'User', entityId: user.id, description: 'User logged in successfully', status: 'Success', level: 'info' });
       res.json(successResponse({
         user: {
           id: user.id,
@@ -49,6 +64,7 @@ export class AuthController {
         tokens,
       }, 'Login successful'));
     } catch (error: any) {
+      HELPERS(req).log({ action: 'USER_LOGIN', entity: 'User', description: `Login failed: ${error.message}`, status: 'Failed', level: 'warning', errorMessage: error.message });
       res.status(401).json({ success: false, error: { message: error.message } });
     }
   };
@@ -94,8 +110,10 @@ export class AuthController {
   updateMe = async (req: AuthRequest, res: Response) => {
     try {
       const user = await authService.updateUserProfile(req.user!.id, req.body);
+      HELPERS(req).log({ userId: req.user!.id, username: req.user!.email, userRole: req.user!.role, action: 'PROFILE_UPDATE', entity: 'User', entityId: req.user!.id, description: 'User profile updated', status: 'Success', level: 'info' });
       res.json(successResponse(user, 'Profile updated'));
     } catch (error: any) {
+      HELPERS(req).log({ userId: req.user?.id, username: req.user?.email, action: 'PROFILE_UPDATE', entity: 'User', description: `Profile update failed: ${error.message}`, status: 'Failed', level: 'error', errorMessage: error.message });
       res.status(400).json({ success: false, error: { message: error.message } });
     }
   };
@@ -103,8 +121,10 @@ export class AuthController {
   logout = async (req: AuthRequest, res: Response) => {
     try {
       await authService.logoutUser(req.user!.id);
+      HELPERS(req).log({ userId: req.user!.id, username: req.user!.email, userRole: req.user!.role, action: 'USER_LOGOUT', entity: 'User', entityId: req.user!.id, description: 'User logged out', status: 'Success', level: 'info' });
       res.json(successResponse(null, 'Logged out successfully'));
     } catch (error: any) {
+      HELPERS(req).log({ userId: req.user?.id, username: req.user?.email, action: 'USER_LOGOUT', entity: 'User', description: `Logout failed: ${error.message}`, status: 'Failed', level: 'error', errorMessage: error.message });
       res.status(400).json({ success: false, error: { message: error.message } });
     }
   };
@@ -116,13 +136,14 @@ export class AuthController {
         return res.status(400).json({ success: false, error: { message: 'Current and new password required' } });
       }
       await authService.changePassword(req.user!.id, currentPassword, newPassword);
+      HELPERS(req).log({ userId: req.user!.id, username: req.user!.email, userRole: req.user!.role, action: 'PASSWORD_CHANGE', entity: 'User', entityId: req.user!.id, description: 'Password changed successfully', status: 'Success', level: 'info' });
       res.json(successResponse(null, 'Password changed successfully'));
     } catch (error: any) {
+      HELPERS(req).log({ userId: req.user?.id, username: req.user?.email, action: 'PASSWORD_CHANGE', entity: 'User', description: `Password change failed: ${error.message}`, status: 'Failed', level: 'error', errorMessage: error.message });
       res.status(400).json({ success: false, error: { message: error.message } });
     }
   };
 
-  /* AUTH-009: Google OAuth login */
   googleLogin = async (req: Request, res: Response) => {
     try {
       const { idToken, email, displayName } = req.body;
@@ -137,53 +158,24 @@ export class AuthController {
 
         firebaseUid = await verifyFirebaseToken(idToken);
       } else {
-        console.warn('[DEV MODE] Firebase verification disabled');
-
         if (!email) {
           throw new Error('Email is required when Firebase verification is disabled');
         }
-
         firebaseUid = `dev-${email.toLowerCase()}`;
       }
 
       // Step 1: find by firebase_uid
-      let user = await prisma.user.findUnique({
-        where: { firebase_uid: firebaseUid },
-        include: {
-          UserRole: {
-            include: { role: true },
-          },
-        },
-      });
+      let user = await prisma.user.findUnique({ where: { firebase_uid: firebaseUid }, include: { UserRole: { include: { role: true } } } });
 
       // Step 2: not found, find by email
       if (!user && email) {
-        user = await prisma.user.findUnique({
-          where: { email },
-          include: {
-            UserRole: {
-              include: { role: true },
-            },
-          },
-        });
+        user = await prisma.user.findUnique({ where: { email }, include: { UserRole: { include: { role: true } } } });
 
-        // Existing email account
         if (user) {
-          // Already linked to another Google account?
           if (user.firebase_uid && user.firebase_uid !== firebaseUid) {
             throw new Error('Google account already linked');
           }
-
-          // Link Google account
-          user = await prisma.user.update({
-            where: { id: user.id },
-            data: { firebase_uid: firebaseUid },
-            include: {
-              UserRole: {
-                include: { role: true },
-              },
-            },
-          });
+          user = await prisma.user.update({ where: { id: user.id }, data: { firebase_uid: firebaseUid }, include: { UserRole: { include: { role: true } } } });
         }
       }
 
@@ -191,26 +183,8 @@ export class AuthController {
       if (!user) {
         isNewUser = true;
         user = await prisma.user.create({
-          data: {
-            firebase_uid: firebaseUid,
-            email,
-            full_name: displayName || '',
-            passwordHash: null,
-            UserRole: {
-              create: {
-                role: {
-                  connect: {
-                    name: 'Tenant',
-                  },
-                },
-              },
-            },
-          },
-          include: {
-            UserRole: {
-              include: { role: true },
-            },
-          },
+          data: { firebase_uid: firebaseUid, email, full_name: displayName || '', passwordHash: null, UserRole: { create: { role: { connect: { name: 'Tenant' } } } } },
+          include: { UserRole: { include: { role: true } } },
         });
       }
 
@@ -218,6 +192,8 @@ export class AuthController {
 
       const tokens = authService.generateTokens(user.id);
       await authService.saveRefreshToken(user.id, tokens.refreshToken);
+
+      HELPERS(req).log({ userId: user.id, username: user.email, userRole: user.UserRole[0]?.role.name || 'Tenant', action: 'GOOGLE_LOGIN', entity: 'User', entityId: user.id, description: isNewUser ? 'New Google user registered and logged in' : 'User logged in via Google', status: 'Success', level: 'info' });
 
       res.json(successResponse({
         user: {
@@ -232,6 +208,7 @@ export class AuthController {
         isNewUser: !!isNewUser,
       }));
     } catch (error: any) {
+      HELPERS(req).log({ action: 'GOOGLE_LOGIN', entity: 'User', description: `Google login failed: ${error.message}`, status: 'Failed', level: 'error', errorMessage: error.message });
       res.status(400).json({ success: false, error: { message: error.message } });
     }
   };

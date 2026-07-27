@@ -71,8 +71,21 @@ export async function getAuditLogs(page = 1, limit = 50, entity?: string) {
   return { logs, total };
 }
 
-export async function createAuditLog(data: { userId?: string; action: string; entity: string; entityId?: string; details?: string; ipAddress?: string; userAgent?: string }) {
-  return prisma.auditLog.create({ data });
+export async function createAuditLog(data: { userId?: string; action: string; entity: string; entityId?: string; description?: string; ipAddress?: string; userAgent?: string; module?: string; status?: string; level?: string }) {
+  return prisma.auditLog.create({
+    data: {
+      userId: data.userId,
+      action: data.action,
+      entity: data.entity,
+      entityId: data.entityId,
+      description: data.description,
+      ipAddress: data.ipAddress,
+      userAgent: data.userAgent,
+      module: data.module || 'Admin',
+      status: data.status || 'Success',
+      level: data.level || 'info',
+    },
+  });
 }
 
 export async function getNotifications(userId: string, page = 1, limit = 20) {
