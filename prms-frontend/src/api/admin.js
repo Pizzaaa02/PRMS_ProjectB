@@ -61,6 +61,9 @@ export const adminApi = {
   getVersions(themeId) {
     return apiClient.get(`/admin/themes/${themeId}/versions`);
   },
+  restoreVersion(themeId, version) {
+    return apiClient.post(`/admin/themes/${themeId}/versions/${version}/restore`, { version });
+  },
   /* Theme / Published theme */
   getThemeById(themeId) {
     return apiClient.get(`/admin/themes/${themeId}`);

@@ -12,6 +12,15 @@ const THEME_VARIABLE_MAP = {
   theme_text_color:          '--text-color',
   theme_font_family:         '--font-family',
   theme_border_radius:       '--border-radius',
+  theme_font_weight:         '--font-weight',
+  theme_letter_spacing:      '--letter-spacing',
+  theme_font_size_base:      '--font-size-base',
+  theme_line_height:         '--line-height',
+  theme_gradient_enabled:    '--gradient-enabled',
+  theme_gradient_direction:  '--gradient-direction',
+  theme_shadow_enabled:      '--shadow-enabled',
+  theme_shadow_size:         '--shadow-size',
+  theme_animation_enabled:   '--animation-enabled',
   header_background_color:   '--header-background-color',
   header_text_color:         '--header-text-color',
   header_cta_button_color:   '--header-cta-button-color',
@@ -28,6 +37,15 @@ const DEFAULTS = {
   theme_text_color:          '#111827',
   theme_font_family:         'Inter, Arial, sans-serif',
   theme_border_radius:       '10px',
+  theme_font_weight:         '400',
+  theme_letter_spacing:      '0',
+  theme_font_size_base:      '14px',
+  theme_line_height:         '1.5',
+  theme_gradient_enabled:    'false',
+  theme_gradient_direction:  '135deg',
+  theme_shadow_enabled:      'true',
+  theme_shadow_size:         'md',
+  theme_animation_enabled:   'true',
   theme_dark_mode:           'false',
   branding_site_name:        'PRMS',
   branding_company_name:     'Customizable Property Rental Management System',
@@ -61,6 +79,13 @@ const DEFAULTS = {
   homepage_about_description: 'We are dedicated to making property rental simple, transparent, and efficient for everyone.',
   homepage_about_image:      '',
   homepage_about_alignment:  'left',
+  homepage_show_hero:        'true',
+  homepage_show_search_bar:  'true',
+  homepage_show_featured:    'true',
+  homepage_show_features:    'true',
+  homepage_show_testimonials:'true',
+  homepage_show_cta:         'true',
+  homepage_show_about:       'true',
   feature_payments:          'true',
   feature_maintenance:       'true',
   feature_messaging:         'true',
@@ -92,9 +117,21 @@ export function SettingsProvider({ children }) {
       }
     }
 
-    /* Apply font family to body */
+    /* Apply font settings to body */
     if (settings.theme_font_family) {
       document.body.style.fontFamily = settings.theme_font_family;
+    }
+    if (settings.theme_font_weight) {
+      document.body.style.fontWeight = settings.theme_font_weight;
+    }
+    if (settings.theme_letter_spacing) {
+      document.body.style.letterSpacing = settings.theme_letter_spacing;
+    }
+    if (settings.theme_font_size_base) {
+      document.body.style.fontSize = settings.theme_font_size_base;
+    }
+    if (settings.theme_line_height) {
+      document.body.style.lineHeight = settings.theme_line_height;
     }
 
     /* Apply background color to body */
@@ -105,6 +142,11 @@ export function SettingsProvider({ children }) {
     /* Apply text color */
     if (settings.theme_text_color) {
       document.body.style.color = settings.theme_text_color;
+    }
+
+    /* Apply gradient when enabled */
+    if (String(settings.theme_gradient_enabled) === 'true') {
+      document.body.style.background = `linear-gradient(${settings.theme_gradient_direction || '135deg'}, ${settings.theme_primary_color || '#8a2be2'}, ${settings.theme_secondary_color || '#0f172a'})`;
     }
 
     /* Update favicon if configured */

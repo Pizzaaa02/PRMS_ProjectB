@@ -12,29 +12,31 @@ import {
   FileText,
   Tag,
   BarChart3,
+  Bell,
 } from 'lucide-react'
 
 const roleRoutes = {
-  Tenant:    { prefix: '/tenant',   pages: ['dashboard', 'properties', 'bookings', 'payments', 'maintenance', 'messages', 'settings'] },
-  Landlord:  { prefix: '/landlord', pages: ['dashboard', 'properties', 'bookings', 'finance', 'heatmap', 'maintenance', 'messages', 'settings'] },
-  Agent:     { prefix: '/agent',    pages: ['dashboard', 'properties', 'bookings', 'maintenance', 'categories', 'settings'] },
-  Admin:     { prefix: '/admin',    pages: ['dashboard', 'users', 'properties', 'bookings', 'finance', 'maintenance', 'messages', 'reports', 'categories', 'settings'] },
+  Tenant:    { prefix: '/tenant',   pages: ['dashboard', 'notifications', 'properties', 'bookings', 'payments', 'maintenance', 'messages', 'settings'] },
+  Landlord:  { prefix: '/landlord', pages: ['dashboard', 'notifications', 'properties', 'bookings', 'finance', 'heatmap', 'maintenance', 'messages', 'settings'] },
+  Agent:     { prefix: '/agent',    pages: ['dashboard', 'notifications', 'properties', 'bookings', 'maintenance', 'categories', 'settings'] },
+  Admin:     { prefix: '/admin',    pages: ['dashboard', 'notifications', 'users', 'properties', 'bookings', 'finance', 'maintenance', 'messages', 'reports', 'categories', 'settings'] },
 }
 
 const pageMeta = {
-  dashboard:  { label: 'Dashboard',       icon: LayoutDashboard },
-  properties: { label: 'Properties',      icon: Building2 },
-  bookings:   { label: 'Bookings',        icon: CalendarDays },
-  payments:   { label: 'Payments',        icon: WalletCards },
-  finance:    { label: 'Finance',         icon: WalletCards },
-  heatmap:    { label: 'Heatmap',         icon: BarChart3 },
-  maintenance:{ label: 'Maintenance',     icon: Wrench },
-  messages:   { label: 'Messages',        icon: MessageCircle },
-  settings:   { label: 'Settings',        icon: Settings },
-  categories: { label: 'Categories',      icon: Tag },
-  users:      { label: 'Users',           icon: Users },
-  reports:    { label: 'Reports',         icon: FileText },
-  help:       { label: 'Help',            icon: CircleHelp },
+  dashboard:    { label: 'Dashboard',       icon: LayoutDashboard },
+  notifications:{ label: 'Notifications',   icon: Bell },
+  properties:   { label: 'Properties',      icon: Building2 },
+  bookings:     { label: 'Bookings',        icon: CalendarDays },
+  payments:     { label: 'Payments',        icon: WalletCards },
+  finance:      { label: 'Finance',         icon: WalletCards },
+  heatmap:      { label: 'Heatmap',         icon: BarChart3 },
+  maintenance:  { label: 'Maintenance',     icon: Wrench },
+  messages:     { label: 'Messages',        icon: MessageCircle },
+  settings:     { label: 'Settings',        icon: Settings },
+  categories:   { label: 'Categories',      icon: Tag },
+  users:        { label: 'Users',           icon: Users },
+  reports:      { label: 'Reports',         icon: FileText },
+  help:         { label: 'Help',            icon: CircleHelp },
 }
 
 /** Build sidebar nav items for a given role */

@@ -7,14 +7,19 @@ import { BarChart, PieChart } from '../components/Charts';
 export default function AdminReports() {
   const [period, setPeriod] = useState('month');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [report, setReport] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
+    setError('');
     try {
       const res = await paymentApi.getPaymentSummary();
       setReport(res.data?.data || {});
-    } catch { await paymentApi.list({ period }); }
+    } catch (e) {
+      setError(e.message || 'Failed to load reports');
+      console.error(e);
+    }
     finally { setLoading(false); }
   }, [period]);
 
@@ -28,6 +33,7 @@ export default function AdminReports() {
       </div>
 
       <div className="card-table">
+        {error && <div className="alert alert-danger mt-2">{error} <button className="btn btn-sm" onClick={load}>Retry</button></div>}
         <p>{loading ? 'Generating report…' : 'Report ready.'}</p>
         {report && (
           <div className="report-content">

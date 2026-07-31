@@ -8,6 +8,7 @@ export default function AdminAuditLogs() {
   const [tab, setTab] = useState('all');
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [sort, setSort] = useState('desc');
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
@@ -20,10 +21,11 @@ export default function AdminAuditLogs() {
     if (tab !== 'all') params.action = tab;
     if (search) params.search = search;
     setLoading(true);
+    setError('');
     try {
       const res = await apiClient.get('/admin/audit-logs', { params });
       setLogs(res.data?.data || []);
-    } catch (e) { console.error(e); }
+    } catch (e) { setError(e.message || 'Failed to load audit logs'); console.error(e); }
     finally { setLoading(false); }
   }, [tab, sort, page, search]);
 
@@ -48,8 +50,9 @@ export default function AdminAuditLogs() {
           {LEVELS.map(l => <button key={l} className={tab === l ? 'active' : ''} onClick={() => setTab(l)}>{l.toUpperCase()}</button>)}
         </div>
 
+        {error && <div className="alert alert-danger mt-2">{error} <button className="btn btn-sm" onClick={load}>Retry</button></div>}
         {loading ? <p>Loading…</p> : (
-          <table className="table mt-2">
+          <table className="table mt-2">\
             <thead>
               <tr><th>Date</th><th>User</th><th>Action</th><th>Level</th><th>Details</th></tr>
             </thead>

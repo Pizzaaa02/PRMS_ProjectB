@@ -11,13 +11,15 @@ export default function TenantMaintenance() {
   const [selected, setSelected] = useState(null);
   const [formOpen, setFormOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
+    setError('');
     try {
       const res = await maintenanceApi.list({ status: tab === 'all' ? undefined : tab });
       setTickets(res.data?.data || []);
-    } catch (e) { console.error(e); }
+    } catch (e) { setError(e.message || 'Failed to load tickets'); console.error(e); }
     finally { setLoading(false); }
   }, [tab]);
 
@@ -39,6 +41,7 @@ export default function TenantMaintenance() {
           ))}
         </div>
 
+        {error && <div className="alert alert-danger mt-2">{error} <button className="btn btn-sm" onClick={load}>Retry</button></div>}
         {loading ? <p>Loading...</p> : (
           <table className="table">
             <thead>

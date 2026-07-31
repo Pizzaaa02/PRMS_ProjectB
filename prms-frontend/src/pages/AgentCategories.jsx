@@ -20,12 +20,14 @@ function AgentCategories() {
   const [formName, setFormName] = useState('')
   const [formDesc, setFormDesc] = useState('')
   const [toast, setToast] = useState(null)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     loadData()
   }, [])
 
   async function loadData() {
+    setError('')
     try {
       const userRes = await apiClient.get('/auth/me')
       const userId = userRes.data?.data?.id
@@ -40,6 +42,7 @@ function AgentCategories() {
         setPersonalCats((allRes.data?.data ?? []).filter(c => c.ownerId === userId))
       }
     } catch (e) {
+      setError(e.message || 'Failed to load categories')
       console.error('Failed to load categories', e)
     } finally {
       setLoading(false)
@@ -115,6 +118,8 @@ function AgentCategories() {
 
       {loading ? (
         <div className="agent-categories-loading">Loading...</div>
+      ) : error ? (
+        <div className="alert alert-danger">{error} <button className="btn btn-sm" onClick={loadData}>Retry</button></div>
       ) : (
         <>
           {renderSection('Shared Categories', sharedCats, <Globe size={18} />)}

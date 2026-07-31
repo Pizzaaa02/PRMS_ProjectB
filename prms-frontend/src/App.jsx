@@ -75,6 +75,7 @@ const LandlordMaintenance = lazy(() => import('./pages/LandlordMaintenance'));
 const AgentMaintenance = lazy(() => import('./pages/AgentMaintenance'));
 const AdminReports = lazy(() => import('./pages/AdminReports'));
 const AdminAuditLogs = lazy(() => import('./pages/AdminAuditLogs'));
+const NotificationCenter = lazy(() => import('./pages/NotificationCenter'));
 
 function AppRoutes() {
   const { loading } = useAuth();
@@ -162,6 +163,14 @@ function AppRoutes() {
         <Route index element={<AdminDashboard />} />
         <Route path="dashboard" element={<AdminDashboard />} />
         <Route
+          path="notifications"
+          element={
+            <SuspenseWrapper>
+              <NotificationCenter />
+            </SuspenseWrapper>
+          }
+        />
+        <Route
           path="users"
           element={
             <SuspenseWrapper>
@@ -229,6 +238,14 @@ function AppRoutes() {
         }
       >
         <Route index element={<LandlordDashboard />} />
+        <Route
+          path="notifications"
+          element={
+            <SuspenseWrapper>
+              <NotificationCenter />
+            </SuspenseWrapper>
+          }
+        />
         <Route path="profile" element={<Profile />} />
         <Route
           path="properties"
@@ -277,6 +294,14 @@ function AppRoutes() {
         }
       >
         <Route index element={<TenantDashboard />} />
+        <Route
+          path="notifications"
+          element={
+            <SuspenseWrapper>
+              <NotificationCenter />
+            </SuspenseWrapper>
+          }
+        />
         <Route path="profile" element={<Profile />} />
         <Route
           path="properties"
@@ -316,6 +341,14 @@ function AppRoutes() {
         }
       >
         <Route index element={<AgentDashboard />} />
+        <Route
+          path="notifications"
+          element={
+            <SuspenseWrapper>
+              <NotificationCenter />
+            </SuspenseWrapper>
+          }
+        />
         <Route path="profile" element={<Profile />} />
         <Route path="properties" element={<AgentSimplePage label="Assigned Properties" />} />
         <Route path="properties/:id" element={<PropertyDetail />} />

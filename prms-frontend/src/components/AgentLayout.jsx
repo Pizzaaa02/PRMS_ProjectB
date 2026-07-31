@@ -14,6 +14,7 @@ import './AgentLayout.css'
 function getTopbarTitle(activePage) {
   const titles = {
     dashboard: 'Agent Dashboard',
+    notifications: 'Notification Center',
     properties: 'Assigned Properties',
     bookings: 'Bookings',
     maintenance: 'Maintenance',

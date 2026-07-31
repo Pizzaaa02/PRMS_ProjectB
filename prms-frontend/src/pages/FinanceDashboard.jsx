@@ -17,6 +17,7 @@ function FinanceDashboard() {
   const [summary, setSummary] = useState(null);
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 
   async function load() {
@@ -28,6 +29,7 @@ function FinanceDashboard() {
       setSummary(summaryRes.data?.data);
       setPayments(paymentsRes.data?.data?.data ?? paymentsRes.data?.data ?? []);
     } catch (e) {
+      setError(e.message || 'Failed to load finance data');
       console.error('Failed to load finance data', e);
     } finally {
       setLoading(false);
@@ -46,6 +48,7 @@ function FinanceDashboard() {
 
   return (
     <div className="finance-dashboard">
+      {error && <div className="alert alert-danger">{error} <button className="btn btn-sm" onClick={load}>Retry</button></div>}
       <div className="finance-header">
         <h1>Finance Overview</h1>
         <button className="finance-export-btn" title="Export">

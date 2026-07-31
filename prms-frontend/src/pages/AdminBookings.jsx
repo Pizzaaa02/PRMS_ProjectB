@@ -7,13 +7,15 @@ export default function AdminBookings() {
   const [tab, setTab] = useState('pending');
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
+    setError('');
     try {
       const res = await bookingApi.list({ status: tab, limit: 100 });
       setBookings(res.data?.data || []);
-    } catch (e) { console.error(e); }
+    } catch (e) { setError(e.message || 'Failed to load bookings'); console.error(e); }
     finally { setLoading(false); }
   }, [tab]);
 
@@ -52,6 +54,7 @@ export default function AdminBookings() {
           ))}
         </div>
 
+        {error && <div className="alert alert-danger mt-2">{error} <button className="btn btn-sm" onClick={load}>Retry</button></div>}
         {loading ? <p>Loading...</p> : (
           <table className="table">
             <thead>

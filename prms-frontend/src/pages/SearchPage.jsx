@@ -23,12 +23,14 @@ function SearchPage() {
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [results, setResults] = useState([])
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
 
   const handleSearch = useCallback(async (e) => {
     e?.preventDefault()
     setLoading(true)
+    setError('')
     try {
       const params = { page: String(page), limit: '20' }
       if (query) params.location = query
@@ -57,6 +59,7 @@ function SearchPage() {
         setTotal(0)
       }
     } catch (err) {
+      setError(err.message || 'Search failed')
       console.error('Search failed:', err)
     } finally {
       setLoading(false)
@@ -197,6 +200,12 @@ function SearchPage() {
                   <div className="skeleton-text short" />
                 </div>
               ))}
+            </div>
+          )}
+
+          {error && (
+            <div className="alert alert-danger">
+              {error} <button className="btn btn-sm" onClick={handleSearch}>Retry</button>
             </div>
           )}
 

@@ -13,8 +13,10 @@ function LandlordHeatmap() {
   const [bookings, setBookings] = useState([]);
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   async function load() {
+    setError('');
     try {
       const [bRes, pRes] = await Promise.all([
         bookingApi.myBookings(),
@@ -23,6 +25,7 @@ function LandlordHeatmap() {
       setBookings(bRes.data?.data ?? []);
       setProperties(pRes.data?.data?.properties ?? []);
     } catch (e) {
+      setError(e.message || 'Failed to load heatmap data');
       console.error(e);
     } finally {
       setLoading(false);
@@ -70,6 +73,7 @@ function LandlordHeatmap() {
 
   return (
     <div className="booking-heatmap">
+      {error && <div className="alert alert-danger">{error} <button className="btn btn-sm" onClick={load}>Retry</button></div>}
       <div className="heatmap-header">
         <div className="heatmap-title-row">
           <CalendarDays size={20} />

@@ -14,6 +14,7 @@ import './AdminLayout.css'
 function getTopbarTitle(activePage) {
   const titles = {
     dashboard: 'Admin Dashboard',
+    notifications: 'Notification Center',
     users: 'User Management',
     properties: 'Property Management',
     bookings: 'Booking Management',
