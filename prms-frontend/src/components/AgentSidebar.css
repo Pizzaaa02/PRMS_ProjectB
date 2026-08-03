@@ -3,12 +3,12 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid #e5e7eb;
+  border-right: 1px solid var(--border-color);
 }
 
 .sidebar-header {
   padding: 1.5rem;
-  background: linear-gradient(135deg, #8a2be2, #5b6ee1);
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
   color: white;
 }
 
@@ -47,7 +47,7 @@
 
 .sidebar-link.active {
   background: var(--primary-color);
-  color: white;
+  color: var(--on-primary);
 }
 
 .sidebar-icon {

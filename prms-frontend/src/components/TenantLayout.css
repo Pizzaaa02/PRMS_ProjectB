@@ -85,7 +85,7 @@
 
 .tenant-layout-side-btn:hover {
   background: rgba(255, 255, 255, 0.08);
-  color: #e2e8f0;
+  color: var(--text-secondary-light);
 }
 
 .tenant-layout-side-btn.active {
@@ -100,12 +100,12 @@
 }
 
 .tenant-layout-side-btn.logout {
-  color: #ef4444;
+  color: var(--status-error);
 }
 
 .tenant-layout-side-btn.logout:hover {
-  background: rgba(239, 68, 68, 0.12);
-  color: #f87171;
+  background: var(--error-container);
+  color: var(--status-error);
 }
 
 .tenant-layout-main {
@@ -196,7 +196,7 @@
   align-items: center;
   gap: 16px;
   padding-left: 20px;
-  border-left: 2px solid #d1d5db;
+  border-left: 2px solid var(--outline-variant);
 }
 
 .tenant-layout-profile h3 {
@@ -217,7 +217,7 @@
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: #1e293b;
+  background: var(--text-primary);
   color: white;
   font-size: 15px;
   font-weight: 900;

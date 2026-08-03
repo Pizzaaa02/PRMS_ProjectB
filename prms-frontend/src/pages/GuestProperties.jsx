@@ -127,10 +127,10 @@ function GuestProperties() {
   /* Status display */
   const statusInfo = (status) => {
     const s = (status || '').toLowerCase();
-    if (s === 'available') return { text: 'Available now', color: '#3C9B4D' };
-    if (s === 'occupied') return { text: 'Occupied', color: '#F29F05' };
-    if (s === 'maintenance') return { text: 'Maintenance', color: '#D8554F' };
-    return { text: 'Unknown', color: '#666' };
+    if (s === 'available') return { text: 'Available now', color: 'var(--status-success, #3C9B4D)' };
+    if (s === 'occupied') return { text: 'Occupied', color: 'var(--status-warning, #F29F05)' };
+    if (s === 'maintenance') return { text: 'Maintenance', color: 'var(--error-state, #D8554F)' };
+    return { text: 'Unknown', color: 'var(--text-secondary, #666)' };
   };
 
   /* Reset filters */

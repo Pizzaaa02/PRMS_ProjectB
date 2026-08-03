@@ -20,7 +20,7 @@ function roundRect(ctx, x, y, w, h, r) {
 }
 
 /* --- Bar Chart ------------------------------------------------- */
-export function BarChart({ data = [], height = 240, colors = ['#6366f1','#8b5cf6','#22c55e','#f59e0b'] }) {
+export function BarChart({ data = [], height = 240, colors = ['var(--status-primary, #6366f1)','var(--status-accent, #8b5cf6)','var(--status-success, #22c55e)','var(--status-warning, #f59e0b'] }) {
   const canvasRef = useRef();
   const dpr = window.devicePixelRatio || 1;
 
@@ -59,7 +59,7 @@ export function BarChart({ data = [], height = 240, colors = ['#6366f1','#8b5cf6
 }
 
 /* --- Pie Chart ------------------------------------------------- */
-export function PieChart({ data = [], height = 240, colors = ['#6366f1','#8b5cf6','#22c55e','#f59e0b','#ef4444'] }) {
+export function PieChart({ data = [], height = 240, colors = ['var(--status-primary, #6366f1)','var(--status-accent, #8b5cf6)','var(--status-success, #22c55e)','var(--status-warning, #f59e0b)','var(--error-state, #ef4444'] }) {
   const canvasRef = useRef();
   const dpr = window.devicePixelRatio || 1;
 

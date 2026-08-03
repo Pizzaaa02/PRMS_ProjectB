@@ -1,9 +1,16 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useSettings } from '../contexts/SettingsContext'
 import {
+  Activity,
+  AlertCircle,
+  ArrowDown,
+  ArrowUp,
+  Database,
   Download,
-  Gauge,
+  Loader,
+  Minus,
   Search,
+  Server,
   ShieldCheck,
   SlidersHorizontal,
   Users,
@@ -13,8 +20,12 @@ import './AdminDashboard.css'
 
 function AdminDashboard() {
   const { settings } = useSettings()
+  const [loading, setLoading] = useState(true)
   useEffect(() => {
     localStorage.setItem('prmsDashboardPath', '/admin')
+  // Simulate a brief load for skeleton
+  const t = setTimeout(() => setLoading(false), 600)
+  return () => clearTimeout(t)
   }, [])
 
   const users = [
@@ -39,7 +50,7 @@ function AdminDashboard() {
       name: 'Sarah Al-Zaid',
       email: 'admin.sarah@prms.sys',
       role: 'Admin',
-      status: 'Active',
+      status: 'Verified',
       activity: 'Now',
     },
   ]
@@ -65,179 +76,219 @@ function AdminDashboard() {
     },
   ]
 
+  /* ---- KPI Card helper ---- */
+  function KpiCard({ icon: Icon, iconBg, label, value, sublabel, trend, trendDir }) {
+    const TrendIcon =
+      trendDir === 'up' ? (
+        <ArrowUp size={14} className="text-status-success" />
+      ) : trendDir === 'down' ? (
+        <ArrowDown size={14} className="text-status-error" />
+      ) : (
+        <Minus size={14} className="text-text-secondary" />
+      )
+
+    return (
+      <div className="kpi-card">
+        <div className="kpi-card-top">
+          <div className={`kpi-icon-wrap ${iconBg}`}>
+            <Icon size={20} />
+          </div>
+          {trend && (
+            <span className={`trend-pill ${trendDir === 'up' ? 'positive' : trendDir === 'down' ? 'negative' : 'neutral'}`}>
+              {TrendIcon}
+              {trend}
+            </span>
+          )}
+        </div>
+        <div className="kpi-card-body">
+          <span className="kpi-label">{label}</span>
+          <div className="kpi-value">{value}</div>
+          {sublabel && <span className="kpi-sublabel">{sublabel}</span>}
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <>
-      <section className="admin-dash-hero">
+    <div className="admin-dashboard-page">
+      {/* ---- Hero ---- */}
+      <div className="landlord-page-title-row">
         <div>
-          <h1>System Health Console</h1>
+          <h1>
+            <span className="material-symbols-outlined brand-icon">settings_applications</span>
+            System Health Console
+          </h1>
           <p>Infrastructure monitoring and global operations audit overview.</p>
         </div>
 
-        <div className="admin-dash-actions">
-          <button type="button" className="admin-dash-light-btn">
+        <div className="landlord-page-actions">
+          <button type="button" className="btn-outline">
             <SlidersHorizontal size={18} />
             Filter
           </button>
-
-          <button type="button" className="admin-dash-dark-btn">
+          <button type="button" className="btn-primary-solid">
             <Download size={18} />
             Export
           </button>
         </div>
+      </div>
+
+      {/* ---- KPI Metrics ---- */}
+      <section className="kpi-card-grid">
+        {loading ? (
+          <>
+            {[1, 2, 3, 4].map((n) => (
+              <div key={n} className="kpi-card kpi-skeleton">
+                <div className="skeleton-line skeleton-sm" />
+                <div className="skeleton-line skeleton-lg" />
+                <div className="skeleton-line skeleton-xs" />
+              </div>
+            ))}
+          </>
+        ) : (
+          <>
+            {/* Uptime */}
+            <KpiCard
+              icon={Activity}
+              iconBg="icon-emerald"
+              label="Uptime"
+              value="99.98%"
+              sublabel="Last 30 days"
+              trend="+0.02%"
+              trendDir="up"
+            />
+
+            {/* Transactions */}
+            <KpiCard
+              icon={WalletCards}
+              iconBg="icon-purple"
+              label="Transactions"
+              value="RM 4.2M"
+              sublabel="This month"
+              trend="+12%"
+              trendDir="up"
+            />
+
+            {/* Active Users */}
+            <KpiCard
+              icon={Users}
+              iconBg="icon-blue"
+              label="Active Users"
+              value="12,482"
+              sublabel="Across 12 clusters"
+              trend="+340"
+              trendDir="up"
+            />
+
+            {/* Integrity */}
+            <KpiCard
+              icon={ShieldCheck}
+              iconBg="icon-rose"
+              label="System Integrity"
+              value="Secure"
+              sublabel="2 alerts pending"
+              trend="2 alerts"
+              trendDir="down"
+            />
+          </>
+        )}
       </section>
 
-      <section className="admin-dash-metrics">
-        <article className="admin-dash-metric-card">
-          <div className="admin-dash-metric-icon green">
-            <Gauge size={27} />
-          </div>
-
-          <div>
-            <p>Uptime</p>
-            <h3>99.98%</h3>
-          </div>
-
-          <div className="admin-dash-progress">
-            <span></span>
-          </div>
-        </article>
-
-        <article className="admin-dash-metric-card">
-          <div className="admin-dash-metric-icon purple">
-            <WalletCards size={27} />
-          </div>
-
-          <div>
-            <p>Transactions</p>
-            <h3>RM 4.2M</h3>
-          </div>
-
-          <strong className="admin-dash-growth">+12%</strong>
-        </article>
-
-        <article className="admin-dash-metric-card">
-          <div className="admin-dash-metric-icon blue">
-            <Users size={27} />
-          </div>
-
-          <div>
-            <p>Active Users</p>
-            <h3>12,482</h3>
-          </div>
-        </article>
-
-        <article className="admin-dash-metric-card">
-          <div className="admin-dash-metric-icon red">
-            <ShieldCheck size={27} />
-          </div>
-
-          <div>
-            <p>Integrity</p>
-            <h3>Secure</h3>
-          </div>
-
-          <strong className="admin-dash-alert">2 Alerts</strong>
-        </article>
-      </section>
-
-      <section className="admin-dash-lower">
-        <article className="admin-dash-directory">
-          <div className="admin-dash-panel-header">
-            <h2>User Directory</h2>
-
-            <div className="admin-dash-search">
-              <Search size={17} />
+      {/* ---- User Directory + Right Panel ---- */}
+      <section className="dashboard-main-grid">
+        {/* User directory */}
+        <div className="panel-card admin-directory">
+          <div className="panel-title">
+            <div>
+              <h3 className="panel-title-text">User Directory</h3>
+              <p className="panel-subtitle">Recent authenticated sessions</p>
+            </div>
+            <div className="admin-search">
+              <Search size={16} />
               <input type="text" placeholder="Search users..." />
             </div>
           </div>
 
-          <div className="admin-dash-table">
-            <div className="admin-dash-table-head">
-              <p>User</p>
-              <p>Role</p>
-              <p>Status</p>
-              <p>Activity</p>
+          <div className="admin-table-warp">
+            <div className="admin-table-head">
+              <span>User</span>
+              <span>Role</span>
+              <span>Status</span>
+              <span>Last Seen</span>
             </div>
 
             {users.map((user) => (
-              <div className="admin-dash-table-row" key={user.email}>
-                <div className="admin-dash-user-cell">
-                  <div className="admin-dash-user-avatar">{user.initials}</div>
-
-                  <div>
-                    <h3>{user.name}</h3>
+              <div className="admin-table-row" key={user.email}>
+                <div className="admin-user-cell">
+                  <div className="admin-user-avatar">{user.initials}</div>
+                  <div className="admin-user-info">
+                    <h4>{user.name}</h4>
                     <p>{user.email}</p>
                   </div>
                 </div>
 
-                <div>
-                  <span className={`admin-dash-role ${user.role.toLowerCase()}`}>
-                    {user.role}
-                  </span>
-                </div>
-
-                <div>
-                  <span
-                    className={`admin-dash-status ${
-                      user.status === 'Pending KYC' ? 'pending' : 'active'
-                    }`}
-                  >
-                    {user.status}
-                  </span>
-                </div>
-
-                <p className="admin-dash-activity">{user.activity}</p>
+                <span className="user-role user-role--landlord">{user.role}</span>
+                <span className={`user-status ${user.status === 'Pending KYC' ? 'user-status--pending' : 'user-status--active'}`}>
+                  <span className="status-dot" />
+                  {user.status}
+                </span>
+                <p className="admin-activity">{user.activity}</p>
               </div>
             ))}
           </div>
-        </article>
+        </div>
 
-        <aside className="admin-dash-right">
-          <article className="admin-dash-audit">
-            <div className="admin-dash-audit-header">
-              <h2>Global Audit Log</h2>
-              <span>
-                <i></i>
+        {/* Right panel: Audit Log + Clusters */}
+        <div className="admin-right-col">
+          {/* Audit log */}
+          <div className="panel-card admin-audit dark-panel">
+            <div className="audit-header">
+              <h3 className="panel-title-text">Global Audit Log</h3>
+              <span className="audit-live">
+                <span className="live-dot" />
                 LIVE
               </span>
             </div>
 
-            <div className="admin-dash-audit-list">
+            <div className="audit-list custom-scrollbar">
               {auditLogs.map((log) => (
-                <div
-                  className={`admin-dash-audit-item ${log.type}`}
-                  key={`${log.time}-${log.title}`}
-                >
-                  <p>{log.time}</p>
-
-                  <div>
-                    <h3>{log.title}</h3>
-                    <span>{log.detail}</span>
+                <div key={`${log.time}-${log.title}`} className={`audit-item audit-${log.type}`}>
+                  <span className="audit-time">{log.time}</span>
+                  <div className="audit-body">
+                    <h4>{log.title}</h4>
+                    <p>{log.detail}</p>
                   </div>
                 </div>
               ))}
             </div>
-          </article>
+          </div>
 
-          <article className="admin-dash-notes">
-            <h2>Operational Notes</h2>
-            <p>12 clusters online across Southeast Asia.</p>
+          {/* Operational notes */}
+          <div className="panel-card admin-notes">
+            <div className="notes-header">
+              <h3 className="panel-title-text">Operational Notes</h3>
+            </div>
 
-            <div className="admin-dash-clusters">
-              <div>
+            <p className="notes-text">12 clusters online across Southeast Asia.</p>
+
+            <div className="clusters-grid">
+              <div className="cluster-tile">
                 <span>KL</span>
                 <strong>8.2k</strong>
               </div>
-
-              <div>
+              <div className="cluster-tile">
                 <span>SG</span>
                 <strong>4.1k</strong>
               </div>
+              <div className="cluster-tile">
+                <span>MY</span>
+                <strong>2.4k</strong>
+              </div>
             </div>
-          </article>
-        </aside>
+          </div>
+        </div>
       </section>
-    </>
+    </div>
   )
 }
 

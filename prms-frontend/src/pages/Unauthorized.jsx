@@ -27,17 +27,17 @@ function Unauthorized() {
         alignItems: 'center',
         justifyContent: 'center',
         minHeight: '100vh',
-        backgroundColor: '#faf9f7',
+        backgroundColor: 'var(--page-bg)',
         textAlign: 'center',
         padding: '2rem',
       }}
     >
-      <ShieldAlert size={64} style={{ color: '#7c5cfc', marginBottom: '1rem' }} />
-      <h1 style={{ fontSize: '4rem', fontWeight: 800, color: '#1e1b2e', margin: 0 }}>403</h1>
-      <h2 style={{ fontSize: '1.5rem', color: '#1e1b2e', margin: '1rem 0 0.5rem' }}>
+      <ShieldAlert size={64} style={{ color: 'var(--primary-color)', marginBottom: '1rem' }} />
+      <h1 style={{ fontSize: '4rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>403</h1>
+      <h2 style={{ fontSize: '1.5rem', color: 'var(--text-primary)', margin: '1rem 0 0.5rem' }}>
         Unauthorized
       </h2>
-      <p style={{ color: '#7e7a8b', margin: '0 0 2rem', maxWidth: 400 }}>
+      <p style={{ color: 'var(--text-secondary)', margin: '0 0 2rem', maxWidth: 400 }}>
         You do not have permission to access this page.
       </p>
       <button
@@ -47,7 +47,7 @@ function Unauthorized() {
           alignItems: 'center',
           gap: 8,
           padding: '0.75rem 1.5rem',
-          backgroundColor: '#7c5cfc',
+          backgroundColor: 'var(--primary-color)',
           color: '#fff',
           borderRadius: 12,
           textDecoration: 'none',

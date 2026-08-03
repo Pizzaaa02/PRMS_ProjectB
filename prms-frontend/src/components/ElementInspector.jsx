@@ -60,13 +60,13 @@ export default function ElementInspector({ onInspect, onClose }) {
   return (
     <div className="wc-inspector">
       <div className="wc-inspector-toolbar" style={{
-        background: '#1e293b',
-        color: '#f8fafc',
+        background: 'var(--sidebar-bg, #1e293b)',
+        color: 'var(--sidebar-text, #f8fafc)',
         fontWeight: 600,
         fontSize: '10px',
         letterSpacing: '0.05em',
         padding: '12px 16px',
-        border: '3px solid #3b82f6',
+        border: '3px solid var(--primary-color, #3b82f6)',
         borderRadius: 12,
         marginBottom: 8,
         textAlign: 'center',
@@ -85,15 +85,15 @@ export default function ElementInspector({ onInspect, onClose }) {
             transition={{ duration: 0.15 }}
             className="wc-inspector-panel"
             style={{
-              border: '1px solid #e5e7eb',
+              border: '1px solid var(--border-color, #e5e7eb)',
               borderRadius: 10,
               padding: '12px 14px',
-              background: '#f9fafb',
+              background: 'var(--card-bg, #f9fafb)',
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
               <div style={{ fontWeight: 700, fontSize: '12px', display: 'flex', gap: 6, alignItems: 'center' }}>
-                <Info size={14} style={{ color: '#3b82f6' }} />
+                <Info size={14} style={{ color: 'var(--primary-color, #3b82f6)' }} />
                 <span>{current.label}</span>
               </div>
               <button
@@ -110,17 +110,17 @@ export default function ElementInspector({ onInspect, onClose }) {
                 <X size={22} />
               </button>
             </div>
-            <div style={{ fontSize: '11px', color: '#475569', marginBottom: 4 }}>
-              <span style={{ color: '#64748b' }}>Key:</span> <code style={{
-                background: '#e5e7eb',
+            <div style={{ fontSize: '11px', color: 'var(--text-secondary, #475569)', marginBottom: 4 }}>
+              <span style={{ color: 'var(--text-secondary-light, #64748b)' }}>Key:</span> <code style={{
+                background: 'var(--border-color, #e5e7eb)',
                 padding: '1px 6px',
                 borderRadius: 4,
                 fontSize: '10px',
               }}>{hoveredKey}</code>
             </div>
-            <div style={{ fontSize: '11px', color: '#475569', marginBottom: 8 }}>
-              <span style={{ color: '#64748b' }}>Value:</span> <code style={{
-                background: '#e5e7eb',
+            <div style={{ fontSize: '11px', color: 'var(--text-secondary, #475569)', marginBottom: 8 }}>
+              <span style={{ color: 'var(--text-secondary-light, #64748b)' }}>Value:</span> <code style={{
+                background: 'var(--border-color, #e5e7eb)',
                 padding: '1px 6px',
                 borderRadius: 4,
                 fontSize: '10px',
@@ -135,7 +135,7 @@ export default function ElementInspector({ onInspect, onClose }) {
         <div style={{
           padding: '12px',
           textAlign: 'center',
-          color: '#9ca3af',
+          color: 'var(--text-secondary-light, #9ca3af)',
           fontSize: '10px',
           fontStyle: 'italic',
         }}>
@@ -147,5 +147,5 @@ export default function ElementInspector({ onInspect, onClose }) {
 }
 
 function primaryColor() {
-  return '#3b82f6';
+  return 'var(--primary-color, #3b82f6)';
 }

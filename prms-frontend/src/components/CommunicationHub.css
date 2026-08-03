@@ -7,7 +7,7 @@
 .comm-loading {
   padding: 32px;
   text-align: center;
-  color: var(--muted, #64748b);
+  color: var(--text-secondary);
 }
 
 /* Conversation list */
@@ -35,7 +35,7 @@
 }
 
 .comm-list-item:hover {
-  background: #f1f5f9;
+  background: var(--surface-container);
 }
 
 .comm-avatar,
@@ -43,8 +43,8 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: #e0e7ff;
-  color: #6366f1;
+  background: var(--secondary-container);
+  color: var(--primary-color);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -72,12 +72,12 @@
 
 .comm-list-time {
   font-size: 0.74rem;
-  color: var(--muted, #64748b);
+  color: var(--text-secondary);
 }
 
 .comm-list-preview {
   font-size: 0.82rem;
-  color: var(--muted, #64748b);
+  color: var(--text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -90,8 +90,8 @@
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #6366f1;
-  color: #fff;
+  background: var(--primary-color);
+  color: var(--on-primary);
   font-size: 0.72rem;
   font-weight: 700;
   flex-shrink: 0;
@@ -104,7 +104,7 @@
   justify-content: center;
   gap: 8px;
   flex: 1;
-  color: var(--muted, #64748b);
+  color: var(--text-secondary);
   font-size: 0.9rem;
 }
 
@@ -124,20 +124,20 @@
   align-items: center;
   gap: 10px;
   padding: 12px 8px;
-  border-bottom: 1px solid var(--border, #e2e8f0);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .comm-back-btn {
   background: none;
   border: none;
   cursor: pointer;
-  color: var(--muted, #64748b);
+  color: var(--text-secondary);
   display: flex;
   align-items: center;
 }
 
 .comm-back-btn:hover {
-  color: var(--body, #334155);
+  color: var(--text-color);
 }
 
 .comm-thread-name {
@@ -165,15 +165,15 @@
 
 .comm-msg-mine {
   align-self: flex-end;
-  background: #6366f1;
-  color: #fff;
+  background: var(--primary-color);
+  color: var(--on-primary);
   border-bottom-right-radius: 4px;
 }
 
 .comm-msg-theirs {
   align-self: flex-start;
-  background: #f1f5f9;
-  color: var(--body, #334155);
+  background: var(--surface-container);
+  color: var(--text-color);
   border-bottom-left-radius: 4px;
 }
 
@@ -192,12 +192,12 @@
   display: flex;
   gap: 8px;
   padding: 12px 8px;
-  border-top: 1px solid var(--border, #e2e8f0);
+  border-top: 1px solid var(--border-color);
 }
 
 .comm-input {
   flex: 1;
-  border: 1px solid var(--border, #e2e8f0);
+  border: 1px solid var(--border-color);
   border-radius: 20px;
   padding: 10px 16px;
   font-size: 0.88rem;
@@ -205,7 +205,7 @@
 }
 
 .comm-input:focus {
-  border-color: #6366f1;
+  border-color: var(--primary-color);
 }
 
 .comm-send-btn {
@@ -215,13 +215,13 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: #6366f1;
-  color: #fff;
+  background: var(--primary-color);
+  color: var(--on-primary);
   border: none;
   cursor: pointer;
   flex-shrink: 0;
 }
 
 .comm-send-btn:hover {
-  background: #4f46e5;
+  background: var(--primary-fixed);
 }

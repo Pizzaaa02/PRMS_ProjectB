@@ -1,18 +1,18 @@
 .finance-dashboard {
-  padding: 8px 0;
+  padding: var(--spacing-xs) 0;
 }
 
 .finance-loading {
-  padding: 32px;
+  padding: var(--spacing-lg);
   text-align: center;
-  color: var(--muted, #64748b);
+  color: var(--text-secondary);
 }
 
 .finance-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: var(--spacing-xl);
 }
 
 .finance-header h1 {
@@ -24,36 +24,36 @@
 .finance-export-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  background: #f8fafc;
-  border: 1px solid var(--border, #e2e8f0);
-  border-radius: 8px;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: var(--surface-container);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
   font-size: 0.84rem;
-  color: var(--muted, #64748b);
+  color: var(--text-secondary);
   cursor: pointer;
 }
 
 .finance-export-btn:hover {
-  background: #e2e8f0;
+  background: var(--border-color);
 }
 
 /* Summary cards */
 .finance-cards {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 14px;
-  margin-bottom: 28px;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-xl);
 }
 
 .finance-card {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 16px;
-  background: var(--card-bg, #fff);
-  border: 1px solid var(--border, #e2e8f0);
-  border-radius: 12px;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  background: var(--surface-container-lowest);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
 }
 
 .finance-card-icon {
@@ -62,28 +62,28 @@
   justify-content: center;
   width: 40px;
   height: 40px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   flex-shrink: 0;
 }
 
 .finance-card-icon.total {
-  background: linear-gradient(135deg, #eef2ff, #e0e7ff);
-  color: #6366f1;
+  background: linear-gradient(135deg, var(--secondary-fixed), var(--secondary-container));
+  color: var(--primary-accent);
 }
 
 .finance-card-icon.pending {
-  background: #fef3c7;
-  color: #92400e;
+  background: var(--warning-state);
+  color: var(--warning-label);
 }
 
 .finance-card-icon.paid {
-  background: #dcfce7;
-  color: #166534;
+  background: var(--success-fixed);
+  color: var(--success-label);
 }
 
 .finance-card-icon.trend {
-  background: #fce7f3;
-  color: #9d174d;
+  background: var(--secondary-fixed);
+  color: var(--primary-accent);
 }
 
 .finance-card-info {
@@ -94,7 +94,7 @@
 
 .finance-card-label {
   font-size: 0.78rem;
-  color: var(--muted, #64748b);
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   font-weight: 500;
@@ -103,40 +103,40 @@
 .finance-card-value {
   font-size: 1.15rem;
   font-weight: 700;
-  color: var(--body, #334155);
+  color: var(--on-surface);
 }
 
 /* Chart section */
 .finance-chart-section {
-  margin-bottom: 28px;
-  padding: 20px;
-  background: var(--card-bg, #fff);
-  border: 1px solid var(--border, #e2e8f0);
-  border-radius: 12px;
+  margin-bottom: var(--spacing-xl);
+  padding: var(--spacing-md);
+  background: var(--surface-container-lowest);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
 }
 
 .finance-chart-section h2 {
   font-size: 1rem;
   font-weight: 600;
-  margin: 0 0 16px;
+  margin: 0 0 var(--spacing-md);
 }
 
 .finance-bars {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--spacing-sm);
 }
 
 .finance-bar-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--spacing-sm);
 }
 
 .finance-bar-label {
   min-width: 130px;
   font-size: 0.84rem;
-  color: var(--body, #334155);
+  color: var(--on-surface);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -145,15 +145,15 @@
 .finance-bar-track {
   flex: 1;
   height: 10px;
-  background: #f1f5f9;
-  border-radius: 5px;
+  background: var(--page-bg);
+  border-radius: var(--radius-xs, 5px);
   overflow: hidden;
 }
 
 .finance-bar-fill {
   height: 100%;
-  background: #6366f1;
-  border-radius: 5px;
+  background: var(--primary-accent);
+  border-radius: var(--radius-xs, 5px);
   transition: width 0.4s ease;
 }
 
@@ -162,22 +162,22 @@
   font-size: 0.84rem;
   font-weight: 600;
   text-align: right;
-  color: var(--body, #334155);
+  color: var(--on-surface);
 }
 
 /* Payment history table */
 .finance-payments-section {
-  padding: 20px;
-  background: var(--card-bg, #fff);
-  border: 1px solid var(--border, #e2e8f0);
-  border-radius: 12px;
+  padding: var(--spacing-md);
+  background: var(--surface-container-lowest);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
 }
 
 .finance-payments-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: var(--spacing-md);
 }
 
 .finance-payments-header h2 {
@@ -189,16 +189,16 @@
 .finance-filter {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--spacing-xs);
 }
 
 .finance-filter select {
-  border: 1px solid var(--border, #e2e8f0);
-  border-radius: 6px;
-  padding: 6px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xs, 6px);
+  padding: 6px var(--spacing-sm);
   font-size: 0.84rem;
-  background: #fff;
-  color: var(--body, #334155);
+  background: var(--surface-container-lowest);
+  color: var(--on-surface);
 }
 
 .finance-table-wrap {
@@ -213,46 +213,46 @@
 
 .finance-table th {
   text-align: left;
-  padding: 10px 8px;
+  padding: var(--spacing-sm) var(--spacing-xs);
   font-weight: 600;
-  color: var(--muted, #64748b);
-  border-bottom: 1px solid var(--border, #e2e8f0);
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .finance-table td {
-  padding: 10px 8px;
-  border-bottom: 1px solid #f1f5f9;
+  padding: var(--spacing-sm) var(--spacing-xs);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .finance-table tbody tr:hover {
-  background: #f8fafc;
+  background: var(--surface-container);
 }
 
 .status-badge {
   display: inline-block;
-  padding: 2px 8px;
-  border-radius: 4px;
+  padding: 2px var(--spacing-sm);
+  border-radius: var(--radius-xs, 4px);
   font-size: 0.76rem;
   font-weight: 600;
   text-transform: uppercase;
 }
 
 .status-badge.paid {
-  background: #dcfce7;
-  color: #166534;
+  background: var(--success-fixed);
+  color: var(--success-label);
 }
 
 .status-badge.pending {
-  background: #fef3c7;
-  color: #92400e;
+  background: var(--warning-state);
+  color: var(--warning-label);
 }
 
 .status-badge.overdue {
-  background: #fee2e2;
-  color: #991b1b;
+  background: var(--error-state);
+  color: var(--error-label);
 }
 
 .status-badge.cancelled {
-  background: #e5e7eb;
-  color: #374151;
+  background: var(--page-bg);
+  color: var(--on-surface);
 }

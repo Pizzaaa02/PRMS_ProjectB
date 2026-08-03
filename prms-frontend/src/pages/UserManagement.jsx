@@ -276,7 +276,7 @@ export default function UserManagement() {
       {/* Filters & search */}
       <div className="user-mgmt-toolbar">
         <div className="user-mgmt-search">
-          <Search size={16} style={{ color: '#94a3b8' }} />
+          <Search size={16} style={{ color: 'var(--text-secondary-light, #94a3b8)' }} />
           <input
             type="text"
             placeholder="Search by name or email..."
@@ -284,7 +284,7 @@ export default function UserManagement() {
             onChange={(e) => setSearch(e.target.value)}
           />
           {search && (
-            <X size={14} onClick={() => setSearch('')} style={{ cursor: 'pointer', color: '#94a3b8' }} />
+            <X size={14} onClick={() => setSearch('')} style={{ cursor: 'pointer', color: 'var(--text-secondary-light, #94a3b8)' }} />
           )}
         </div>
 
@@ -317,7 +317,7 @@ export default function UserManagement() {
           </div>
         ) : users.length === 0 ? (
           <div className="user-mgmt-empty">
-            <Users size={36} color="#cbd5e1" />
+            <Users size={36} color="var(--text-secondary-light, #cbd5e1)" />
             <p>No users found</p>
           </div>
         ) : (

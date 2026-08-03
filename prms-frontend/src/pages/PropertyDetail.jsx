@@ -55,11 +55,11 @@ function amenityIcon(name) {
  */
 function BookingStatusBadge({ status }) {
   const config = {
-    PENDING:    { text: 'Pending',    icon: Clock,  color: '#f59e0b' },
-    CONFIRMED:  { text: 'Confirmed',  icon: Check,  color: '#22c55e' },
-    CHECKED_IN: { text: 'Checked In', icon: Check,  color: '#3b82f6' },
-    CHECKED_OUT:{ text: 'Checked Out',icon: Check,  color: '#6b7280' },
-    CANCELLED:  { text: 'Cancelled',  icon: X,      color: '#ef4444' },
+    PENDING:    { text: 'Pending',    icon: Clock,  color: 'var(--status-warning, #f59e0b)' },
+    CONFIRMED:  { text: 'Confirmed',  icon: Check,  color: 'var(--status-success, #22c55e)' },
+    CHECKED_IN: { text: 'Checked In', icon: Check,  color: 'var(--primary-color, #3b82f6)' },
+    CHECKED_OUT:{ text: 'Checked Out',icon: Check,  color: 'var(--text-secondary, #6b7280)' },
+    CANCELLED:  { text: 'Cancelled',  icon: X,      color: 'var(--error-state, #ef4444)' },
   };
   const { text, icon: Ic, color } = config[status] || config.PENDING;
   return (
@@ -185,8 +185,8 @@ function PropertyDetail() {
 
   /* Format status for display */
   const statusBadges = {
-    AVAILABLE: { text: 'Available now', color: '#3C9B4D' },
-    OCCUPIED: { text: 'Currently occupied', color: '#F29F05' },
+    AVAILABLE: { text: 'Available now', color: 'var(--status-success, #3C9B4D)' },
+    OCCUPIED: { text: 'Currently occupied', color: 'var(--status-warning, #F29F05)' },
     MAINTENANCE: { text: 'Under maintenance', color: '#D8554F' },
   };
   const badge = statusBadges[property.status] || statusBadges.AVAILABLE;
@@ -257,7 +257,7 @@ function PropertyDetail() {
             className="property-heart-btn"
             onClick={() => setLiked(!liked)}
           >
-            <Heart size={20} fill={liked ? '#D82A2A' : 'none'} stroke="#D82A2A" />
+            <Heart size={20} fill={liked ? 'var(--error-state, #D82A2A)' : 'none'} stroke="var(--error-state, #D82A2A)" />
           </button>
         </div>
 

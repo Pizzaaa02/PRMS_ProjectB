@@ -373,7 +373,7 @@ export default function Customize() {
           <p className="wc-subtitle">
             Style colors, typography, layout, header, footer, homepage content, and feature toggles.
             {dirtyCount > 0 && (
-              <span className="wc-dirty-badge" style={{ marginLeft: 8, color: '#dc2626', fontWeight: 600 }}>
+              <span className="wc-dirty-badge" style={{ marginLeft: 8, color: 'var(--error-state, #dc2626)', fontWeight: 600 }}>
                 {dirtyCount} change{dirtyCount !== 1 ? 's' : ''}
               </span>
             )}
@@ -453,7 +453,7 @@ export default function Customize() {
                 >
                   <cat.icon size={16} />
                   <span>{cat.label}</span>
-                  {catDirty && <span className="wc-tab-dot" style={{ width: 6, height: 6, borderRadius: '50%', background: '#dc2626' }} />}
+                  {catDirty && <span className="wc-tab-dot" style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--error-state, #dc2626)' }} />}
                 </motion.button>
               );
             })}
@@ -486,7 +486,7 @@ export default function Customize() {
 
           {/* ---- Element-level editor (when Edit Elements is ON) ---- */}
           {editingElements && (
-            <div style={{ padding: '20px 24px', borderTop: '1px solid #e5e7eb' }}>
+            <div style={{ padding: '20px 24px', borderTop: '1px solid var(--border-color, #e5e7eb)' }}>
               <CustomizationPanel />
             </div>
           )}

@@ -7,8 +7,8 @@
 .wc-panel {
   width: 380px;
   min-width: 380px;
-  background: #fff;
-  border-right: 1px solid #e5e7eb;
+  background: var(--card-bg);
+  border-right: 1px solid var(--border-color);
   overflow-y: auto;
   border-radius: 0;
 }
@@ -29,14 +29,14 @@
 .cp-title {
   font-size: 1.125rem;
   font-weight: 700;
-  color: var(--primary-color, #8a2be2);
+  color: var(--primary-color);
   margin: 0 0 8px 0;
 }
 
 .cp-hint {
   margin: 0;
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--text-secondary);
 }
 
 /* -- Header -- */
@@ -46,7 +46,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .cp-element-info {
@@ -60,15 +60,15 @@
   font-family: 'Courier New', monospace;
   font-size: 0.8125rem;
   font-weight: 700;
-  color: var(--primary-color, #8a2be2);
-  background: rgba(138, 43, 226, 0.08);
+  color: var(--primary-color);
+  background: var(--secondary-container);
   padding: 3px 8px;
   border-radius: 6px;
 }
 
 .cp-id {
   font-size: 0.8125rem;
-  color: #6b7280;
+  color: var(--text-secondary);
 }
 
 .cp-close-btn {
@@ -88,7 +88,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #6b7280;
+  color: var(--text-secondary);
   margin: 0 0 12px 0;
 }
 
@@ -121,7 +121,7 @@
 .wc-spacing-label {
   font-size: 0.6875rem;
   font-weight: 600;
-  color: #9ca3af;
+  color: var(--text-secondary-light);
   text-align: center;
 }
 
@@ -141,7 +141,7 @@
 
 .wc-mode-toggle button {
   padding: 4px 12px;
-  border: 1px solid var(--border-color, #d1d5db);
+  border: 1px solid var(--outline-variant);
   background: transparent;
   cursor: pointer;
   border-radius: 4px;
@@ -151,13 +151,13 @@
 }
 
 .wc-mode-toggle button:hover {
-  background: #f3f4f6;
+  background: var(--surface-container);
 }
 
 .wc-mode-toggle button.active {
-  background: #6366f1;
-  color: #fff;
-  border-color: #6366f1;
+  background: var(--primary-color);
+  color: var(--on-primary);
+  border-color: var(--primary-color);
 }
 
 /* -- Scope selector radio group -- */
@@ -175,10 +175,10 @@
   gap: 6px;
   font-size: 0.8125rem;
   cursor: pointer;
-  color: #374151;
+  color: var(--text-color);
 }
 
 .wc-scope-selector input[type='radio'] {
-  accent-color: #6366f1;
+  accent-color: var(--primary-color);
   width: auto;
 }

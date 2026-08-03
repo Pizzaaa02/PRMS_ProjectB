@@ -28,7 +28,7 @@ class ErrorBoundary extends Component {
                 marginTop: 16,
                 padding: '8px 24px',
                 background: 'var(--primary-color, #8a2be2)',
-                color: '#fff',
+                color: 'var(--on-primary, #fff)',
                 border: 'none',
                 borderRadius: 8,
                 cursor: 'pointer',

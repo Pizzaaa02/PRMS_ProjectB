@@ -69,7 +69,7 @@
 
 .agent-layout-side-btn:hover {
   background: rgba(255, 255, 255, 0.08);
-  color: #e2e8f0;
+  color: var(--text-secondary-light);
 }
 
 .agent-layout-side-btn.active {
@@ -79,12 +79,12 @@
 }
 
 .agent-layout-side-btn.logout {
-  color: #ef4444;
+  color: var(--status-error);
 }
 
 .agent-layout-side-btn.logout:hover {
-  background: rgba(239, 68, 68, 0.12);
-  color: #f87171;
+  background: var(--error-container);
+  color: var(--status-error);
 }
 
 .agent-layout-side-spacer {
@@ -147,7 +147,7 @@
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: #1e293b;
+  background: var(--text-primary);
   color: white;
   font-size: 15px;
   font-weight: 900;

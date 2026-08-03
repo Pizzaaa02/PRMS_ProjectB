@@ -81,11 +81,11 @@ export default function ElementOverlay({ onInspect }) {
           position: relative;
         }
         .wc-inspectable:hover {
-          outline: 2px dashed #3b82f6 !important;
+          outline: 2px dashed var(--primary-color, #3b82f6) !important;
           outline-offset: 2px;
         }
         .wc-hover-highlight {
-          outline: 2px solid #3b82f6 !important;
+          outline: 2px solid var(--primary-color, #3b82f6) !important;
           outline-offset: 2px;
           background: rgba(59, 130, 246, 0.08) !important;
           transition: all 0.15s ease !important;
@@ -99,8 +99,8 @@ export default function ElementOverlay({ onInspect }) {
                top: cursorY,
                left: cursorX + 16,
                padding: '2px 8px',
-               background: '#3b82f6',
-               color: '#fff',
+               background: 'var(--primary-color, #3b82f6)',
+               color: 'var(--on-primary, #fff)',
                borderRadius: 4,
                fontSize: '10px',
                zIndex: 5,

@@ -94,7 +94,7 @@ export default function NotificationDropdown() {
             width: 8,
             height: 8,
             borderRadius: '50%',
-            background: unread > 0 ? '#ef4444' : 'transparent',
+            background: unread > 0 ? 'var(--error-state, #ef4444)' : 'transparent',
             position: 'absolute',
             top: -2,
             right: -2,

@@ -12,12 +12,12 @@
 .error-boundary h2 {
   font-size: 1.5rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--text-primary);
   margin: 0;
 }
 
 .error-boundary p {
-  color: #64748b;
+  color: var(--text-secondary);
   max-width: 480px;
   margin: 0;
 }
@@ -31,29 +31,29 @@
 .error-boundary-retry {
   padding: 0.6rem 1.2rem;
   border-radius: 8px;
-  border: 1px solid #e2e8f0;
-  background: #fff;
-  color: #1e293b;
+  border: 1px solid var(--outline-variant);
+  background: var(--card-bg);
+  color: var(--text-primary);
   font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .error-boundary-retry:hover {
-  background: #f1f5f9;
+  background: var(--surface-container);
 }
 
 .error-boundary-home {
   padding: 0.6rem 1.2rem;
   border-radius: 8px;
   border: none;
-  background: #8a2be2;
-  color: #fff;
+  background: var(--primary-color);
+  color: var(--on-primary);
   font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .error-boundary-home:hover {
-  background: #7a2dd6;
+  background: var(--primary-fixed);
 }

@@ -15,7 +15,7 @@
 
 .tenant-booking-modal {
   position: relative;
-  background: #fff;
+  background: var(--card-bg);
   border-radius: 16px;
   padding: 32px 28px;
   max-width: 460px;
@@ -33,15 +33,15 @@
   background: transparent;
   border: none;
   cursor: pointer;
-  color: #666;
+  color: var(--text-secondary);
   padding: 4px;
   border-radius: 6px;
   transition: color 0.15s, background 0.15s;
 }
 
 .tenant-booking-close:hover {
-  color: #1a1a1a;
-  background: #f3f4f6;
+  color: var(--text-primary);
+  background: var(--surface-container);
 }
 
 /* ---- Title ---- */
@@ -51,11 +51,11 @@
   gap: 8px;
   margin: 0 0 4px;
   font-size: 22px;
-  color: #1a1a1a;
+  color: var(--text-primary);
 }
 
 .tenant-booking-property-name {
-  color: #666;
+  color: var(--text-secondary);
   margin: 0 0 24px;
   font-size: 15px;
 }
@@ -74,12 +74,12 @@
   gap: 6px;
   font-size: 14px;
   font-weight: 500;
-  color: #333;
+  color: var(--text-secondary);
 }
 
 .tenant-booking-field input[type='date'] {
   padding: 10px 12px;
-  border: 1px solid #dcdcdc;
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   font-size: 15px;
   outline: none;
@@ -87,15 +87,15 @@
 }
 
 .tenant-booking-field input[type='date']:focus {
-  border-color: #ff5a5f;
+  border-color: var(--status-error);
 }
 
 /* ---- Check Availability button ---- */
 .tenant-booking-check-btn {
   width: 100%;
   padding: 12px;
-  background: #6366f1;
-  color: #fff;
+  background: var(--primary-color);
+  color: var(--on-primary);
   border: none;
   border-radius: 10px;
   font-size: 15px;
@@ -109,7 +109,7 @@
 }
 
 .tenant-booking-check-btn:hover:not(:disabled) {
-  background: #4f46e5;
+  background: var(--primary-fixed);
 }
 
 .tenant-booking-check-btn:disabled {
@@ -127,23 +127,23 @@
 
 /* Red overlap warning */
 .tenant-booking-availability--overlap {
-  background: #fef2f2;
-  border-color: #fecaca;
-  color: #1a1a1a;
+  background: var(--error-container);
+  border-color: var(--error-state-border);
+  color: var(--text-primary);
 }
 
 /* Green available */
 .tenant-booking-availability--ok {
-  background: #f0fdf4;
-  border-color: #bbf7d0;
-  color: #1a1a1a;
+  background: var(--success-state-background);
+  border-color: var(--success-state-border);
+  color: var(--text-primary);
 }
 
 /* Error */
 .tenant-booking-availability--error {
-  background: #fef2f2;
-  border-color: #fecaca;
-  color: #dc2626;
+  background: var(--error-container);
+  border-color: var(--error-state-border);
+  color: var(--status-error);
 }
 
 .tenant-booking-availability--error > div {
@@ -164,11 +164,11 @@
   width: 100%;
   margin: 8px 0 0;
   font-size: 14px;
-  color: #4b5563;
+  color: var(--text-secondary);
 }
 
 .tenant-booking-availability-content strong {
-  color: #1a1a1a;
+  color: var(--text-primary);
   font-size: 15px;
 }
 
@@ -187,29 +187,29 @@
   gap: 8px;
   padding: 8px 12px;
   margin-bottom: 4px;
-  background: #fff;
-  border: 1px solid #fca5a5;
+  background: var(--card-bg);
+  border: 1px solid var(--error-state-border);
   border-radius: 8px;
   font-size: 13px;
 }
 
 .tenant-booking-conflict-range {
   font-weight: 600;
-  color: #dc2626;
+  color: var(--status-error);
 }
 
 .tenant-booking-conflict-tenant {
-  color: #6b7280;
+  color: var(--text-secondary);
 }
 
 .tenant-booking-conflict-status {
   margin-left: auto;
   padding: 2px 8px;
   border-radius: 4px;
-  background: #f3f4f6;
+  background: var(--surface-container);
   font-size: 12px;
   font-weight: 500;
-  color: #374151;
+  color: var(--text-color);
   text-transform: uppercase;
 }
 
@@ -218,8 +218,8 @@
   width: 100%;
   margin-top: 14px;
   padding: 12px;
-  background: #22c55e;
-  color: #fff;
+  background: var(--status-success);
+  color: var(--on-success);
   border: none;
   border-radius: 10px;
   font-size: 15px;
@@ -233,7 +233,7 @@
 }
 
 .tenant-booking-confirm-btn:hover:not(:disabled) {
-  background: #16a34a;
+  background: var(--success-state);
 }
 
 .tenant-booking-confirm-btn:disabled {
@@ -250,20 +250,20 @@
 .tenant-booking-result h2 {
   margin: 12px 0 4px;
   font-size: 20px;
-  color: #1a1a1a;
+  color: var(--text-primary);
 }
 
 .tenant-booking-result p {
-  color: #666;
+  color: var(--text-secondary);
   font-size: 14px;
 }
 
 .tenant-booking-success-icon {
-  color: #22c55e;
+  color: var(--status-success);
 }
 
 .tenant-booking-error-icon {
-  color: #ef4444;
+  color: var(--status-error);
 }
 
 /* ---- Spinner (shared) ---- */

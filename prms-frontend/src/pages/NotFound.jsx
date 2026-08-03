@@ -9,15 +9,15 @@ function NotFound() {
       alignItems: 'center',
       justifyContent: 'center',
       minHeight: '100vh',
-      backgroundColor: '#faf9f7',
+      backgroundColor: 'var(--page-bg)',
       textAlign: 'center',
       padding: '2rem',
     }}>
-      <h1 style={{ fontSize: '6rem', fontWeight: 800, color: '#7c5cfc', margin: 0 }}>404</h1>
-      <h2 style={{ fontSize: '1.5rem', color: '#1e1b2e', margin: '1rem 0 0.5rem' }}>
+      <h1 style={{ fontSize: '6rem', fontWeight: 800, color: 'var(--primary-color)', margin: 0 }}>404</h1>
+      <h2 style={{ fontSize: '1.5rem', color: 'var(--text-primary)', margin: '1rem 0 0.5rem' }}>
         Page Not Found
       </h2>
-      <p style={{ color: '#7e7a8b', margin: '0 0 2rem', maxWidth: 400 }}>
+      <p style={{ color: 'var(--text-secondary)', margin: '0 0 2rem', maxWidth: 400 }}>
         The page you are looking for does not exist or has been moved.
       </p>
       <Link
@@ -27,7 +27,7 @@ function NotFound() {
           alignItems: 'center',
           gap: 8,
           padding: '0.75rem 1.5rem',
-          backgroundColor: '#7c5cfc',
+          backgroundColor: 'var(--primary-color)',
           color: '#fff',
           borderRadius: 12,
           textDecoration: 'none',

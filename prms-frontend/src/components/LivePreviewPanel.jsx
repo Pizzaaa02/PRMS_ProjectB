@@ -105,12 +105,12 @@ export default function LivePreviewPanel({ onElementClick }) {
 
       {/* Search Bar */}
       {showSearchBar && (
-        <div style={{ padding: '12px 16px', background: '#fff', display: 'flex', gap: 8, alignItems: 'center', borderBottom: '1px solid #e5e7eb' }}>
+        <div style={{ padding: '12px 16px', background: 'var(--card-bg, #fff)', display: 'flex', gap: 8, alignItems: 'center', borderBottom: '1px solid var(--border-color, #e5e7eb)' }}>
           <input placeholder="Search properties..." style={{
-            flex: 1, padding: '6px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '11px', outline: 'none'
+            flex: 1, padding: '6px 10px', border: '1px solid var(--border-color, #d1d5db)', borderRadius: 6, fontSize: '11px', outline: 'none'
           }} readOnly />
           <button style={{
-            padding: '6px 12px', background: primary, color: '#fff', border: 'none', borderRadius: 6, fontSize: '10px'
+            padding: '6px 12px', background: primary, color: 'var(--on-primary, #fff)', border: 'none', borderRadius: 6, fontSize: '10px'
           }}>Search</button>
         </div>
       )}
@@ -122,12 +122,12 @@ export default function LivePreviewPanel({ onElementClick }) {
           <div style={{ display: 'flex', gap: 8, overflow: 'hidden' }}>
             {[1, 2, 3].map((i) => (
               <div key={i} style={{
-                flex: '1', minWidth: 0, borderRadius: 8, overflow: 'hidden', border: '1px solid #e5e7eb'
+                flex: '1', minWidth: 0, borderRadius: 8, overflow: 'hidden', border: '1px solid var(--border-color, #e5e7eb)'
               }}>
                 <div style={{ height: 40, background: `linear-gradient(135deg, ${primary}33, ${secondary}33)`, width: '100%' }} />
                 <div style={{ padding: '4px 6px' }}>
                   <div style={{ fontSize: '9px', fontWeight: 600, color: textColor }}>Property {i}</div>
-                  <div style={{ fontSize: '8px', color: '#6b7280' }}>RM 2,400/mo</div>
+                  <div style={{ fontSize: '8px', color: 'var(--text-secondary, #6b7280)' }}>RM 2,400/mo</div>
                 </div>
               </div>
             ))}
@@ -137,7 +137,7 @@ export default function LivePreviewPanel({ onElementClick }) {
 
       {/* Features Highlights */}
       {showFeatures && (
-        <div style={{ padding: '12px 16px', background: '#fff' }}>
+        <div style={{ padding: '12px 16px', background: 'var(--card-bg, #fff)' }}>
           <div style={{ fontSize: '11px', fontWeight: 700, color: textColor, marginBottom: 8, textAlign: 'center' }}>Platform Features</div>
           <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
             {['Payments', 'Maintenance', 'Messaging'].map((f) => (
@@ -154,7 +154,7 @@ export default function LivePreviewPanel({ onElementClick }) {
         <div style={{ padding: '12px 16px' }}>
           <div style={{ fontSize: '11px', fontWeight: 700, color: textColor, marginBottom: 6 }}>What Our Tenants Say</div>
           <div style={{
-            padding: 8, background: '#fff', borderRadius: 8, borderLeft: `3px solid ${primary}`, fontSize: '9px', color: '#4b5563', fontStyle: 'italic'
+            padding: 8, background: 'var(--card-bg, #fff)', borderRadius: 8, borderLeft: `3px solid ${primary}`, fontSize: '9px', color: 'var(--text-secondary, #4b5563)', fontStyle: 'italic'
           }}>
             &ldquo;Great platform for managing my rental property. Highly recommended!&rdquo;
           </div>
@@ -164,12 +164,12 @@ export default function LivePreviewPanel({ onElementClick }) {
       {/* CTA Section */}
       {showCta && (
         <div style={{
-          padding: '12px 16px', background: primary, color: '#fff', textAlign: 'center',
+          padding: '12px 16px', background: primary, color: 'var(--on-primary, #fff)', textAlign: 'center',
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6
         }}>
           <div style={{ fontSize: '11px', fontWeight: 700 }}>Ready to Get Started?</div>
           <button style={{
-            padding: '4px 12px', background: '#fff', color: primary, border: 'none', borderRadius: 6, fontSize: '9px', fontWeight: 600
+            padding: '4px 12px', background: 'var(--card-bg, #fff)', color: primary, border: 'none', borderRadius: 6, fontSize: '9px', fontWeight: 600
           }}>Contact Us</button>
         </div>
       )}

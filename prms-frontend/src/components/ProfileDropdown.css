@@ -19,7 +19,7 @@
 }
 
 .profile-dropdown-toggle:hover {
-  background: #f1f5f9;
+  background: var(--surface-container);
 }
 
 .profile-dropdown-info {
@@ -32,12 +32,12 @@
 .profile-dropdown-name {
   font-size: 13px;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--text-primary);
 }
 
 .profile-dropdown-role {
   font-size: 11px;
-  color: #64748b;
+  color: var(--text-secondary);
 }
 
 .profile-dropdown-avatar-box {
@@ -48,8 +48,8 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: #e2e8f0;
-  color: #64748b;
+  background: var(--outline-variant);
+  color: var(--text-secondary);
   font-size: 13px;
   font-weight: 700;
   flex-shrink: 0;
@@ -59,7 +59,7 @@
   position: absolute;
   bottom: -6px;
   right: -4px;
-  color: #94a3b8;
+  color: var(--text-secondary-light);
 }
 
 /* Dropdown menu */
@@ -68,8 +68,8 @@
   top: calc(100% + 6px);
   right: 0;
   min-width: 180px;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  background: var(--card-bg);
+  border: 1px solid var(--outline-variant);
   border-radius: 12px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
   padding: 6px;
@@ -85,7 +85,7 @@
   padding: 8px 12px;
   border: none;
   background: none;
-  color: #334155;
+  color: var(--text-color);
   font-size: 13px;
   font-weight: 500;
   border-radius: 8px;
@@ -95,20 +95,20 @@
 }
 
 .profile-dropdown-item:hover {
-  background: #f8fafc;
-  color: #1e293b;
+  background: var(--surface-container);
+  color: var(--text-primary);
 }
 
 .profile-dropdown-item.logout-item {
-  color: #dc2626;
+  color: var(--status-error);
 }
 
 .profile-dropdown-item.logout-item:hover {
-  background: #fef2f2;
+  background: var(--error-container);
 }
 
 .profile-dropdown-divider {
   height: 1px;
-  background: #e2e8f0;
+  background: var(--outline-variant);
   margin: 4px 8px;
 }

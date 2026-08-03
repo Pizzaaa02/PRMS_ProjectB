@@ -1,41 +1,61 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import { ROUTES } from '../config/routes';
-import './AgentDashboard.css';
+import { useEffect, useState } from 'react'
+import { useAuth } from '../contexts/AuthContext'
+import { useNavigate } from 'react-router-dom'
+import { ROUTES } from '../config/routes'
+import {
+  ArrowUp,
+  CalendarDays,
+  CheckCircle2,
+  Clock,
+  Download,
+  Home,
+  Loader,
+  Minus,
+  Search,
+  SlidersHorizontal,
+  Star,
+  Target,
+  TrendingUp,
+  Wrench,
+} from 'lucide-react'
+import './AgentDashboard.css'
 
-const AgentDashboard = () => {
-  const { user, loading } = useAuth();
-  const navigate = useNavigate();
-  const [assignedProperties, setAssignedProperties] = useState([]);
-  const [bookings, setBookings] = useState([]);
-  const [maintenanceRequests, setMaintenanceRequests] = useState([]);
+function AgentDashboard() {
+  const { user, loading: authLoading } = useAuth()
+  const navigate = useNavigate()
+  const [loading, setLoading] = useState(true)
+  const [assignedProperties, setAssignedProperties] = useState([])
+  const [bookings, setBookings] = useState([])
+  const [maintenanceRequests, setMaintenanceRequests] = useState([])
 
   useEffect(() => {
     if (!user) {
-      navigate('/login');
-      return;
+      navigate('/login')
+      return
     }
+    localStorage.setItem('prmsDashboardPath', '/agent')
 
-    // Simulate fetching agent data
     const fetchData = async () => {
-      // This would be replaced with actual API calls
       setAssignedProperties([
         {
           id: '1',
           title: 'Modern Apartment',
           address: '123 Main St, City',
           rent: 1200,
-          status: 'AVAILABLE'
+          status: 'AVAILABLE',
+          image:
+            'https://images.unsplash.com/photo-1560448204-e02f11c3d0fd?q=80&w=1200&auto=format&fit=crop',
         },
         {
           id: '2',
           title: 'Luxury Condo',
           address: '456 Park Ave, City',
           rent: 2500,
-          status: 'RENTED'
-        }
-      ]);
+          status: 'RENTED',
+          image:
+            'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=1200&auto=format&fit=crop',
+        },
+      ])
 
       setBookings([
         {
@@ -44,9 +64,9 @@ const AgentDashboard = () => {
           tenant: 'John Doe',
           startDate: '2023-06-01',
           endDate: '2023-08-31',
-          status: 'CONFIRMED'
-        }
-      ]);
+          status: 'CONFIRMED',
+        },
+      ])
 
       setMaintenanceRequests([
         {
@@ -55,98 +75,292 @@ const AgentDashboard = () => {
           title: 'Kitchen Faucet Repair',
           priority: 'HIGH',
           status: 'OPEN',
-          createdDate: '2023-06-10'
-        }
-      ]);
-    };
+          createdDate: '2023-06-10',
+        },
+      ])
 
-    fetchData();
-  }, [user, navigate]);
+      setLoading(false)
+    }
 
-  if (loading) {
-    return <div className="loading">Loading dashboard...</div>;
+    fetchData()
+  }, [user, navigate])
+
+  if (authLoading || loading) {
+    return (
+      <div className="agent-dashboard-skeleton">
+        {[1, 2, 3, 4].map((n) => (
+          <div key={n} className="kpi-card kpi-skeleton">
+            <div className="skeleton-line skeleton-sm" />
+            <div className="skeleton-line skeleton-lg" />
+            <div className="skeleton-line skeleton-xs" />
+          </div>
+        ))}
+      </div>
+    )
   }
 
   if (!user) {
-    return <div className="error">Please log in to view dashboard</div>;
+    return null
+  }
+
+  /* ---- KPI Card helper ---- */
+  function KpiCard({ icon: Icon, iconBg, label, value, sublabel, trend, trendDir }) {
+    const TrendIcon =
+      trendDir === 'up' ? (
+        <ArrowUp size={14} className="text-status-success" />
+      ) : (
+        <Minus size={14} className="text-text-secondary" />
+      )
+
+    return (
+      <div className="kpi-card">
+        <div className="kpi-card-top">
+          <div className={`kpi-icon-wrap ${iconBg}`}>
+            <Icon size={20} />
+          </div>
+          {trend && (
+            <span className={`trend-pill ${trendDir === 'up' ? 'positive' : 'neutral'}`}>
+              {TrendIcon}
+              {trend}
+            </span>
+          )}
+        </div>
+        <div className="kpi-card-body">
+          <span className="kpi-label">{label}</span>
+          <div className="kpi-value">{value}</div>
+          {sublabel && <span className="kpi-sublabel">{sublabel}</span>}
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="agent-dashboard">
-      <header className="dashboard-header">
-        <h1>Agent Dashboard</h1>
-        <p>Welcome back, {user.full_name}</p>
-      </header>
-
-      <div className="dashboard-content">
-        <div className="dashboard-stats">
-          <div className="stat-card">
-            <h3>Assigned Properties</h3>
-            <p>{assignedProperties.length}</p>
-          </div>
-          <div className="stat-card">
-            <h3>Pending Bookings</h3>
-            <p>{bookings.filter(b => b.status === 'CONFIRMED').length}</p>
-          </div>
-          <div className="stat-card">
-            <h3>Pending Maintenance</h3>
-            <p>{maintenanceRequests.filter(m => m.status === 'OPEN').length}</p>
-          </div>
+    <div className="agent-dashboard-page">
+      {/* ---- Hero ---- */}
+      <div className="landlord-page-title-row">
+        <div>
+          <h1>
+            <span className="material-symbols-outlined brand-icon">person_apARTment</span>
+            Agent Dashboard
+          </h1>
+          <p>Welcome back, {user.full_name} — here&apos;s your portfolio overview.</p>
         </div>
 
-        <div className="dashboard-section">
-          <h2>Assigned Properties</h2>
-          <div className="properties-grid">
-            {assignedProperties.map(property => (
-              <div key={property.id} className="property-card">
-                <h3>{property.title}</h3>
-                <p>{property.address}</p>
-                <p>Rent: ${property.rent}/month</p>
-                <p>Status: <span className={`status ${property.status.toLowerCase()}`}>{property.status}</span></p>
-                <button onClick={() => navigate(ROUTES.agent.properties)}>
-                  View Details
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="dashboard-section">
-          <h2>Pending Bookings</h2>
-          <div className="bookings-list">
-            {bookings.map(booking => (
-              <div key={booking.id} className="booking-item">
-                <h4>{booking.propertyTitle}</h4>
-                <p>Tenant: {booking.tenant}</p>
-                <p>Period: {booking.startDate} to {booking.endDate}</p>
-                <p>Status: <span className={`status ${booking.status.toLowerCase()}`}>{booking.status}</span></p>
-                <button onClick={() => navigate(ROUTES.agent.bookings)}>
-                  View Details
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="dashboard-section">
-          <h2>Maintenance Requests</h2>
-          <div className="maintenance-list">
-            {maintenanceRequests.map(request => (
-              <div key={request.id} className="maintenance-item">
-                <h4>{request.title}</h4>
-                <p>Property: {request.propertyTitle}</p>
-                <p>Priority: <span className={`priority ${request.priority.toLowerCase()}`}>{request.priority}</span></p>
-                <p>Status: <span className={`status ${request.status.toLowerCase()}`}>{request.status}</span></p>
-                <button onClick={() => navigate(ROUTES.agent.maintenance)}>
-                  View Details
-                </button>
-              </div>
-            ))}
-          </div>
+        <div className="landlord-page-actions">
+          <button type="button" className="btn-outline">
+            <SlidersHorizontal size={18} />
+            Filter
+          </button>
+          <button type="button" className="btn-primary-solid">
+            <Download size={18} />
+            Export
+          </button>
         </div>
       </div>
-    </div>
-  );
-};
 
-export default AgentDashboard;
+      {/* ---- KPI Cards ---- */}
+      <section className="kpi-card-grid">
+        {/* Assigned Properties */}
+        <KpiCard
+          icon={Home}
+          iconBg="icon-blue"
+          label="Assigned Properties"
+          value={String(assignedProperties.length)}
+          sublabel="Under management"
+          trend={`${assignedProperties.filter((p) => p.status === 'RENTED').length} rented`}
+          trendDir="up"
+        />
+
+        {/* Active Bookings */}
+        <KpiCard
+          icon={CalendarDays}
+          iconBg="icon-purple"
+          label="Active Bookings"
+          value={String(bookings.length)}
+          sublabel="Confirmed leases"
+          trend="All active"
+          trendDir="up"
+        />
+
+        {/* Maintenance */}
+        <KpiCard
+          icon={Wrench}
+          iconBg="icon-rose"
+          label="Open Maintenance"
+          value={String(maintenanceRequests.filter((m) => m.status === 'OPEN').length)}
+          sublabel="Awaiting attention"
+          trend="Urgent"
+          trendDir="neutral"
+        />
+
+        {/* Revenue Estimate */}
+        <KpiCard
+          icon={TrendingUp}
+          iconBg="icon-emerald"
+          label="Monthly Revenue"
+          value={`RM ${assignedProperties.reduce((s, p) => s + p.rent, 0).toLocaleString()}`}
+          sublabel="Estimated from active leases"
+          trend="+8%"
+          trendDir="up"
+        />
+      </section>
+
+      {/* ---- Properties panel ---- */}
+      <section className="panel-card">
+        <div className="panel-title">
+          <div>
+            <h3 className="panel-title-text">Assigned Properties</h3>
+            <p className="panel-subtitle">Properties under your management</p>
+          </div>
+          <button
+            type="button"
+            className="btn-outline-sm"
+            onClick={() => navigate(ROUTES.agent.properties)}
+          >
+            View All
+          </button>
+        </div>
+
+        <div className="agent-properties-grid">
+          {assignedProperties.map((prop) => (
+            <div className="agent-property-card" key={prop.id}>
+              <div className="agent-property-img">
+                <img src={prop.image} alt={prop.title} />
+              </div>
+              <div className="agent-property-info">
+                <div className="agent-property-top">
+                  <h4>{prop.title}</h4>
+                  <span
+                    className={`agent-status ${
+                      prop.status === 'AVAILABLE' ? 'agent-status--available' : 'agent-status--rented'
+                    }`}
+                  >
+                    {prop.status === 'AVAILABLE' ? (
+                      <Star size={10} fill="currentColor" />
+                    ) : (
+                      <Home size={10} />
+                    )}
+                    {prop.status}
+                  </span>
+                </div>
+                <p className="agent-location">{prop.address}</p>
+                <div className="agent-rent-row">
+                  <span className="agent-rent-label">Rent</span>
+                  <strong>RM {prop.rent.toLocaleString()}/mo</strong>
+                </div>
+                <button
+                  type="button"
+                  className="btn-outline-sm"
+                  onClick={() => navigate(ROUTES.agent.properties)}
+                >
+                  View Details
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ---- Bookings + Maintenance grid ---- */}
+      <section className="dashboard-main-grid">
+        {/* Bookings */}
+        <div className="panel-card">
+          <div className="panel-title">
+            <div>
+              <h3 className="panel-title-text">Bookings</h3>
+              <p className="panel-subtitle">
+                Confirmed and pending lease agreements
+              </p>
+            </div>
+            <button
+              type="button"
+              className="btn-outline-sm"
+              onClick={() => navigate(ROUTES.agent.bookings)}
+            >
+              See All
+            </button>
+          </div>
+
+          <div className="agent-bookings-list">
+            {bookings.map((booking) => (
+              <div className="agent-booking-item" key={booking.id}>
+                <div className="agent-booking-icon">
+                  <CalendarDays size={20} />
+                </div>
+                <div className="agent-booking-info">
+                  <h4>{booking.propertyTitle}</h4>
+                  <p>Tenant: {booking.tenant}</p>
+                  <p>
+                    {booking.startDate} → {booking.endDate}
+                  </p>
+                </div>
+                <span className="agent-status-badge agent-status--confirmed">
+                  <CheckCircle2 size={12} />
+                  {booking.status}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Maintenance */}
+        <div className="panel-card">
+          <div className="panel-title">
+            <div>
+              <h3 className="panel-title-text">Maintenance Requests</h3>
+              <p className="panel-subtitle">Open work orders and repair tickets</p>
+            </div>
+            <button
+              type="button"
+              className="btn-primary-sm"
+              onClick={() => navigate(ROUTES.agent.maintenance)}
+            >
+              <Wrench size={16} />
+              New Request
+            </button>
+          </div>
+
+          <div className="agent-maintenance-list">
+            {maintenanceRequests.map((req) => (
+              <div className="agent-maintenance-item" key={req.id}>
+                <div className={`agent-maint-icon ${req.priority === 'HIGH' ? 'urgent' : 'soft'}`}>
+                  <Wrench size={20} />
+                </div>
+                <div className="agent-maintenance-info">
+                  <h4>{req.title}</h4>
+                  <p>Property: {req.propertyTitle}</p>
+                  <p>Filed: {req.createdDate}</p>
+                </div>
+                <div className="agent-maintenance-badges">
+                  <span
+                    className={`agent-priority-badge ${
+                      req.priority === 'HIGH'
+                        ? 'agent-priority--high'
+                        : req.priority === 'MEDIUM'
+                        ? 'agent-priority--medium'
+                        : 'agent-priority--low'
+                    }`}
+                  >
+                    {req.priority}
+                  </span>
+                  <span
+                    className={`agent-status-badge ${
+                      req.status === 'OPEN'
+                        ? 'agent-status--error'
+                        : 'agent-status--active'
+                    }`}
+                  >
+                    <Clock size={12} />
+                    {req.status}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    </div>
+  )
+}
+
+export default AgentDashboard

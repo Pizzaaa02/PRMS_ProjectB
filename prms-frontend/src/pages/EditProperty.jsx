@@ -201,7 +201,7 @@ export default function EditProperty() {
     return (
       <div style={{ minHeight: '80vh', display: 'grid', placeItems: 'center' }}>
         <Loader2 className="spin-icon" size={36} />
-        <p style={{ marginTop: 12, color: '#6b7280' }}>Loading property...</p>
+        <p style={{ marginTop: 12, color: 'var(--text-secondary, #6b7280)' }}>Loading property...</p>
       </div>
     )
   }
