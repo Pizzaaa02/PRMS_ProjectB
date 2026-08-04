@@ -1,522 +1,493 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Undo, Redo, RotateCcw, Save, Share2, Wand2,
+  Sun, Moon, Eye, EyeOff, Search, Plus,
+  Edit3, ChevronDown, ChevronUp, Download, Upload,
+  Trash2
+} from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 import { useCustomization } from '../contexts/CustomizationContext';
-import CustomizationPanel from '../components/CustomizationPanel';
-import useElementPicker from '../hooks/useElementPicker';
-import {
-  Palette, Building2, Type, LayoutTemplate,
-  Palette as ThemeIcon, Globe, ToggleLeft, CheckCircle2,
-  Save, RotateCcw, Sun, Moon, Pencil, PencilOff,
-  Undo, Redo, Trash2
-} from 'lucide-react';
+import { adminApi } from '../api/admin';
+import PageTree from '../components/WebsiteCustomizerV2/PageTree';
+import PropertiesPanel from '../components/WebsiteCustomizerV2/PropertiesPanel';
+import PreviewToolbar from '../components/WebsiteCustomizerV2/PreviewToolbar';
+import LivePreviewPanel from '../components/LivePreviewPanel';
+import VersionHistory from '../components/VersionHistory';
+import ThemeTemplates from '../components/ThemeTemplates';
 import './WebsiteCustomizer.css';
 
-/* ------------------------------------------------------------------ */
-/*  Tab definitions                                                    */
-/* ------------------------------------------------------------------ */
-
-const TABS = [
-  { id: 'theme',      label: 'Theme',       icon: Palette },
-  { id: 'branding',   label: 'Branding',    icon: Building2 },
-  { id: 'header',     label: 'Header',      icon: LayoutTemplate },
-  { id: 'footer',     label: 'Footer',      icon: Type },
-  { id: 'homepage',   label: 'Homepage',    icon: Globe },
-  { id: 'features',   label: 'Features',    icon: ToggleLeft },
-];
-
-/* ------------------------------------------------------------------ */
-/*  Field definitions per category                                     */
-/* ------------------------------------------------------------------ */
-
-const FIELDS = {
-  theme: [
-    { key: 'theme_primary_color',       label: 'Primary Colour',     type: 'color' },
-    { key: 'theme_secondary_color',     label: 'Secondary Colour',   type: 'color' },
-    { key: 'theme_accent_color',        label: 'Accent Colour',      type: 'color' },
-    { key: 'theme_background_color',    label: 'Background Colour',  type: 'color' },
-    { key: 'theme_text_color',          label: 'Text Colour',        type: 'color' },
-    { key: 'theme_font_family',         label: 'Font Family',        type: 'select',
-      options: [
-        { value: 'Inter, Arial, sans-serif',        label: 'Inter (Default)' },
-        { value: 'Segoe UI, Tahoma, Geneva, Verdana, sans-serif', label: 'Segoe UI' },
-        { value: 'Poppins, sans-serif',              label: 'Poppins' },
-        { value: 'Roboto, sans-serif',               label: 'Roboto' },
-        { value: 'Open Sans, sans-serif',            label: 'Open Sans' },
-        { value: 'Lato, sans-serif',                 label: 'Lato' },
-        { value: 'Montserrat, sans-serif',           label: 'Montserrat' },
-        { value: 'Raleway, sans-serif',              label: 'Raleway' },
-        { value: 'Nunito, sans-serif',               label: 'Nunito' },
-        { value: "Courier New, Courier, monospace", label: 'Courier New' },
-      ]},
-    { key: 'theme_border_radius',    label: 'Border Radius',    type: 'select',
-      options: [
-        { value: '0px',     label: 'Sharp (0px)' },
-        { value: '4px',     label: 'Small (4px)' },
-        { value: '8px',     label: 'Medium (8px)' },
-        { value: '10px',    label: 'Default (10px)' },
-        { value: '12px',    label: 'Large (12px)' },
-        { value: '16px',    label: 'X-Large (16px)' },
-        { value: '999px',   label: 'Full Round (999px)' },
-      ]},
-  ],
-
-  branding: [
-    { key: 'branding_site_name',      label: 'Site Name',          type: 'text', placeholder: 'PRMS' },
-    { key: 'branding_company_name',   label: 'Company Name',       type: 'text', placeholder: 'Your Company Sdn Bhd' },
-    { key: 'branding_logo_url',       label: 'Logo Image URL',     type: 'text', placeholder: 'https://example.com/logo.png' },
-    { key: 'branding_favicon_url',    label: 'Favicon URL',        type: 'text', placeholder: 'https://example.com/favicon.ico' },
-    { key: 'branding_footer_text',    label: 'Footer Text',        type: 'text', placeholder: 'Text for the footer' },
-    { key: 'branding_support_email',  label: 'Support Email',      type: 'email', placeholder: 'support@yourcompany.com' },
-    { key: 'branding_support_phone',  label: 'Support Phone',      type: 'tel', placeholder: '+60 12-345 6789' },
-  ],
-
-  header: [
-    { key: 'header_background_color',   label: 'Background Colour', type: 'color' },
-    { key: 'header_text_color',         label: 'Text Colour',       type: 'color' },
-    { key: 'header_alignment',          label: 'Alignment',         type: 'select',
-      options: [
-        { value: 'left',   label: 'Left' },
-        { value: 'center', label: 'Centre' },
-        { value: 'right',  label: 'Right' },
-      ]},
-    { key: 'header_show_logo',          label: 'Show Logo',         type: 'toggle' },
-    { key: 'header_show_search',        label: 'Show Search Bar',   type: 'toggle' },
-    { key: 'header_show_notifications', label: 'Show Notifications', type: 'toggle' },
-    { key: 'header_cta_button_text',    label: 'CTA Button Text',   type: 'text', placeholder: 'Get Started' },
-    { key: 'header_cta_button_color',   label: 'CTA Button Colour', type: 'color' },
-  ],
-
-  footer: [
-    { key: 'footer_background_color', label: 'Background Colour',  type: 'color' },
-    { key: 'footer_text_color',       label: 'Text Colour',        type: 'color' },
-    { key: 'footer_company_address',  label: 'Company Address',    type: 'text', placeholder: 'No. 1, Jalan Utama, Kuala Lumpur' },
-    { key: 'footer_company_phone',    label: 'Company Phone',      type: 'tel', placeholder: '+60 12-345 6789' },
-    { key: 'footer_company_email',    label: 'Company Email',      type: 'email', placeholder: 'info@yourcompany.com' },
-    { key: 'footer_copyright_text',   label: 'Copyright Text',     type: 'text', placeholder: '2026 Your Company. All rights reserved.' },
-  ],
-
-  homepage: [
-    { key: 'homepage_hero_title',          label: 'Hero Title',            type: 'text', placeholder: 'Find Your Perfect Rental Property' },
-    { key: 'homepage_hero_subtitle',       label: 'Hero Subtitle',         type: 'textarea', placeholder: 'Discover top-quality rental properties...' },
-    { key: 'homepage_hero_image',          label: 'Hero Background Image', type: 'text', placeholder: 'https://example.com/hero.jpg' },
-    { key: 'homepage_hero_button_text',    label: 'Hero Button Text',      type: 'text', placeholder: 'Browse Properties' },
-    { key: 'homepage_hero_button_link',    label: 'Hero Button Link',      type: 'text', placeholder: '/properties' },
-    { key: 'homepage_hero_text_alignment', label: 'Hero Text Alignment',   type: 'select',
-      options: [
-        { value: 'left',   label: 'Left' },
-        { value: 'center', label: 'Centre' },
-        { value: 'right',  label: 'Right' },
-      ]},
-    { key: 'homepage_hero_background_color', label: 'Hero Background Colour', type: 'color' },
-    { key: 'homepage_about_title',       label: 'About Section Title',   type: 'text', placeholder: 'About Us' },
-    { key: 'homepage_about_description', label: 'About Section Text',    type: 'textarea', placeholder: 'We are dedicated to...' },
-    { key: 'homepage_about_image',       label: 'About Section Image',   type: 'text', placeholder: 'https://example.com/about.jpg' },
-    { key: 'homepage_about_alignment',   label: 'About Alignment',       type: 'select',
-      options: [
-        { value: 'left',   label: 'Left' },
-        { value: 'center', label: 'Centre' },
-        { value: 'right',  label: 'Right' },
-      ]},
-  ],
-
-  features: [
-    { key: 'feature_payments',        label: 'Payments Module',        type: 'toggle', help: 'Allow property rental payments' },
-    { key: 'feature_maintenance',     label: 'Maintenance Module',     type: 'toggle', help: 'Maintenance ticket requests' },
-    { key: 'feature_messaging',       label: 'Messaging Module',       type: 'toggle', help: 'In-app messaging between users' },
-    { key: 'feature_notifications',   label: 'Notifications Module',   type: 'toggle', help: 'Push and in-app notifications' },
-    { key: 'feature_analytics',       label: 'Analytics Module',       type: 'toggle', help: 'Dashboard analytics and reports' },
-    { key: 'feature_recommendations', label: 'Recommendations Module', type: 'toggle', help: 'AI-based property recommendations' },
-    { key: 'feature_maps',            label: 'Maps Integration',       type: 'toggle', help: 'Interactive property location maps' },
-  ],
+/* Element -> properties mapping so clicking a tree node populates the right panel */
+const ELEMENT_PROPERTIES_MAP = {
+  hero: { text: 'Hero Section', visibility: true, lock: false, color: '', bg_color: '#8a2be2', font_size: 24, font_weight: '600', alignment: 'left', opacity: 100 },
+  hero_title: { text: 'Find Your Perfect Rental Property', visibility: true, lock: false, color: '#ffffff', font_size: 42, font_weight: '700', alignment: 'left', opacity: 100 },
+  hero_subtitle: { text: 'Discover top-quality rental properties tailored to your lifestyle and budget', visibility: true, lock: false, color: '#e2e8f0', font_size: 18, font_weight: '400', alignment: 'left', opacity: 100 },
+  hero_cta: { button_text: 'Browse Properties', button_link: '/properties', visibility: true, lock: false, color: '#ffffff', bg_color: '#8a2be2', font_size: 16, font_weight: '600', alignment: 'center', border_radius: 8, opacity: 100 },
+  hero_image: { image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab', alt_text: 'Modern building', visibility: true, lock: false, width: 100, height: 0, opacity: 100 },
+  hero_background: { bg_color: '#0f172a', visibility: true, lock: false, opacity: 100 },
+  search_bar: { visibility: true, lock: false, bg_color: '#ffffff', padding: 16, margin: 0, border_radius: 10, opacity: 100 },
+  search_placeholder: { text: 'Search by location, property type...', visibility: true, lock: false, color: '#64748b', font_size: 14, font_weight: '400', opacity: 100 },
+  search_button: { button_text: 'Search', button_link: '#', visibility: true, lock: false, color: '#ffffff', bg_color: '#8a2be2', font_size: 14, font_weight: '500', border_radius: 6, opacity: 100 },
+  featured: { text: 'Featured Properties', visibility: true, lock: false, padding: 40, margin: 0, opacity: 100 },
+  featured_title: { text: 'Featured Properties', visibility: true, lock: false, color: '#0f172a', font_size: 28, font_weight: '700', alignment: 'center', opacity: 100 },
+  featured_cards: { visibility: true, lock: false, border_radius: 12, padding: 0, margin: 0, opacity: 100 },
+  features: { text: 'Features', visibility: true, lock: false, padding: 40, margin: 0, opacity: 100 },
+  features_title: { text: 'Our Features', visibility: true, lock: false, color: '#0f172a', font_size: 28, font_weight: '700', alignment: 'center', opacity: 100 },
+  features_grid: { visibility: true, lock: false, padding: 24, margin: 0, opacity: 100 },
+  testimonials: { text: 'Testimonials', visibility: true, lock: false, padding: 40, margin: 0, opacity: 100 },
+  testimonials_title: { text: 'What Our Clients Say', visibility: true, lock: false, color: '#0f172a', font_size: 28, font_weight: '700', alignment: 'center', opacity: 100 },
+  testimonials_cards: { visibility: true, lock: false, border_radius: 12, padding: 0, margin: 0, opacity: 100 },
+  header_background_color: { visibility: true, lock: false, bg_color: '#ffffff', padding: 10, margin: 0, opacity: 100 },
+  branding_site_name: { text: 'PRMS', visibility: true, lock: false, color: '#111827', font_size: 20, font_weight: '700', alignment: 'left', opacity: 100 },
+  homepage_about_title: { text: 'About Us', visibility: true, lock: false, color: '#111827', font_size: 28, font_weight: '700', alignment: 'center', opacity: 100 },
+  homepage_about_description: { text: 'Your trusted property management platform.', visibility: true, lock: false, color: '#6b7280', font_size: 16, font_weight: '400', alignment: 'center', opacity: 100 },
+  footer_background_color: { visibility: true, lock: false, bg_color: '#f3f4f6', padding: 16, margin: 0, opacity: 100 },
+  footer_copyright_text: { text: `© ${new Date().getFullYear()} PRMS. All rights reserved.`, visibility: true, lock: false, color: '#6b7280', font_size: 14, font_weight: '400', alignment: 'center', opacity: 100 },
+  cta_section: { visibility: true, lock: false, bg_color: '#8a2be2', padding: 48, margin: 0, opacity: 100 },
+  cta_title: { text: 'Start Your Property Journey Today', visibility: true, lock: false, color: '#ffffff', font_size: 32, font_weight: '700', alignment: 'center', opacity: 100 },
+  cta_button: { button_text: 'Get Started', button_link: '/contact', visibility: true, lock: false, color: '#0f172a', bg_color: '#ffffff', font_size: 16, font_weight: '600', alignment: 'center', border_radius: 8, opacity: 100 },
 };
 
-/* ------------------------------------------------------------------ */
-/*  Individual field renderer                                          */
-/* ------------------------------------------------------------------ */
-
-function SettingField({ field, value, onChange }) {
-  switch (field.type) {
-    case 'color':
-      return (
-        <div className="wc-field wc-color-field">
-          <label className="wc-label">{field.label}</label>
-          <div className="wc-color-inputs">
-            <input
-              type="color"
-              value={value || '#000000'}
-              onChange={e => onChange(field.key, e.target.value)}
-            />
-            <input
-              type="text"
-              className="wc-hex"
-              value={value || ''}
-              onChange={e => onChange(field.key, e.target.value)}
-              placeholder="#8a2be2"
-            />
-            <div
-              className="wc-color-swatch"
-              style={{ background: value || 'transparent' }}
-              title={value || 'Not set'}
-            />
-          </div>
-        </div>
-      );
-
-    case 'toggle':
-      return (
-        <div className="wc-field wc-toggle-field">
-          <label className="wc-label">{field.label}</label>
-          <button
-            type="button"
-            className={`wc-toggle-btn ${String(value) === 'true' ? 'wc-toggle-on' : 'wc-toggle-off'}`}
-            onClick={() => onChange(field.key, String(value) === 'true' ? 'false' : 'true')}
-          >
-            {String(value) === 'true' ? 'ON' : 'OFF'}
-          </button>
-          <span className="wc-help-text">{field.help || ''}</span>
-        </div>
-      );
-
-    case 'select':
-      return (
-        <div className="wc-field">
-          <label className="wc-label">{field.label}</label>
-          <select
-            value={value || ''}
-            onChange={e => onChange(field.key, e.target.value)}
-            className="wc-select"
-          >
-            {field.options.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
-        </div>
-      );
-
-    case 'textarea':
-      return (
-        <div className="wc-field">
-          <label className="wc-label">{field.label}</label>
-          <textarea
-            className="wc-textarea"
-            rows={3}
-            value={value || ''}
-            onChange={e => onChange(field.key, e.target.value)}
-            placeholder={field.placeholder}
-          />
-        </div>
-      );
-
-    default:
-      return (
-        <div className="wc-field">
-          <label className="wc-label">{field.label}</label>
-          <input
-            type={field.type || 'text'}
-            className="wc-input"
-            value={value || ''}
-            onChange={e => onChange(field.key, e.target.value)}
-            placeholder={field.placeholder}
-          />
-          {field.help && <span className="wc-help-text">{field.help}</span>}
-        </div>
-      );
-  }
-}
-
-/* ------------------------------------------------------------------ */
-/*  Live preview mini-panel                                            */
-/* ------------------------------------------------------------------ */
-
-function LivePreviewPanel({ settings }) {
-  const primary = settings.theme_primary_color || '#8a2be2';
-  return (
-    <div className="wc-preview" style={{ backgroundColor: settings.theme_background_color || '#f3f6fb' }}>
-      <div className="wc-preview-header" style={{ background: settings.header_background_color, color: settings.header_text_color }}>
-        {settings.header_show_logo === 'true' && (settings.branding_logo_url ?? '').trim() && (
-          <img
-            src={settings.branding_logo_url}
-            alt="Logo preview"
-            className="wc-preview-logo"
-          />
-        )}
-        <span className="wc-preview-brand">{settings.branding_site_name || 'PRMS'}</span>
-      </div>
-
-      <div className="wc-preview-hero" style={{ textAlign: settings.homepage_hero_text_alignment }}>
-        <h3 style={{ color: settings.theme_text_color }}>{settings.homepage_hero_title}</h3>
-        <p style={{ color: settings.theme_text_color, opacity: 0.8 }}>
-          {settings.homepage_hero_subtitle}
-        </p>
-        <button className="wc-preview-cta" style={{ background: primary }}>
-          {settings.homepage_hero_button_text}
-        </button>
-      </div>
-
-      <div className="wc-preview-footer" style={{ background: settings.footer_background_color, color: settings.footer_text_color }}>
-        {settings.footer_copyright_text}
-      </div>
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  Bottom toolbar (undo / redo / reset / save / publish / discard)   */
-/* ------------------------------------------------------------------ */
-
-function BottomToolbar() {
+export default function WebsiteCustomizer() {
+  const { settings: allSettings, updateSetting, bulkUpdateSettings, loadSettings } = useSettings();
   const {
-    undo, redo, historyPast, historyFuture,
-    resetElement, discardChanges,
-    saveDraft, publish, saving, publishing,
-    factoryReset,
-  } = useCustomization();
-
-  return (
-    <div className="wc-bottom-toolbar">
-      <div className="wc-toolbar-group">
-        <button
-          type="button"
-          className="wc-toolbar-btn"
-          disabled={historyPast.length === 0}
-          onClick={undo}
-          title="Undo"
-        >
-          <Undo size={16} />
-          <span>Undo</span>
-        </button>
-
-        <button
-          type="button"
-          className="wc-toolbar-btn"
-          disabled={historyFuture.length === 0}
-          onClick={redo}
-          title="Redo"
-        >
-          <Redo size={16} />
-          <span>Redo</span>
-        </button>
-
-        <button
-          type="button"
-          className="wc-toolbar-btn"
-          onClick={resetElement}
-          title="Reset selected element"
-        >
-          <RotateCcw size={16} />
-          <span>Reset Element</span>
-        </button>
-
-        <button
-          type="button"
-          className="wc-toolbar-btn wc-toolbar-btn-discard"
-          onClick={discardChanges}
-          title="Discard all unsaved changes"
-        >
-          <Trash2 size={16} />
-          <span>Discard Changes</span>
-        </button>
-      </div>
-
-      <div className="wc-toolbar-group">
-        <button
-          type="button"
-          className="wc-toolbar-btn wc-toolbar-btn-save"
-          disabled={saving}
-          onClick={() => saveDraft('default')}
-          title="Save draft"
-        >
-          <Save size={16} />
-          <span>{saving ? 'Saving…' : 'Save Draft'}</span>
-        </button>
-
-        <button
-          type="button"
-          className="wc-toolbar-btn wc-toolbar-btn-publish"
-          disabled={publishing}
-          onClick={() => publish('default')}
-          title="Publish theme"
-        >
-          <CheckCircle2 size={16} />
-          <span>{publishing ? 'Publishing…' : 'Publish'}</span>
-        </button>
-
-        <button
-          type="button"
-          className="wc-toolbar-btn factory-reset"
-          onClick={factoryReset}
-          title="Factory Reset"
-        >
-          <RotateCcw size={16} />
-          <span>Factory Reset</span>
-        </button>
-      </div>
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  Main customizer page                                               */
-/* ------------------------------------------------------------------ */
-
-function WebsiteCustomizer() {
-  const { settings, updateSetting, loadSettings } = useSettings();
-  const {
-    isEditMode, setIsEditMode,
+    selectedElement, setSelectedElement,
     editingTheme, setEditingTheme,
-  } = useCustomization();
+    draftConfig, setDraftConfig,
+    updateElementStyle, undo, redo,
+    historyPast, historyFuture,
+    saveDraft: saveDraftAction, publish: publishAction, saving, publishing,
+    factoryReset, discardChanges,
+  } = useCustomization() || {};
 
-  const [activeTab, setActiveTab] = useState('theme');
+  /* Local state */
+  const [selectedId, setSelectedId] = useState('hero_title');
+  const [device, setDevice] = useState('desktop');
+  const [showPreview, setShowPreview] = useState(true);
+  const [themeMode, setThemeMode] = useState(() => localStorage.getItem('customizer-theme') || 'light');
+  const [elementProperties, setElementProperties] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [themeId, setThemeId] = useState(null);
+  const [currentVersion, setCurrentVersion] = useState(1);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [editMode, setEditMode] = useState(false);
 
-  /* Activate element picker when edit mode is on */
-  useElementPicker();
+  /* Load theme info on mount */
+  useEffect(() => {
+    adminApi.getTheme().then(res => {
+      const id = res?.data?.data?.id;
+      setThemeId(id);
+      setCurrentVersion(res?.data?.data?.version || 1);
+    }).catch(() => {});
+  }, []);
 
-  const handleChange = useCallback(async (key, value) => {
-    await updateSetting(key, value);
-  }, [updateSetting]);
+  /* Load default properties for selected element */
+  const getProperties = useCallback((eid) => {
+    return ELEMENT_PROPERTIES_MAP[eid] || {
+      text: '', visibility: true, lock: false,
+      color: '', bg_color: '', font_size: 16, font_weight: '400',
+      alignment: 'left', opacity: 100, padding: 0, margin: 0,
+      border_radius: 0, width: 100, height: 0,
+    };
+  }, []);
 
-  const handleReset = useCallback(async () => {
-    await loadSettings('public');
-  }, [loadSettings]);
+  /* Sync local properties when selection changes */
+  useEffect(() => {
+    if (selectedId) {
+      setElementProperties(getProperties(selectedId));
+      setSelectedElement({ id: selectedId });
+    }
+  }, [selectedId]);
 
-  /* Toggle edit mode and theme together */
-  const toggleEditMode = useCallback(() => {
-    setIsEditMode(prev => !prev);
-  }, [setIsEditMode]);
+  const handleSelectElement = useCallback((id) => {
+    setSelectedId(id);
+  }, []);
+
+  const saveDraft = async () => {
+    const dirty = getDirtySettings();
+    setLoading(true);
+    try {
+      if (dirty.length > 0 && bulkUpdateSettings) {
+        await bulkUpdateSettings(dirty);
+      }
+      if (saveDraftAction) {
+        await saveDraftAction(themeId);
+      }
+    } catch (err) {
+      console.error('Save draft failed:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const publishTheme = async () => {
+    setLoading(true);
+    try {
+      const dirty = getDirtySettings();
+      if (dirty.length > 0 && bulkUpdateSettings) {
+        await bulkUpdateSettings(dirty);
+      }
+      if (publishAction) {
+        await publishAction(themeId);
+      } else {
+        const themeResp = await adminApi.getTheme();
+        const tid = themeResp?.data?.data?.id;
+        if (tid) await adminApi.publishTheme(tid);
+      }
+    } catch (err) {
+      console.error('Publish failed:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const applyTheme = (mode) => {
+    setThemeMode(mode);
+    localStorage.setItem('customizer-theme', mode);
+    document.documentElement.setAttribute('data-theme', mode);
+  };
+
+  const resetAll = () => {
+    if (factoryReset) {
+      factoryReset();
+    } else {
+      if (window.confirm('Reset all customizations?')) {
+        setElementProperties({});
+      }
+    }
+  };
+
+  const undoAction = () => {
+    if (undo) undo();
+  };
+
+  const redoAction = () => {
+    if (redo) redo();
+  };
+
+  /* Map element property keys -> setting keys (per-element for accuracy) */
+  const ELEMENT_SETTING_MAP = {
+    hero_title: { text: 'homepage_hero_title', color: 'homepage_hero_title_color', font_size: 'homepage_hero_title_font_size', font_weight: 'homepage_hero_title_font_weight', alignment: 'homepage_hero_text_alignment' },
+    hero_subtitle: { text: 'homepage_hero_subtitle', color: 'homepage_hero_subtitle_color', font_size: 'homepage_hero_subtitle_font_size' },
+    hero_cta: { button_text: 'homepage_hero_button_text', color: 'homepage_hero_button_color', bg_color: 'homepage_hero_button_background_color' },
+    hero_background: { bg_color: 'homepage_hero_background_color' },
+    search_placeholder: { text: 'homepage_search_placeholder' },
+    search_button: { button_text: 'homepage_search_button_text', bg_color: 'homepage_search_button_background_color' },
+    featured_title: { text: 'homepage_featured_title', color: 'homepage_featured_title_color', font_size: 'homepage_featured_title_font_size' },
+    features_title: { text: 'homepage_features_title' },
+    testimonials_title: { text: 'homepage_testimonials_title' },
+    cta_title: { text: 'homepage_cta_title', color: 'homepage_cta_title_color' },
+    cta_button: { button_text: 'homepage_cta_button_text', bg_color: 'homepage_cta_button_background_color' },
+    header_background_color: { bg_color: 'header_background_color' },
+    branding_site_name: { text: 'branding_site_name' },
+    footer_background_color: { bg_color: 'footer_background_color' },
+    footer_copyright_text: { text: 'footer_copyright_text' },
+    homepage_about_title: { text: 'homepage_about_title' },
+    homepage_about_description: { text: 'homepage_about_description' },
+  };
+
+  /* Fallback for unmapped elements */
+  const GENERIC_SETTING_MAP = {
+    color: 'theme_text_color',
+    bg_color: 'theme_background_color',
+    font_size: 'theme_font_size_base',
+    font_weight: 'theme_font_weight',
+    alignment: 'header_alignment',
+    opacity: 'theme_opacity',
+    padding: 'theme_padding_base',
+    margin: 'theme_margin_base',
+  };
+
+  const mapElementKeyToSetting = (elementId, propKey) => {
+    const perElement = ELEMENT_SETTING_MAP[elementId];
+    if (perElement && perElement[propKey]) return perElement[propKey];
+    return GENERIC_SETTING_MAP[propKey] || null;
+  };
+
+  /* Reverse map: LivePreview sends setting keys -> resolve to PageTree node IDs */
+  const SETTING_TO_NODE_ID = {
+    homepage_hero_title: 'hero_title',
+    homepage_hero_subtitle: 'hero_subtitle',
+    homepage_hero_button_text: 'hero_cta',
+    homepage_hero_background_color: 'hero_background',
+    header_background_color: 'header_background_color',
+    branding_site_name: 'branding_site_name',
+    footer_background_color: 'footer_background_color',
+    footer_copyright_text: 'footer_copyright_text',
+    homepage_about_title: 'homepage_about_title',
+    homepage_about_description: 'homepage_about_description',
+  };
+
+  /* Collect dirty settings */
+  const getDirtySettings = () => {
+    if (!allSettings) return [];
+    const dirty = [];
+    for (const [key, value] of Object.entries(allSettings)) {
+      const defaultVal = getDefaultValue(key);
+      if (String(value) !== String(defaultVal)) {
+        dirty.push({ key, value: String(value) });
+      }
+    }
+    return dirty;
+  };
+
+  const getDefaultValue = (key) => {
+    const DEFAULTS = {
+      theme_primary_color: '#8a2be2',
+      theme_secondary_color: '#0f172a',
+      theme_accent_color: '#b84cff',
+    };
+    return DEFAULTS[key] || '';
+  };
+
+  /* ---- Actions ---- */
+
+  const handlePropertyChange = useCallback((key, value) => {
+    setElementProperties((prev) => ({ ...prev, [key]: value }));
+
+    /* Sync back to the settings context for live preview */
+    if (allSettings) {
+      const settingKey = mapElementKeyToSetting(selectedId, key);
+      if (settingKey) {
+        updateSetting(settingKey, String(value));
+      }
+    }
+  }, [selectedId, allSettings, updateSetting]);
+
+  /* ---- Preview click handler: setting key -> PageTree node ID ---- */
+  const handlePreviewElementClick = useCallback((settingKey) => {
+    const nodeId = SETTING_TO_NODE_ID[settingKey] || settingKey;
+    setSelectedId(nodeId);
+  }, []);
+
+  /* Device width class for preview */
+  const deviceWidth = {
+    desktop: '100%',
+    tablet: '768px',
+    mobile: '375px',
+  };
 
   return (
-    <div className="wc-page">
-      {/* Header */}
-      <div className="wc-header">
-        <div>
-          <h1 className="wc-title">Website Customizer</h1>
-          <p className="wc-subtitle">
-            {isEditMode
-              ? 'Click any highlighted element to edit its styles.'
-              : 'Customise the look and feel of your PRMS website in real-time. Changes apply instantly.'}
+    <motion.div
+      className="wc2-page"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
+      {/* ========== PAGE HEADER ========== */}
+      <header className="wc2-header">
+        <div className="wc2-header-left">
+          <h1 className="wc2-title">Website Customizer</h1>
+          <p className="wc2-subtitle">
+            Visual editor for your public-facing website. Click elements in the tree, edit properties on the right.
           </p>
         </div>
+        <div className="wc2-header-right">
+          {/* Theme mode */}
+          <div className="wc2-theme-group">
+            {[
+              { id: 'light', icon: Sun, label: 'Light' },
+              { id: 'dark', icon: Moon, label: 'Dark' },
+            ].map((opt) => (
+              <motion.button
+                key={opt.id}
+                type="button"
+                className={`wc2-theme-btn ${themeMode === opt.id ? 'wc2-theme-active' : ''}`}
+                onClick={() => applyTheme(opt.id)}
+                whileTap={{ scale: 0.95 }}
+              >
+                <opt.icon size={13} />
+                <span className="wc2-theme-label">{opt.label}</span>
+              </motion.button>
+            ))}
+          </div>
 
-        {isEditMode ? (
-          <div className="wc-header-controls">
-            {/* Theme mode selector */}
-            <div className="wc-theme-toggle">
-              <button
-                type="button"
-                className={`wc-theme-btn ${editingTheme === 'light' ? 'wc-theme-btn-active' : ''}`}
-                onClick={() => setEditingTheme('light')}
-                title="Edit Light theme"
-              >
-                <Sun size={16} />
-                <span>Light</span>
-              </button>
-              <button
-                type="button"
-                className={`wc-theme-btn ${editingTheme === 'dark' ? 'wc-theme-btn-active' : ''}`}
-                onClick={() => setEditingTheme('dark')}
-                title="Edit Dark theme"
-              >
-                <Moon size={16} />
-                <span>Dark</span>
+          {/* Undo/Redo */}
+          <motion.button type="button" className="wc2-icon-btn" onClick={undoAction} whileTap={{ scale: 0.95 }} title="Undo" disabled={!historyPast?.length}>
+            <Undo size={14} />
+          </motion.button>
+          <motion.button type="button" className="wc2-icon-btn" onClick={redoAction} whileTap={{ scale: 0.95 }} title="Redo" disabled={!historyFuture?.length}>
+            <Redo size={14} />
+          </motion.button>
+
+          {/* Edit mode toggle */}
+          <motion.button
+            type="button"
+            className={`wc2-edit-btn ${editMode ? 'wc2-edit-on' : ''}`}
+            onClick={() => setEditMode((v) => !v)}
+            whileTap={{ scale: 0.96 }}
+          >
+            <Edit3 size={13} />
+            <span>{editMode ? 'Editing ON' : 'Edit Mode'}</span>
+          </motion.button>
+
+          {/* Reset */}
+          <motion.button type="button" className="wc2-reset-btn" onClick={resetAll} whileTap={{ scale: 0.96 }}>
+            <RotateCcw size={13} />
+            <span>Reset</span>
+          </motion.button>
+
+          {/* Save / Publish */}
+          <motion.button
+            type="button"
+            className="wc2-save-btn"
+            onClick={saveDraft}
+            disabled={loading || saving}
+            whileTap={{ scale: 0.96 }}
+          >
+            <Save size={13} />
+            <span>{saving || loading ? 'Saving...' : 'Save Draft'}</span>
+          </motion.button>
+
+          <motion.button
+            type="button"
+            className="wc2-publish-btn"
+            onClick={publishTheme}
+            disabled={loading || publishing}
+            whileTap={{ scale: 0.96 }}
+          >
+            <Share2 size={13} />
+            <span>Publish</span>
+          </motion.button>
+        </div>
+      </header>
+
+      {/* ========== MAIN 3-COLUMN LAYOUT ========== */}
+      <div className="wc2-body">
+        {/* ---- LEFT: Page Tree ---- */}
+        <PageTree selectedId={selectedId} onSelect={handleSelectElement} />
+
+        {/* ---- CENTER: Preview area ---- */}
+        <div className="wc2-preview-area">
+          {/* Toolbar above preview */}
+          <PreviewToolbar device={device} onDeviceChange={setDevice} />
+
+          {/* Preview canvas */}
+          {showPreview && (
+            <div className="wc2-canvas" style={{ maxWidth: deviceWidth[device], margin: '0 auto' }}>
+              <LivePreviewPanel onElementClick={handlePreviewElementClick} />
+            </div>
+          )}
+
+          {/* Toggle preview visibility */}
+          {!showPreview && (
+            <div className="wc2-preview-hidden">
+              <EyeOff size={48} className="wc2-preview-hidden-icon" />
+              <p>Preview hidden</p>
+              <button type="button" className="wc2-preview-show-btn" onClick={() => setShowPreview(true)}>
+                <Eye size={14} /> Show Preview
               </button>
             </div>
+          )}
 
-            {/* Edit mode toggle */}
-            <button
-              type="button"
-              className="wc-edit-toggle-btn"
-              onClick={toggleEditMode}
-            >
-              <PencilOff size={16} />
-              <span>Exit Edit Mode</span>
-            </button>
-          </div>
-        ) : (
-          <div className="wc-header-controls">
-            <button
-              type="button"
-              className="wc-reset-btn"
-              onClick={handleReset}
-            >
-              <RotateCcw size={16} />
-              <span>Reset to Server</span>
-            </button>
+          {/* Version history below preview */}
+          {showPreview && themeId && (
+            <div className="wc2-history-wrap">
+              <VersionHistory
+                themeId={themeId}
+                currentVersion={currentVersion}
+                onRestore={async (v) => {
+                  if (!window.confirm(`Restore to version ${v}?`)) return;
+                  try {
+                    await adminApi.restoreVersion(themeId, v);
+                    await loadSettings();
+                  } catch {}
+                }}
+              />
+            </div>
+          )}
+        </div>
 
-            <button
-              type="button"
-              className="wc-edit-toggle-btn wc-edit-toggle-on"
-              onClick={toggleEditMode}
-            >
-              <Pencil size={16} />
-              <span>Edit Mode</span>
-            </button>
-          </div>
-        )}
+        {/* ---- RIGHT: Properties Panel ---- */}
+        <PropertiesPanel
+          selectedId={selectedId}
+          properties={elementProperties}
+          onChange={handlePropertyChange}
+        />
       </div>
 
-      {isEditMode ? (
-        /* ---- EDIT MODE LAYOUT ---- */
-        <div className="wc-edit-body">
-          {/* Left: Preview area */}
-          <div className="wc-edit-preview">
-            <div className="wc-preview-sticky">
-              <LivePreviewPanel settings={settings} />
-            </div>
-          </div>
-
-          {/* Right: Customization Panel */}
-          <CustomizationPanel />
-
-          {/* Bottom: Toolbar */}
-          <BottomToolbar />
+      {/* ========== BOTTOM TOOLBAR ========== */}
+      <div className="wc2-bottom">
+        <div className="wc2-bottom-left">
+          {historyPast && (
+            <span className="wc2-history-count">
+              {historyPast.length} step{historyPast.length !== 1 ? 's' : ''} back
+            </span>
+          )}
+          {historyFuture && (
+            <span className="wc2-history-count">
+              {historyFuture.length} step{historyFuture.length !== 1 ? 's' : ''} forward
+            </span>
+          )}
         </div>
-      ) : (
-        /* ---- CLASSIC TAB LAYOUT ---- */
-        <div className="wc-body">
-          {/* Left: Editor Panel */}
-          <div className="wc-editor-panel">
-            {/* Tab bar */}
-            <div className="wc-tab-bar">
-              {TABS.map(tab => {
-                const Icon = tab.icon;
-                const isActive = activeTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    className={`wc-tab ${isActive ? 'wc-tab-active' : ''}`}
-                    onClick={() => setActiveTab(tab.id)}
-                  >
-                    <Icon size={18} />
-                    <span>{tab.label}</span>
-                  </button>
-                );
-              })}
-            </div>
+        <div className="wc2-bottom-right">
+          <motion.button
+            type="button"
+            className="wc2-bottom-icon"
+            onClick={() => setShowPreview((v) => !v)}
+            whileTap={{ scale: 0.96 }}
+          >
+            {showPreview ? <EyeOff size={13} /> : <Eye size={13} />}
+          </motion.button>
 
-            {/* Tab content */}
-            <div className="wc-tab-content">
-              {FIELDS[activeTab] && FIELDS[activeTab].map(field => (
-                <SettingField
-                  key={field.key}
-                  field={field}
-                  value={settings[field.key] || ''}
-                  onChange={handleChange}
-                />
-              ))}
-            </div>
-          </div>
+          <motion.button
+            type="button"
+            className="wc2-bottom-icon"
+            onClick={() => setShowTemplates((v) => !v)}
+            whileTap={{ scale: 0.96 }}
+          >
+            <Wand2 size={13} />
+          </motion.button>
 
-          {/* Right: Live Preview */}
-          <div className="wc-preview-panel">
-            <div className="wc-preview-sticky">
-              <LivePreviewPanel settings={settings} />
-            </div>
-          </div>
+          <motion.button
+            type="button"
+            className="wc2-bottom-icon"
+            onClick={async () => {
+              if (discardChanges) await discardChanges();
+            }}
+            whileTap={{ scale: 0.96 }}
+          >
+            <Trash2 size={13} />
+          </motion.button>
         </div>
-      )}
-    </div>
+      </div>
+
+      {/* ========== TEMPLATES MODAL ========== */}
+      <AnimatePresence>
+        {showTemplates && (
+          <motion.div
+            className="wc2-templates-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowTemplates(false)}
+          >
+            <motion.div
+              className="wc2-templates-modal"
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3>Theme Templates</h3>
+              <ThemeTemplates
+                onApply={(preset) => {
+                  /* Apply preset settings via bulk update */
+                  const vals = {};
+                  Object.entries(preset.settings).forEach(([k, v]) => {
+                    vals[k] = v;
+                  });
+                  if (bulkUpdateSettings) {
+                    bulkUpdateSettings(Object.entries(vals).map(([key, value]) => ({ key, value: String(value) })));
+                  }
+                  setShowTemplates(false);
+                  window.alert(`Template "${preset.name}" applied. Click "Save Draft" to persist.`);
+                }}
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }
-
-export default WebsiteCustomizer;
