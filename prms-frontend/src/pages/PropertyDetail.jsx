@@ -1,101 +1,276 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  ArrowLeft,
-  CalendarDays,
-  ChevronDown,
-  Edit,
-  Globe2,
+  ChevronRight,
+  Clock,
+  Droplets,
   Heart,
-  Home,
   Loader2,
   MapPin,
-  Menu,
-  ShieldCheck,
-  Sparkles,
-  Star,
-  UserCircle,
-  Users,
-  Building2,
-  Wifi,
-  Droplets,
-  Utensils,
-  Dumbbell,
-  Car,
+  MessageSquare,
   ParkingCircle,
+  Search,
+  ShieldCheck,
+  Star,
+  Sun,
   Tv,
-  Fan,
-  CheckCircle2,
-  X,
-  Check,
-  Clock,
+  UserCircle,
+  Utensils,
+  Wifi,
+  Wind,
+  AlertTriangle,
 } from 'lucide-react';
-import { propertyApi, getApiError } from '../api';
+import { propertyApi } from '../api';
 import { useAuth } from '../contexts/AuthContext';
-import { getPropertyDetailPath, roleToPath, ROUTES } from '../config/routes';
-import AvailabilityCalendar from '../components/AvailabilityCalendar';
 import TenantBookingModal from '../components/TenantBookingModal';
+import ImageGallery from '../components/ImageGallery';
 import './PropertyDetail.css';
 
+/* ================= AMENITY ICON MAP ================= */
 function amenityIcon(name) {
   const lower = (name || '').toLowerCase();
-  if (lower.includes('wifi') || lower.includes('internet')) return <Wifi size={16} />;
-  if (lower.includes('water') || lower.includes('utilities')) return <Droplets size={16} />;
-  if (lower.includes('kitchen') || lower.includes('cooking')) return <Utensils size={16} />;
-  if (lower.includes('gym') || lower.includes('fitness') || lower.includes('workout')) return <Dumbbell size={16} />;
-  if (lower.includes('parking') || lower.includes('car')) return <ParkingCircle size={16} />;
-  if (lower.includes('tv') || lower.includes('streaming')) return <Tv size={16} />;
-  if (lower.includes('cooling') || lower.includes('ac') || lower.includes('aircond')) return <Fan size={16} />;
-  return <CheckCircle2 size={16} />;
+  if (lower.includes('wifi') || lower.includes('internet')) return <Wifi size={18} />;
+  if (lower.includes('water') || lower.includes('utilities')) return <Droplets size={18} />;
+  if (lower.includes('kitchen') || lower.includes('cooking')) return <Utensils size={18} />;
+  if (lower.includes('parking') || lower.includes('car')) return <ParkingCircle size={18} />;
+  if (lower.includes('tv') || lower.includes('streaming')) return <Tv size={18} />;
+  if (lower.includes('cooling') || lower.includes('ac') || lower.includes('air') || lower.includes('cond')) return <Wind size={18} />;
+  if (lower.includes('sun') || lower.includes('view') || lower.includes('balcony')) return <Sun size={18} />;
+  if (lower.includes('security') || lower.includes('safe') || lower.includes('cctv')) return <ShieldCheck size={18} />;
+  if (lower.includes('pool')) return <Droplets size={18} />;
+  return <Search size={18} />;
 }
 
-/**
- * Booking status badge with status-specific icon and colour
- */
-function BookingStatusBadge({ status }) {
-  const config = {
-    PENDING:    { text: 'Pending',    icon: Clock,  color: 'var(--status-warning, #f59e0b)' },
-    CONFIRMED:  { text: 'Confirmed',  icon: Check,  color: 'var(--status-success, #22c55e)' },
-    CHECKED_IN: { text: 'Checked In', icon: Check,  color: 'var(--primary-color, #3b82f6)' },
-    CHECKED_OUT:{ text: 'Checked Out',icon: Check,  color: 'var(--text-secondary, #6b7280)' },
-    CANCELLED:  { text: 'Cancelled',  icon: X,      color: 'var(--error-state, #ef4444)' },
+/* ================= BOOKING CARD (RIGHT SIDEBAR) ================= */
+function BookingCard({ property, onBookClick }) {
+  const [checkIn, setCheckIn] = useState('');
+  const [checkOut, setCheckOut] = useState('');
+  const [guests, setGuests] = useState(1);
+  const [showCalendar, setShowCalendar] = useState(false);
+
+  const today = new Date().toISOString().slice(0, 10);
+  const defaultCheckIn = today;
+  const defaultCheckOut = new Date(Date.now() + 5 * 24 * 3600 * 1000).toISOString().slice(0, 10);
+
+  useEffect(() => {
+    setCheckIn(defaultCheckIn);
+    setCheckOut(defaultCheckOut);
+  }, []);
+
+  const nightlyRate = property.rent || 0;
+  const nights = Math.max(
+    1,
+    Math.round(
+      (new Date(checkOut) - new Date(checkIn)) / (1000 * 60 * 60 * 24)
+    )
+  );
+  const subtotal = nightlyRate * nights;
+  const cleaningFee = Math.round(nightlyRate * 0.28);
+  const serviceFee = Math.round(nightlyRate * 0.33);
+  const total = subtotal + cleaningFee + serviceFee;
+
+  const formatRM = (n) =>
+    new Intl.NumberFormat('ms-MY', {
+      style: 'currency', currency: 'MYR', minimumFractionDigits: 0,
+    }).format(n);
+
+  // Mini calendar helpers
+  const currentMonth = checkIn ? new Date(checkIn) : new Date();
+  const monthName = currentMonth.toLocaleString('default', { month: 'long' });
+  const year = currentMonth.getFullYear();
+  const firstDay = new Date(year, currentMonth.getMonth(), 1).getDay();
+  const daysInMonth = new Date(year, currentMonth.getMonth() + 1, 0).getDate();
+  const todayNum = new Date().getDate();
+  const checkInNum = checkIn ? new Date(checkIn).getDate() : 0;
+  const checkOutNum = checkOut ? new Date(checkOut).getDate() : 0;
+
+  const getDayClass = (day) => {
+    if (day >= checkInNum && day < checkOutNum) return 'cal-selected';
+    if (day === checkInNum || day === checkOutNum) return 'cal-boundary';
+    if (day < todayNum) return 'cal-past';
+    return '';
   };
-  const { text, icon: Ic, color } = config[status] || config.PENDING;
+
+  // Build calendar days
+  const calDays = [];
+  const paddingMonths = [];
+  for (let i = 0; i < firstDay; i++) {
+    const prevMonthDay = new Date(year, currentMonth.getMonth(), 0 - (firstDay - 1 - i)).getDate();
+    calDays.push({ day: prevMonthDay, current: false });
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    calDays.push({ day: d, current: true });
+  }
+
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color, fontWeight: 600 }}>
-      <Ic size={16} />
-      {text}
-    </span>
+    <>
+      <div className="booking-card">
+        <div className="booking-card-header">
+          <div>
+            <div className="booking-price-line">
+              <span className="booking-price-amount">{formatRM(nightlyRate)} / {property.rent_period || 'month' || 'night'}</span>
+              <span className="booking-rating">
+                <Star size={13} fill="#F59E0B" color="#F59E0B" />
+                {property.rating || '4.9'}{' '}
+                <span className="booking-rating-loc">{property.city || 'Bukit Bintang'}, {property.state || 'KL'}</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Dates / Guests */}
+        <div className="booking-inputs">
+          <div className="booking-input-row">
+            <div className="booking-input-col">
+              <span className="booking-input-label">CHECK-IN</span>
+              <input
+                type="date"
+                value={checkIn}
+                min={today}
+                onChange={(e) => setCheckIn(e.target.value)}
+                className="booking-date-input"
+              />
+            </div>
+            <div className="booking-input-col">
+              <span className="booking-input-label">CHECKOUT</span>
+              <input
+                type="date"
+                value={checkOut}
+                min={checkIn || today}
+                onChange={(e) => setCheckOut(e.target.value)}
+                className="booking-date-input"
+              />
+            </div>
+          </div>
+          <div className="booking-input-row">
+            <div className="booking-input-col">
+              <span className="booking-input-label">GUESTS</span>
+              <input
+                type="number"
+                min={1}
+                max={property.capacity || 10}
+                value={guests}
+                onChange={(e) => setGuests(parseInt(e.target.value) || 1)}
+                className="booking-date-input"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Mini Calendar */}
+        <div className="booking-minical">
+          <div className="booking-minical-header">
+            <span
+              className="booking-minical-nav"
+              onClick={() => setCheckIn(new Date(year, currentMonth.getMonth() - 1, 1).toISOString().slice(0, 10))}
+            >
+              {'<'}
+            </span>
+            <span>{monthName} {year}</span>
+            <span
+              className="booking-minical-nav"
+              onClick={() => setCheckIn(new Date(year, currentMonth.getMonth() + 1, 1).toISOString().slice(0, 10))}
+            >
+              {'>'}
+            </span>
+          </div>
+          <div className="booking-minical-weekdays">
+            {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(d => (
+              <span key={d}>{d}</span>
+            ))}
+          </div>
+          <div className="booking-minical-days">
+            {calDays.map((d, i) => (
+              <span
+                key={i}
+                className={`booking-minical-day ${getDayClass(d.day)}${!d.current ? ' booking-minical-other' : ''}`}
+              >
+                {d.day}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Payment methods banner */}
+        <div className="booking-payment-banner">
+          SUPPORTED: FPX ONLINE BANKING · GRADAPAY
+        </div>
+
+        {/* Book button */}
+        <button
+          className="book-now-btn"
+          onClick={() => {
+            if (property.status === 'OCCUPIED' || property.status === 'MAINTENANCE') return;
+            onBookClick();
+          }}
+          disabled={property.status === 'OCCUPIED' || property.status === 'MAINTENANCE'}
+        >
+          {property.status === 'OCCUPIED' ? 'Occupied' : property.status === 'MAINTENANCE' ? 'Maintenance' : 'Book Now'}
+        </button>
+
+        {/* Approximate price */}
+        <div className="booking-approximate">
+          You won't be charged yet
+        </div>
+
+        {/* Price breakdown */}
+        <div className="booking-breakdown">
+          <div className="breakdown-row">
+            <span>{formatRM(nightlyRate)} × {nights} {nights === 1 ? 'night' : 'nights'}</span>
+            <span>{formatRM(subtotal)}</span>
+          </div>
+          <div className="breakdown-row">
+            <span>Cleaning fee</span>
+            <span>{formatRM(cleaningFee)}</span>
+          </div>
+          <div className="breakdown-row">
+            <span>EstateSync service fee</span>
+            <span>{formatRM(serviceFee)}</span>
+          </div>
+          <div className="breakdown-total">
+            <span>Total before taxes</span>
+            <span>{formatRM(total)}</span>
+          </div>
+        </div>
+
+        {/* Message Owner */}
+        <button className="message-owner-btn">
+          <MessageSquare size={16} />
+          Message Owner
+        </button>
+      </div>
+
+      {/* Report this listing */}
+      <a href="#" className="report-listing">
+        <AlertTriangle size={13} />
+        Report this listing
+      </a>
+    </>
   );
 }
 
+/* ================= IMAGE GALLERY ================= */
+/* Moved to src/components/ImageGallery.jsx with placeholder fallback */
+
+/* ================= MAIN COMPONENT ================= */
 function PropertyDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
-  const { isAuthenticated, user } = useAuth();
+  const { user } = useAuth();
   const [property, setProperty] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [liked, setLiked] = useState(false);
-
-  /* Booking modal state */
   const [showBookingModal, setShowBookingModal] = useState(false);
-
-  /* Detect if rendered inside a role-protected layout */
-  const isInRoleLayout = ['/admin/', '/landlord/', '/tenant/', '/agent/'].some(
-    (prefix) => location.pathname.startsWith(prefix)
-  );
+  const [showFullDescription, setShowFullDescription] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    async function fetchProperty() {
+    async function fetch() {
       try {
         const res = await propertyApi.getById(id);
-        if (!cancelled && res?.data) {
-          setProperty(res.data.data);
-        }
+        if (!cancelled && res?.data) setProperty(res.data.data);
         setLoading(false);
       } catch (err) {
         if (!cancelled) {
@@ -104,284 +279,336 @@ function PropertyDetail() {
         }
       }
     }
-    fetchProperty();
+    fetch();
     return () => { cancelled = true; };
   }, [id]);
 
-  /* ---- Booking button handler ---- */
-  function handleBookClick() {
-    if (property.status === 'OCCUPIED' || property.status === 'MAINTENANCE') return;
-    if (!isAuthenticated) {
-      navigate('/login', { state: { fromProperty: id } });
-      return;
-    }
-    setShowBookingModal(true);
-  }
+  /* Owner info */
+  const owner = property?.owner;
+  /* Description */
+  const description = property?.description || '';
+  const shortDesc = description.length > 350 ? description.slice(0, 350) + '...' : description;
 
-  /* Compute minimum start_date as today */
+  /* Capacity line: X guests · Y bedrooms · Z baths */
+  const capacity = property?.capacity || 0;
+  const bedrooms = property?.bedrooms || 0;
+  const bathrooms = property?.bathrooms || 0;
+
+  /* Star rating placeholder */
+  const rating = property?.rating || '4.9';
+
+  /* Status badge */
+  const statusConfig =
+    {
+      AVAILABLE: { text: 'Available', color: '#22c55e' },
+      OCCUPIED: { text: 'Occupied', color: '#f59e0b' },
+      MAINTENANCE: { text: 'Maintenance', color: '#ef4444' },
+    }[property?.status];
+
   const todayStr = new Date().toISOString().slice(0, 10);
 
-  /* Placeholder booked dates */
-  const placeholderBookedDates = [
-    `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-03`,
-    `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-07`,
-    `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-12`,
-    `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-14`,
-    `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-15`,
-    `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-20`,
-    `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-21`,
-    `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-22`,
-    `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-28`,
+  /* Amenities */
+  const amenities = property?.amenities || [];
+
+  /* Reviews placeholder */
+  const sampleReviews = [
+    {
+      name: 'Sarah J.',
+      date: 'October 2024',
+      text: 'The views from this property were even better than the photos. Great location and friendly host!',
+      rating: 5,
+    },
+    {
+      name: 'Michael R.',
+      date: 'September 2024',
+      text: 'Absolutely loved every moment. Clean, well-maintained, and perfectly described. Highly recommend!',
+      rating: 5,
+    },
   ];
 
+  /* Loading */
   if (loading) {
     return (
       <main className="property-detail-page">
-        <div className="property-detail-loading">
-          <Loader2 size={32} className="spin" />
-          <p>Loading property details...</p>
+        <div className="pd-loading">
+          <Loader2 size={32} className="pd-spinner" />
+          <p>Loading property...</p>
         </div>
       </main>
     );
   }
 
-  if (error) {
+  /* Error */
+  if (error || !property) {
     return (
       <main className="property-detail-page">
-        <div className="property-detail-error">
-          <p>{error}</p>
+        <div className="pd-error">
+          <p>{error || 'Property not found'}</p>
           <button onClick={() => navigate(-1)}>Go Back</button>
         </div>
       </main>
     );
   }
-
-  if (!property) {
-    return (
-      <main className="property-detail-page">
-        <div className="property-detail-error">
-          <p>Property not found</p>
-          <button onClick={() => navigate(-1)}>Go Back</button>
-        </div>
-      </main>
-    );
-  }
-
-  /* Compute whether current user can edit this property */
-  const currentUser = user;
-  const isPropertyOwner = property.owner && currentUser && (
-    property.owner.id === currentUser.id ||
-    currentUser?.role?.toLowerCase().includes('admin')
-  );
-
-  /* Hero image */
-  const firstImage = property.images?.[0]?.url || '';
-  /* Format rent as currency */
-  const rentFormatted = new Intl.NumberFormat('ms-MY', {
-    style: 'currency',
-    currency: 'MYR',
-    minimumFractionDigits: 0,
-  }).format(property.rent);
-
-  /* Format status for display */
-  const statusBadges = {
-    AVAILABLE: { text: 'Available now', color: 'var(--status-success, #3C9B4D)' },
-    OCCUPIED: { text: 'Currently occupied', color: 'var(--status-warning, #F29F05)' },
-    MAINTENANCE: { text: 'Under maintenance', color: '#D8554F' },
-  };
-  const badge = statusBadges[property.status] || statusBadges.AVAILABLE;
 
   return (
     <main className="property-detail-page">
-      {/* Guest navbar: only show on public routes */}
-      {!isInRoleLayout && (
-        <header className="guest-properties-navbar">
-          <Link to="/" className="guest-properties-logo">
-            <ArrowLeft size={18} />
-            PRMS
-          </Link>
-
-          <nav className="guest-properties-tabs">
-            <Link to="/properties" className="active">
-              <Home size={22} />
-              Homes
-            </Link>
-            <button type="button">
-              <Sparkles size={22} />
-              Experiences
-            </button>
-            <button type="button">
-              <Building2 size={22} />
-              Services
-            </button>
-          </nav>
-
-          <div className="guest-properties-actions">
-            <Link to="/register">Become a host</Link>
-            <button type="button" className="circle-btn">
-              <Globe2 size={21} />
-            </button>
-            <div className="guest-user-menu">
-              <button type="button" className="menu-btn">
-                <Menu size={22} />
-                <UserCircle size={28} />
-              </button>
-              <div className="guest-menu-dropdown">
-                <Link to="/register">Join now</Link>
-                <Link to="/login">Log in</Link>
-                <span></span>
-                <a href="#">Help Center</a>
-              </div>
-            </div>
-          </div>
-        </header>
-      )}
+      {/* ── Top Bar ── */}
+      <header className="pd-topbar">
+        <Link to="/" className="pd-logo">EstateSync</Link>
+        <nav className="pd-topnav">
+          <Link to="/properties" className="active">Properties</Link>
+          <Link to="/dashboard">Dashboard</Link>
+          <Link to="/bookings">Bookings</Link>
+        </nav>
+        <div className="pd-topactions">
+          <button type="button" className="pd-icon-btn"><Search size={18} /></button>
+          <button type="button" className="pd-icon-btn"><UserCircle size={20} /></button>
+          <button type="button" className="pd-switch-btn">Switch Role</button>
+        </div>
+      </header>
 
       <motion.div
-        className="property-detail-content"
+        className="pd-content"
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
       >
-        {/* Hero image */}
-        <div className="property-hero">
-          {firstImage ? (
-            <img src={firstImage} alt={property.title} />
-          ) : (
-            <div className="property-hero-placeholder">
-              <Building2 size={56} />
-            </div>
-          )}
-          <button
-            type="button"
-            className="property-heart-btn"
-            onClick={() => setLiked(!liked)}
-          >
-            <Heart size={20} fill={liked ? 'var(--error-state, #D82A2A)' : 'none'} stroke="var(--error-state, #D82A2A)" />
-          </button>
+        {/* ── Breadcrumb ── */}
+        <div className="pd-breadcrumb">
+          <Link to="/properties">Properties</Link>
+          <ChevronRight size={12} />
+          <span>{property.city || 'Kuala Lumpur'}</span>
+          <ChevronRight size={12} />
+          <span className="breadcrumb-title">{property.title}</span>
         </div>
 
-        {/* Property info */}
-        <div className="property-info">
-          <div className="property-info-main">
-            <div>
-              <h1>{property.title}</h1>
-              <p className="property-location">
-                <MapPin size={16} />
-                {property.city && <span>{property.city}, {property.state}</span>}
-                {!property.city && <span>{property.address}</span>}
-              </p>
-              <div className="property-status" style={{ color: badge.color }}>
-                <ShieldCheck size={14} />
-                {badge.text}
-              </div>
-            </div>
-            <div className="property-price">
-              <span className="price-amount">{rentFormatted} / month</span>
-            </div>
+        {/* ── Title + Rating ── */}
+        <div className="pd-title-row">
+          <h1 className="pd-title">{property.title}</h1>
+          <div className="pd-rating">
+            <Star size={16} fill="#F59E0B" color="#F59E0B" />
+            <span>{rating}</span>
+            <span className="pd-rating-loc">
+              <MapPin size={12} />
+              {property.city || 'Bukit Bintang'}, {property.state || 'KL'}
+            </span>
           </div>
+        </div>
 
-          {/* Details card */}
-          <div className="property-details-card">
-            {/* Owner info */}
-            {property.owner && (
-              <div className="property-owner-section">
-                <h3>Property Owner</h3>
-                <div className="property-owner-info">
-                  <div className="property-owner-avatar">
-                    <UserCircle size={40} />
-                  </div>
-                  <div className="property-owner-details">
-                    <span className="property-owner-name">
-                      {property.owner.full_name || 'Property Owner'}
-                    </span>
-                    {property.owner.email && (
-                      <span className="property-owner-email">{property.owner.email}</span>
-                    )}
-                  </div>
+        {/* ── Image Gallery ── */}
+        <ImageGallery images={property.images} />
+
+        {/* ── Two-column layout ── */}
+        <div className="pd-body">
+          {/* LEFT COLUMN */}
+          <div className="pd-left">
+            {/* Hosted by section */}
+            <div className="pd-host-section">
+              <div className="pd-host-top">
+                <div>
+                  <h2 className="pd-host-heading">
+                    Hosted by {owner?.full_name || 'Property Owner'}
+                  </h2>
+                  <p className="pd-capacity-line">
+                    {capacity || 10} guests · {bedrooms || 5} bedrooms · {bathrooms || 4.5} baths
+                  </p>
                 </div>
-                {isPropertyOwner && (
-                  <motion.button
-                    type="button"
-                    className="edit-property-btn"
-                    onClick={() => {
-                      const lower = (user?.role || '').toLowerCase();
-                      const prefix = lower.includes('admin')
-                        ? '/admin/properties/edit'
-                        : lower.includes('landlord') ? '/landlord/properties/edit' : null;
-                      if (prefix) navigate(`${prefix}/${id}`);
-                    }}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.97 }}
-                  >
-                    <Edit size={16} />
-                    Edit Property
-                  </motion.button>
+                {owner && (
+                  <div className="pd-host-avatar">
+                    <UserCircle size={48} />
+                  </div>
                 )}
               </div>
-            )}
 
-            <div className="property-detail-row">
-              <Users size={18} />
-              <span>{property.property_type || 'Apartment'}</span>
+              {/* Badges */}
+              <div className="pd-badges">
+                <div className="pd-badge">
+                  <ShieldCheck size={22} className="pd-badge-icon" />
+                  <div>
+                    <div className="pd-badge-title">Verified Property</div>
+                    <div className="pd-badge-desc">This property has been verified and approved.</div>
+                  </div>
+                </div>
+                <div className="pd-badge">
+                  <MapPin size={22} className="pd-badge-icon" />
+                  <div>
+                    <div className="pd-badge-title">Great location</div>
+                    <div className="pd-badge-desc">Conveniently located with great access to amenities.</div>
+                  </div>
+                </div>
+                <div className="pd-badge">
+                  <Clock size={22} className="pd-badge-icon" />
+                  <div>
+                    <div className="pd-badge-title">Free cancellation</div>
+                    <div className="pd-badge-desc">Full refund if you change your mind within 48 hours.</div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <p className="property-address-detail">{property.address}</p>
+
+            {/* Divider */}
+            <div className="pd-divider" />
+
+            {/* Description */}
+            <div className="pd-section">
+              <div className="pd-description">
+                <p>
+                  {showFullDescription ? description : shortDesc}
+                  {description.length > 350 && (
+                    <button className="pd-show-more" onClick={() => setShowFullDescription(!showFullDescription)}>
+                      Show more{' '}
+                      <ChevronRight size={14} className="pd-show-more-arrow" />
+                    </button>
+                  )}
+                </p>
+              </div>
+              {/* Status pill */}
+              <div className="pd-status-pill" style={{
+                color: statusConfig?.color || '#22c55e',
+                borderColor: statusConfig?.color || '#22c55e',
+              }}>
+                <ShieldCheck size={14} />
+                {statusConfig?.text || 'Available'}
+              </div>
+            </div>
+
+            <div className="pd-divider" />
 
             {/* Amenities */}
-            {property.amenities?.length > 0 && (
-              <div className="property-amenities-section">
-                <h3>Amenities</h3>
-                <div className="property-amenities-grid">
-                  {property.amenities.map((a) => (
-                    <div key={a.id} className="property-amenity-item">
-                      {amenityIcon(a.name)}
-                      <span>{a.name}</span>
-                    </div>
-                  ))}
+            {amenities.length > 0 && (
+              <>
+                <div className="pd-section">
+                  <h3 className="pd-section-title">What this place offers</h3>
+                  <div className="pd-amenities-grid">
+                    {amenities.map((a) => (
+                      <div className="pd-amenity" key={a.id}>
+                        <span className="pd-amenity-icon">{amenityIcon(a.name)}</span>
+                        <span>{a.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {amenities.length > 6 && (
+                    <button className="pd-amenity-more">Show all amenities</button>
+                  )}
                 </div>
-              </div>
+                <div className="pd-divider" />
+              </>
             )}
 
-            {/* Additional images gallery */}
-            {property.images?.length > 1 && (
-              <div className="property-images-section">
-                <h3>More photos</h3>
-                <div className="property-images-grid">
-                  {property.images.slice(1).map((img) => (
-                    <img key={img.id} src={img.url} alt="" />
-                  ))}
-                </div>
+            {/* Map section */}
+            <div className="pd-section">
+              <h3 className="pd-section-title">Where you'll be</h3>
+              <p className="pd-map-location">{property.address || property.city || 'Kuala Lumpur'}</p>
+              <div className="pd-map">
+                {/* Embedded map placeholder */}
+                {property.latitude && property.longitude ? (
+                  <iframe
+                    title="Property location"
+                    className="pd-map-iframe"
+                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${property.longitude - 0.01},${property.latitude - 0.01},${property.longitude + 0.01},${property.latitude + 0.01}&layer=mapnik&marker=${property.latitude},${property.longitude}`}
+                    width="100%"
+                    height="300"
+                    frameBorder="0"
+                    allowFullScreen
+                  />
+                ) : (
+                  <div className="pd-map-placeholder">
+                    <MapPin size={48} />
+                    <span>Map coming soon — address: {property.address || 'TBD'}</span>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
+
+            <div className="pd-divider" />
+
+            {/* Reviews */}
+            <div className="pd-section">
+              <h3 className="pd-section-title">
+                <Star size={16} fill="#222" color="#222" />
+                {' '}{rating} · {sampleReviews.length} reviews
+              </h3>
+              <div className="pd-reviews">
+                {sampleReviews.map((r, i) => (
+                  <div className="pd-review" key={i}>
+                    <div className="pd-review-avatar">
+                      <UserCircle size={36} />
+                    </div>
+                    <div className="pd-review-body">
+                      <div className="pd-review-header">
+                        <strong>{r.name}</strong>
+                        <span className="pd-review-date">{r.date}</span>
+                      </div>
+                      <div className="pd-review-stars">
+                        {'★ '.repeat(r.rating)}
+                      </div>
+                      <p>{r.text}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <button className="pd-amenity-more">Show all reviews</button>
+            </div>
           </div>
 
-          {/* Action button */}
-          <AvailabilityCalendar
-            bookedDates={placeholderBookedDates}
-            month={new Date()}
-          />
-          <div className="property-action-bar">
-            <motion.button
-              type="button"
-              className="book-now-btn"
-              onClick={handleBookClick}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.97 }}
-              disabled={property.status === 'OCCUPIED' || property.status === 'MAINTENANCE'}
-            >
-              <CalendarDays size={20} />
-              {property.status === 'AVAILABLE' || property.status === 'available'
-                ? 'Check availability'
-                : badge.text}
-            </motion.button>
-            <p className="property-action-hint">
-              Not sure yet? <Link to="/properties">Browse all properties</Link>
-            </p>
+          {/* RIGHT COLUMN — Sticky Booking Card */}
+          <div className="pd-right">
+            <BookingCard
+              property={property}
+              onBookClick={() => setShowBookingModal(true)}
+            />
           </div>
         </div>
       </motion.div>
 
-      {/* ========== BOOKING MODAL ========== */}
+      {/* Footer */}
+      <footer className="pd-footer">
+        <div className="pd-footer-inner">
+          <div className="pd-footer-col">
+            <h4>EstateSync</h4>
+            <p>The world's most trusted platform for luxury property management and short-term rentals.</p>
+          </div>
+          <div className="pd-footer-col">
+            <h4>Support</h4>
+            <a href="#">Help Center</a>
+            <a href="#">Cancellation options</a>
+            <a href="#">Safety information</a>
+          </div>
+          <div className="pd-footer-col">
+            <h4>Hosting</h4>
+            <a href="#">List your property</a>
+            <a href="#">Hosting resources</a>
+            <a href="#">Community forum</a>
+          </div>
+          <div className="pd-footer-col">
+            <h4>Newsletter</h4>
+            <p>Get the latest travel news and property deals.</p>
+            <div className="pd-footer-newsletter">
+              <input type="email" placeholder="Email address" />
+              <button type="button">Join</button>
+            </div>
+          </div>
+        </div>
+        <div className="pd-footer-bottom">
+          <span>© 2024 EstateSync Inc. All rights reserved.</span>
+          <div className="pd-footer-links">
+            <a href="#">Privacy</a>
+            <a href="#">Terms</a>
+            <a href="#">Sitemap</a>
+          </div>
+        </div>
+      </footer>
+
+      {/* ── Heart overlay on gallery ── */}
+      <button
+        className="pd-heart"
+        onClick={() => setLiked(!liked)}
+        aria-label="Like"
+      >
+        <Heart size={20} fill={liked ? '#D82A2A' : 'none'} stroke="#D82A2A" />
+      </button>
+
+      {/* Booking Modal */}
       <TenantBookingModal
         property={property}
         isOpen={showBookingModal}
@@ -391,4 +618,4 @@ function PropertyDetail() {
   );
 }
 
-export default PropertyDetail;
+export default PropertyDetail
