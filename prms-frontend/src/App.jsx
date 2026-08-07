@@ -8,6 +8,7 @@ import { UserPreferencesProvider } from './contexts/UserPreferencesContext';
 import { FeatureFlagsProvider } from './contexts/FeatureFlagsContext';
 import { ProtectedRoute, PublicRoute } from './components/ProtectedRoute';
 import RoleSelectionGuard from './components/RoleSelectionGuard';
+import LoginGuard from './components/LoginGuard';
 import PublicPageTransition from './components/PublicPageTransition';
 
 /*  Public pages  */
@@ -130,9 +131,11 @@ function AppRoutes() {
         path="/login"
         element={
           <PublicRoute>
-            <PublicPageTransition>
-              <Login />
-            </PublicPageTransition>
+            <LoginGuard>
+              <PublicPageTransition>
+                <Login />
+              </PublicPageTransition>
+            </LoginGuard>
           </PublicRoute>
         }
       />

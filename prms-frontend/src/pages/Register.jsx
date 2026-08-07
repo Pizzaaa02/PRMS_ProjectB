@@ -20,7 +20,7 @@ function Register() {
 
   /* Issue #2: Redirect to /role-selection if user skipped role pick */
   useEffect(() => {
-    const selected = localStorage.getItem('prmsSelectedRole');
+    const selected = sessionStorage.getItem('prmsSelectedRole');
     if (!selected) {
       navigate('/role-selection', { replace: true });
     }
@@ -36,7 +36,7 @@ function Register() {
   });
 
   /* AUTH-002: Read role from RoleSelection, fallback to Tenant */
-  const selectedRole = localStorage.getItem('prmsSelectedRole') || 'Tenant';
+  const selectedRole = sessionStorage.getItem('prmsSelectedRole') || 'Tenant';
 
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
