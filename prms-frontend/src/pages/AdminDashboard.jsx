@@ -107,13 +107,13 @@ function AdminDashboard() {
       fetchJson(API_ENDPOINTS.auditLogs + '?limit=12').then((d) => d?.data?.logs ?? d?.logs ?? d?.data ?? []),
     ])
       .then(([dash, occ, props, usr, logs]) => {
-        setStats(dash)
-        setOccupancy(occ)
-        setProperties(Array.isArray(props) ? props : [])
-        setUsers(Array.isArray(usr) ? usr : [])
-        setAuditLogs(Array.isArray(logs) ? logs : [])
+        // Promise.allSettled wraps each result in {status, value|reason}
+        setStats(dash.status === 'fulfilled' ? dash.value : null)
+        setOccupancy(occ.status === 'fulfilled' ? occ.value : null)
+        setProperties(Array.isArray(props?.value) ? props.value : [])
+        setUsers(Array.isArray(usr?.value) ? usr.value : [])
+        setAuditLogs(Array.isArray(logs?.value) ? logs.value : [])
       })
-      .catch((err) => setError(getApiError(err)))
       .finally(() => {
         // Short delay so skeleton is visible briefly
         setTimeout(() => setLoading(false), 400)

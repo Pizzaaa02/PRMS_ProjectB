@@ -33,6 +33,7 @@ export const ROUTES = {
     settings: '/admin/settings',
     profile: '/admin/profile',
     customizer: '/admin/settings/customizer',
+    auditLogs: '/admin/audit-logs',
     help: '/admin/help',
   } as const,
 

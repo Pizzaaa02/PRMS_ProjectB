@@ -20,6 +20,14 @@ function getProfilePath(role) {
   return ROUTES.admin.profile
 }
 
+function getAuditLogsPath(role) {
+  if (!role) return ROUTES.admin.auditLogs
+  const lower = role.toLowerCase()
+  if (lower.includes('admin')) return ROUTES.admin.auditLogs
+  // Audit logs are admin-only; other roles see the admin path
+  return ROUTES.admin.auditLogs
+}
+
 function getCustomizerPath(role) {
   if (!role) return ROUTES.admin.customizer
   const lower = role.toLowerCase()
@@ -34,6 +42,7 @@ function Settings() {
   const { user } = useAuth()
 
   const profilePath = getProfilePath(user?.role)
+  const auditLogsPath = getAuditLogsPath(user?.role)
   const customizerPath = getCustomizerPath(user?.role)
 
   return (
@@ -76,7 +85,7 @@ function Settings() {
           <h2>Security Settings</h2>
           <p>Review login activity, enable verification, and manage session access.</p>
 
-          <button type="button">Manage Security</button>
+          <button type="button" onClick={() => navigate(auditLogsPath)}>Manage Security</button>
         </div>
 
         <div className="settings-card">
