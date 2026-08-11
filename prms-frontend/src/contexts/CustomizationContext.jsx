@@ -29,16 +29,17 @@ export function CustomizationProvider({ children }) {
       }
     }
 
-    // Apply inline styles directly to matching [data-customize-id] elements
-    // This ensures the preview sees changes immediately
+    // Apply inline styles directly to ALL matching [data-customize-id] elements
+    // Use querySelectorAll so shared IDs (e.g. global.header, global.sidebar)
+    // apply across every layout on the page simultaneously
     if (editingTheme === 'light') {
       for (const [customizeId, styles] of Object.entries(current)) {
-        const el = document.querySelector(`[data-customize-id="${customizeId}"]`);
-        if (el) {
+        const elements = document.querySelectorAll(`[data-customize-id="${customizeId}"]`);
+        elements.forEach((el) => {
           for (const [prop, value] of Object.entries(styles)) {
             el.style[prop] = value;
           }
-        }
+        });
       }
     }
   }, [draftConfig, editingTheme]);

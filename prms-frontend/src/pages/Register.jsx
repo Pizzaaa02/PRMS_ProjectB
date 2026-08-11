@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Building2,
@@ -13,10 +13,12 @@ import {
   MapPin,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useRegistration } from '../contexts/RegistrationContext';
 
 function Register() {
   const navigate = useNavigate();
   const { register, error, clearError } = useAuth();
+  const { clearRegistration } = useRegistration();
 
   /* Issue #2: Redirect to /role-selection if user skipped role pick */
   useEffect(() => {
@@ -71,16 +73,15 @@ function Register() {
     if (!result.success) {
       clearError();
     } else {
-      /* Issue #7: Clear onboarding state after successful registration */
-      localStorage.removeItem('prmsSelectedRole');
-      localStorage.removeItem('prmsOnboarding');
+      /* Issue #7: Clear registration state after successful registration */
+      clearRegistration();
     }
 
     setSubmitting(false);
   }
 
   return (
-    <main className="login-page">
+    <main className="login-page" data-customize-id="global.page">
       <motion.section
         className="login-left"
         initial={{ x: -80, opacity: 0 }}
@@ -92,6 +93,8 @@ function Register() {
           initial={{ y: -18, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.15, duration: 0.45 }}
+          onClick={() => navigate('/')}
+          style={{ cursor: 'pointer' }}
         >
           <Building2 size={28} />
           <span>PRMS</span>
@@ -327,7 +330,19 @@ function Register() {
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.8, duration: 0.35 }}
             >
-              Already have an account? <Link to="/login">Sign in</Link>
+              Already have an account?{' '}
+              <a
+                href="#"
+                role="link"
+                tabIndex={0}
+                onClick={(e) => {
+                  e.preventDefault();
+                  clearRegistration();
+                  navigate('/login', { replace: true });
+                }}
+              >
+                Sign in
+              </a>
             </motion.p>
           </form>
         </motion.div>

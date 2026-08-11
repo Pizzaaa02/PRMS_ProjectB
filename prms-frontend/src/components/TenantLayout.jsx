@@ -31,8 +31,8 @@ function TenantLayout() {
   }
 
   return (
-    <main className="tenant-layout-shell">
-      <aside className="tenant-layout-sidebar">
+    <main className="tenant-layout-shell" data-customize-id="global.page">
+      <aside className="tenant-layout-sidebar" data-customize-id="global.sidebar">
         {navItems.map((item) => {
           const Icon = item.icon
           const isActive = activePage === item.key
@@ -76,27 +76,27 @@ function TenantLayout() {
         </motion.button>
       </aside>
 
-      <section className="tenant-layout-main">
-        <header className="tenant-layout-topbar">
-          <div className="tenant-layout-brand" onClick={() => safeNavigate('/tenant')}>
-            <h2>PRMS</h2>
+      <section className="tenant-layout-main" data-customize-id="global.content">
+        <header className="tenant-layout-topbar" data-customize-id="global.header">
+          <div className="tenant-layout-brand" onClick={() => safeNavigate('/tenant')} data-customize-id="global.brand">
+            <h2 data-customize-id="global.brand.title">PRMS</h2>
             <span></span>
-            <p>{role} Portal</p>
+            <p data-customize-id="global.brand.subtitle">{role} Portal</p>
           </div>
 
-          <div className="tenant-layout-search">
+          <div className="tenant-layout-search" data-customize-id="global.search">
             <Search size={22} />
             <input type="text" placeholder="Search..." />
           </div>
 
-          <div className="tenant-layout-actions">
+          <div className="tenant-layout-actions" data-customize-id="global.top-actions">
             <NotificationDropdown />
             <ThemeSwitcher />
             <ProfileDropdown prefix="/tenant" />
           </div>
         </header>
 
-        <div className="tenant-layout-content">
+        <div className="tenant-layout-content" data-customize-id="global.body">
           <PageTransition>
             <Outlet />
           </PageTransition>

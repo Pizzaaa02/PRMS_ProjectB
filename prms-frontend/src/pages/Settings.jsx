@@ -46,7 +46,7 @@ function Settings() {
   const customizerPath = getCustomizerPath(user?.role)
 
   return (
-    <div className="admin-content">
+    <div className="admin-content" data-customize-id="global.content">
       <div className="admin-title-row">
         <div>
           <h1>Settings</h1>

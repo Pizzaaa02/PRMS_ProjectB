@@ -24,7 +24,7 @@ export const propertyApi = {
   },
   addImage(propertyId, formData) {
     return apiClient.post(`/properties/${propertyId}/images`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+      headers: { 'Content-Type': undefined },
     });
   },
   deleteImage(imageId) {

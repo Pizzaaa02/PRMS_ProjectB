@@ -47,8 +47,8 @@ function AgentLayout() {
   }
 
   return (
-    <main className="agent-layout-shell">
-      <aside className="agent-layout-sidebar">
+    <main className="agent-layout-shell" data-customize-id="global.page">
+      <aside className="agent-layout-sidebar" data-customize-id="global.sidebar">
         {navItems.map((item) => {
           const Icon = item.icon
           const isActive = activePage === item.key
@@ -92,15 +92,15 @@ function AgentLayout() {
         </motion.button>
       </aside>
 
-      <section className="agent-layout-main">
-        <header className="agent-layout-topbar">
-          <div className="agent-layout-brand" onClick={() => safeNavigate('/agent')}>
-            <h2>PRMS</h2>
+      <section className="agent-layout-main" data-customize-id="global.content">
+        <header className="agent-layout-topbar" data-customize-id="global.header">
+          <div className="agent-layout-brand" onClick={() => safeNavigate('/agent')} data-customize-id="global.brand">
+            <h2 data-customize-id="global.brand.title">PRMS</h2>
             <span></span>
-            <p>{getTopbarTitle(activePage)}</p>
+            <p data-customize-id="global.brand.subtitle">{getTopbarTitle(activePage)}</p>
           </div>
 
-          <div className="agent-layout-top-actions">
+          <div className="agent-layout-top-actions" data-customize-id="global.top-actions">
             <NotificationDropdown />
             <ThemeSwitcher />
 
@@ -115,7 +115,7 @@ function AgentLayout() {
           </div>
         </header>
 
-        <div className="agent-layout-content">
+        <div className="agent-layout-content" data-customize-id="global.body">
           <PageTransition>
             <Outlet />
           </PageTransition>

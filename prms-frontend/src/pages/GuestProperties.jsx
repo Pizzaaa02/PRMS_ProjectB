@@ -20,6 +20,7 @@ import {
   Users,
   X,
 } from 'lucide-react';
+import { getImageUrl } from '../config/imageHelper';
 import { propertyApi, searchApi } from '../api';
 import './GuestProperties.css';
 
@@ -144,13 +145,13 @@ function GuestProperties() {
   const hasActiveFilters = searchQuery || priceFilter !== null || typeFilter || statusFilter;
 
   return (
-    <main className="guest-properties-page">
-      <header className="guest-properties-navbar">
-        <Link to="/" className="guest-properties-logo">
+    <main className="guest-properties-page" data-customize-id="global.page">
+      <header className="guest-properties-navbar" data-customize-id="global.header">
+        <Link to="/" className="guest-properties-logo" data-customize-id="global.brand">
           PRMS
         </Link>
 
-        <nav className="guest-properties-tabs">
+        <nav className="guest-properties-tabs" data-customize-id="global.tabs">
           <button type="button" className="active">
             <Home size={22} />
             Homes
@@ -165,7 +166,7 @@ function GuestProperties() {
           </button>
         </nav>
 
-        <div className="guest-properties-actions">
+        <div className="guest-properties-actions" data-customize-id="global.top-actions">
           <Link to="/register">Become a host</Link>
           <button type="button" className="circle-btn">
             <Globe2 size={21} />
@@ -188,7 +189,7 @@ function GuestProperties() {
       </header>
 
       {/* Issue #13: Search panel connected to data */}
-      <section className="guest-search-panel">
+      <section className="guest-search-panel" data-customize-id="home.search">
         <div className="guest-search-pill">
           <div>
             <span>Where</span>
@@ -211,7 +212,7 @@ function GuestProperties() {
       </section>
 
       {/* Filter bar with area tabs */}
-      <section className="guest-filter-bar">
+      <section className="guest-filter-bar" data-customize-id="search.filters">
         <div className="guest-area-tabs">
           {cities.map((city, index) => (
             <button
@@ -343,7 +344,7 @@ function GuestProperties() {
 
       {/* Issue #13: Property listing with real data */}
       {!loading && !error && (
-        <section className="guest-listing-section">
+        <section className="guest-listing-section" data-customize-id="home.listings">
           <div className="guest-listing-title">
             <div>
               <h1>
@@ -368,7 +369,7 @@ function GuestProperties() {
             <div className="guest-property-grid">
               {filteredProperties.map((property, index) => {
                 const status = statusInfo(property.status);
-                const firstImg = property.images?.[0]?.url || '';
+                const firstImg = getImageUrl(property.images?.[0]?.url);
                 return (
                   <motion.article
                     key={property.id}

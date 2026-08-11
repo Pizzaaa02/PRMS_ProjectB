@@ -118,7 +118,7 @@ function TenantDashboard() {
   }
 
   return (
-    <div className="tenant-dashboard-page">
+    <div className="tenant-dashboard-page" data-customize-id="global.content">
       {/* ---- Hero ---- */}
       <div className="landlord-page-title-row">
         <div>

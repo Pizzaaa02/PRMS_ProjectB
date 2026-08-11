@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { getImageUrl } from '../config/imageHelper';
 import { searchApi } from '../api/search'
 import { ROUTES } from '../config/routes'
 import {
@@ -90,7 +91,7 @@ function SearchPage() {
   ]
 
   return (
-    <div className="search-page">
+    <div className="search-page" data-customize-id="global.page">
       {/* Search Header */}
       <div className="search-header" data-customize-id="search.header">
         <div className="search-header-content">
@@ -131,9 +132,9 @@ function SearchPage() {
         </div>
       </div>
 
-      <main className="search-body">
+      <main className="search-body" data-customize-id="search.body">
         {/* Filters Sidebar */}
-        <aside className={`search-filters ${filtersOpen ? 'open' : ''}`}>
+        <aside className={`search-filters ${filtersOpen ? 'open' : ''}`} data-customize-id="search.filters">
           <div className="filter-header">
             <h3>Filters</h3>
             <button type="button" onClick={clearFilters}>
@@ -166,7 +167,7 @@ function SearchPage() {
         </aside>
 
         {/* Results */}
-        <section className="search-results">
+        <section className="search-results" data-customize-id="search.results">
           <div className="results-toolbar">
             <button
               type="button"
@@ -226,7 +227,7 @@ function SearchPage() {
               >
                 <div className="result-image">
                   {property.images?.[0]?.url ? (
-                    <img src={property.images[0].url} alt={property.title || property.name} />
+                    <img src={getImageUrl(property.images[0].url)} alt={property.title || property.name} />
                   ) : property.image ? (
                     <img src={property.image} alt={property.title} />
                   ) : (

@@ -243,7 +243,7 @@ export default function UserManagement() {
 
   /* ── Render ── */
   return (
-    <div className="user-mgmt">
+    <div className="user-mgmt" data-customize-id="global.content">
       {/* Hero */}
       <section className="user-mgmt-hero">
         <div>

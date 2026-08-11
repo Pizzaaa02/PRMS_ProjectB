@@ -75,7 +75,7 @@ function RoleSelection() {
   }
 
   return (
-    <main className="role-page">
+    <main className="role-page" data-customize-id="global.page">
       <motion.section
         className="role-left"
         initial={{ x: -80, opacity: 0 }}

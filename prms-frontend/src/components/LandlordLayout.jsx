@@ -31,8 +31,8 @@ function LandlordLayout() {
   }
 
   return (
-    <main className="landlord-layout-shell">
-      <aside className="landlord-layout-sidebar">
+    <main className="landlord-layout-shell" data-customize-id="global.page">
+      <aside className="landlord-layout-sidebar" data-customize-id="global.sidebar">
         {navItems.map((item) => {
           const Icon = item.icon
           const isActive = activePage === item.key
@@ -76,27 +76,27 @@ function LandlordLayout() {
         </motion.button>
       </aside>
 
-      <section className="landlord-layout-main">
-        <header className="landlord-layout-topbar">
-          <div className="landlord-layout-brand" onClick={() => safeNavigate('/landlord')}>
-            <h2>PRMS</h2>
+      <section className="landlord-layout-main" data-customize-id="global.content">
+        <header className="landlord-layout-topbar" data-customize-id="global.header">
+          <div className="landlord-layout-brand" onClick={() => safeNavigate('/landlord')} data-customize-id="global.brand">
+            <h2 data-customize-id="global.brand.title">PRMS</h2>
             <span></span>
-            <p>{role} Portal</p>
+            <p data-customize-id="global.brand.subtitle">{role} Portal</p>
           </div>
 
-          <div className="landlord-layout-search">
+          <div className="landlord-layout-search" data-customize-id="global.search">
             <Search size={22} />
             <input type="text" placeholder="Search portfolios..." />
           </div>
 
-          <div className="landlord-layout-actions">
+          <div className="landlord-layout-actions" data-customize-id="global.top-actions">
             <NotificationDropdown />
             <ThemeSwitcher />
             <ProfileDropdown prefix="/landlord" />
           </div>
         </header>
 
-        <div className="landlord-layout-content">
+        <div className="landlord-layout-content" data-customize-id="global.body">
           <PageTransition>
             <Outlet />
           </PageTransition>

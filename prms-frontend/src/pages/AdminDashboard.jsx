@@ -258,7 +258,7 @@ function AdminDashboard() {
   })
 
   return (
-    <div className="admin-dashboard-page">
+    <div className="admin-dashboard-page" data-customize-id="global.content">
       {/* ---- Hero ---- */}
       <div className="landlord-page-title-row">
         <div>

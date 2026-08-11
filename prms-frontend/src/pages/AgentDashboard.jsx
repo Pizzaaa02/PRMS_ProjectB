@@ -18,6 +18,7 @@ import {
   TrendingUp,
   Wrench,
 } from 'lucide-react'
+import { getImageUrl } from '../config/imageHelper';
 import './AgentDashboard.css'
 
 function AgentDashboard() {
@@ -87,7 +88,7 @@ function AgentDashboard() {
 
   if (authLoading || loading) {
     return (
-      <div className="agent-dashboard-skeleton">
+      <div className="agent-dashboard-skeleton" data-customize-id="global.content">
         {[1, 2, 3, 4].map((n) => (
           <div key={n} className="kpi-card kpi-skeleton">
             <div className="skeleton-line skeleton-sm" />
@@ -225,7 +226,7 @@ function AgentDashboard() {
           {assignedProperties.map((prop) => (
             <div className="agent-property-card" key={prop.id}>
               <div className="agent-property-img">
-                <img src={prop.image} alt={prop.title} />
+                <img src={getImageUrl(prop.image)} alt={prop.title} />
               </div>
               <div className="agent-property-info">
                 <div className="agent-property-top">

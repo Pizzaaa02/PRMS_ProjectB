@@ -181,7 +181,7 @@ function AuthProvider({ children }) {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('prmsDashboardPath');
-      localStorage.removeItem('prmsSelectedRole');
+      sessionStorage.removeItem('prmsSelectedRole');
       localStorage.removeItem('prmsOnboarding');
       navigate?.('/login');
       dispatch({ type: ACTIONS.LOGOUT });

@@ -46,6 +46,21 @@ const ELEMENT_PROPERTIES_MAP = {
   cta_section: { visibility: true, lock: false, bg_color: '#8a2be2', padding: 48, margin: 0, opacity: 100 },
   cta_title: { text: 'Start Your Property Journey Today', visibility: true, lock: false, color: '#ffffff', font_size: 32, font_weight: '700', alignment: 'center', opacity: 100 },
   cta_button: { button_text: 'Get Started', button_link: '/contact', visibility: true, lock: false, color: '#0f172a', bg_color: '#ffffff', font_size: 16, font_weight: '600', alignment: 'center', border_radius: 8, opacity: 100 },
+  /* PropertyDetail elements */
+  'detail.page': { visibility: true, lock: false },
+  'detail.header': { bg_color: '#ffffff', visibility: true, lock: false },
+  'global.header': { bg_color: '#ffffff', visibility: true, lock: false },
+  'global.brand': { color: '#3366ff', visibility: true, lock: false },
+  'global.top-actions': { visibility: true, lock: false },
+  'detail.breadcrumb': { color: '#64748b', visibility: true, lock: false },
+  'detail.title': { color: '#1a1a1a', bg_color: '#ffffff', visibility: true, lock: false },
+  'detail.gallery': { visibility: true, lock: false },
+  'detail.body': { visibility: true, lock: false },
+  'detail.left': { color: '#1a1a1a', bg_color: '#ffffff', visibility: true, lock: false },
+  'detail.right': { visibility: true, lock: false },
+  'global.page': { bg_color: '#f8f9fb', visibility: true, lock: false },
+  'global.body': { visibility: true, lock: false },
+  'global.tabs': { visibility: true, lock: false },
 };
 
 export default function WebsiteCustomizer() {
@@ -184,6 +199,20 @@ export default function WebsiteCustomizer() {
     footer_copyright_text: { text: 'footer_copyright_text' },
     homepage_about_title: { text: 'homepage_about_title' },
     homepage_about_description: { text: 'homepage_about_description' },
+    /* PropertyDetail elements */
+    'global.page': { bg_color: 'property_detail_page_bg_color' },
+    'global.header': { bg_color: 'property_detail_header_bg_color' },
+    'global.brand': { color: 'property_detail_brand_color' },
+    'global.top-actions': { visibility: 'property_detail_top_actions_visibility' },
+    'detail.page': { visibility: 'property_detail_page_visibility' },
+    'detail.breadcrumb': { color: 'property_detail_breadcrumb_color' },
+    'detail.title': { color: 'property_detail_title_color', bg_color: 'property_detail_title_bg_color' },
+    'detail.gallery': { bg_color: 'property_detail_gallery_bg_color' },
+    'detail.body': { bg_color: 'property_detail_body_bg_color' },
+    'detail.left': { color: 'property_detail_left_color', bg_color: 'property_detail_left_bg_color' },
+    'detail.right': { bg_color: 'property_detail_right_bg_color' },
+    'global.body': { visibility: 'property_detail_body_visibility' },
+    'global.tabs': { visibility: 'property_detail_tabs_visibility' },
   };
 
   /* Fallback for unmapped elements */

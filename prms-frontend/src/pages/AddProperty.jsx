@@ -1,15 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { propertyApi } from '../api';
 import { ROUTES, getPropertyRoute, roleToPath } from '../config/routes';
 import { categoryApi } from '../api/categories';
+import './AddProperty.css';
 import {
   ArrowLeft,
   Check,
+  FileImage,
   Loader2,
   Plus,
   Save,
+  Upload,
   X,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -40,8 +43,12 @@ export default function AddProperty() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [amenityInput, setAmenityInput] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
   const [categories, setCategories] = useState([]);
+  const [uploadingImages, setUploadingImages] = useState(false);
+
+  // Image files: array of { file: File, preview: string }
+  const [imageFiles, setImageFiles] = useState([]);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     (async () => {
@@ -107,23 +114,47 @@ export default function AddProperty() {
     }));
   };
 
-  /* Add image URL */
-  const addImage = (e) => {
-    e.preventDefault();
-    if (imageUrl.trim()) {
-      setForm((prev) => ({
-        ...prev,
-        images: [...prev.images, { url: imageUrl.trim() }],
-      }));
-      setImageUrl('');
+  /* ── Image file handling ── */
+
+  /* Handle file selection */
+  const MAX_IMAGE_FILES = 5;
+  const MAX_IMAGE_SIZE_MB = 5;
+
+  const handleFileSelect = (e) => {
+    const files = Array.from(e.target.files || []);
+    let currentCount = imageFiles.length;
+    for (const file of files) {
+      // Size check (5 MB)
+      if (file.size > MAX_IMAGE_SIZE_MB * 1024 * 1024) {
+        setError(`"${file.name}" exceeds ${MAX_IMAGE_SIZE_MB} MB and was skipped`);
+        continue;
+      }
+      // Quick type check
+      if (!file.type.startsWith('image/')) continue;
+      // Count check
+      if (currentCount >= MAX_IMAGE_FILES) {
+        setError(`Maximum ${MAX_IMAGE_FILES} images allowed`);
+        break;
+      }
+      const preview = URL.createObjectURL(file);
+      currentCount += 1;
+      setImageFiles((prev) => [...prev, { file, preview }]);
     }
+    // Reset input so the same file can be re-selected
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  /* Remove a queued image by index */
   const removeImage = (idx) => {
-    setForm((prev) => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== idx),
-    }));
+    setImageFiles((prev) => {
+      const updated = prev.filter((_, i) => i !== idx);
+      return updated;
+    });
+  };
+
+  /* Trigger hidden file input */
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
   };
 
   /* Validate */
@@ -133,6 +164,16 @@ export default function AddProperty() {
     if (!form.rent || Number(form.rent) <= 0) return 'Valid rental price is required';
     if (!form.city) return 'City is required';
     return null;
+  };
+
+  /* Upload image files to the backend */
+  const uploadImages = async (propertyId) => {
+    const uploadPromises = imageFiles.map(async ({ file }) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      return propertyApi.addImage(propertyId, formData);
+    });
+    await Promise.allSettled(uploadPromises);
   };
 
   /* Submit */
@@ -147,15 +188,25 @@ export default function AddProperty() {
     }
 
     setLoading(true);
+    setUploadingImages(false);
     try {
       const payload = {
         ...form,
         rent: Number(form.rent),
         availableFrom: form.availableFrom || undefined,
         availableTo: form.availableTo || undefined,
+        images: [], // images are uploaded separately after creation
       };
       const res = await propertyApi.create(payload);
       if (res?.data?.success) {
+        const propertyId = res.data.data.id;
+
+        // Upload images if any were selected
+        if (imageFiles.length > 0) {
+          setUploadingImages(true);
+          await uploadImages(propertyId);
+        }
+
         setSuccess(true);
         setTimeout(() => navigate(getPropertyRoute(user?.role)), 1200);
       } else {
@@ -166,12 +217,15 @@ export default function AddProperty() {
         err.response?.data?.error?.message || 'Failed to create property'
       );
     } finally {
+      // Revoke all object URLs to free memory
+      imageFiles.forEach(({ preview }) => URL.revokeObjectURL(preview));
       setLoading(false);
+      setUploadingImages(false);
     }
   };
 
   return (
-    <div className="add-property-page">
+    <div className="add-property-page" data-customize-id="global.content">
       <header className="add-property-header">
         <div className="add-property-header-left">
           <Link to={getPropertyRoute(user?.role)} className="back-link">
@@ -389,27 +443,35 @@ export default function AddProperty() {
               <section className="form-section">
                 <h2>Property images</h2>
                 <p className="section-hint">
-                  Add property image URLs. You can add image files via the property detail page later.
+                  Upload images from your device. Up to 5 images, max 5 MB each.
                 </p>
 
-                <div className="image-input-row">
+                {/* Upload button */}
+                <div className="image-upload-area">
                   <input
-                    type="url"
-                    placeholder="https://example.com/photo.jpg"
-                    value={imageUrl}
-                    onChange={(e) => setImageUrl(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && addImage(e)}
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    style={{ display: 'none' }}
+                    onChange={handleFileSelect}
                   />
-                  <button type="button" className="add-amenity-btn" onClick={addImage}>
-                    <Plus size={18} />
+                  <button
+                    type="button"
+                    className="image-upload-btn"
+                    onClick={triggerFileInput}
+                  >
+                    <Upload size={18} />
+                    Upload images
                   </button>
                 </div>
 
-                {form.images.length > 0 && (
+                {/* Image previews or default placeholder */}
+                {imageFiles.length > 0 ? (
                   <div className="image-list">
-                    {form.images.map((img, idx) => (
+                    {imageFiles.map(({ preview }, idx) => (
                       <div key={idx} className="image-thumb">
-                        <img src={img.url} alt={`Image ${idx + 1}`} />
+                        <img src={preview} alt={`Image ${idx + 1}`} />
                         <button
                           type="button"
                           className="remove-image"
@@ -419,6 +481,16 @@ export default function AddProperty() {
                         </button>
                       </div>
                     ))}
+                  </div>
+                ) : (
+                  <div className="image-list">
+                    <div className="image-thumb image-thumb-default">
+                      <img
+                        src="http://localhost:3500/images/92d9ae18-6837-4f1c-95fc-31a2e0cad4df-1786324589235-igd6f8.jpg"
+                        alt="Default property image"
+                      />
+                      <span className="image-thumb-label">Default image</span>
+                    </div>
                   </div>
                 )}
               </section>
@@ -434,7 +506,7 @@ export default function AddProperty() {
               {loading ? (
                 <>
                   <Loader2 size={18} className="spin-icon" />
-                  Saving...
+                  {uploadingImages ? 'Uploading images...' : 'Saving...'}
                 </>
               ) : (
                 <>

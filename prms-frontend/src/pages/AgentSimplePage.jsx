@@ -19,7 +19,7 @@ const AgentSimplePage = ({ label }) => {
   return (
     <div className="page-container">
       <AgentSidebar />
-      <main className="content-wrapper">
+      <main className="content-wrapper" data-customize-id="global.content">
         <div className="topbar">
           <h2>{label}</h2>
           <div className="topbar-right">

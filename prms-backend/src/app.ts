@@ -5,6 +5,7 @@ import { initializeApp, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { env } from './config';
 import { prisma } from './db';
+import path from 'path';
 import { requestLogger } from './middleware/logging';
 import { responseCache } from './middleware/responseCache';
 import { errorHandler } from './middleware/errorHandler';
@@ -43,6 +44,12 @@ app.use(cors({ origin: env.CORS_ORIGIN }));
 app.use(express.json());
 app.use(responseCache);
 app.use(requestLogger);
+
+// Serve uploaded images statically with cross-origin CORP (frontend is on a different port)
+app.use('/images', (req, res, next) => {
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    next();
+}, express.static(path.join(__dirname, '..', 'public', 'images')));
 
 app.get('/health', async (req, res) => {
   try {

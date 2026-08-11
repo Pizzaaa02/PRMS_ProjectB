@@ -193,7 +193,7 @@ function LandlordDashboard() {
   }
 
   return (
-    <div className="landlord-dashboard-page">
+    <div className="landlord-dashboard-page" data-customize-id="global.content">
       {/* Page title row */}
       <div className="landlord-page-title-row">
         <div>

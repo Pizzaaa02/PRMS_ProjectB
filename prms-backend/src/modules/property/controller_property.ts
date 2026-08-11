@@ -66,7 +66,10 @@ export class PropertyController {
 
   addImage = async (req: Request, res: Response) => {
     try {
-      const image = await propertyService.addImage(String(req.params.id), req.body.url);
+      const file = (req as any).file;
+      if (!file) return res.status(400).json({ success: false, error: { message: 'No image file provided' } });
+      const url = `/images/${file.filename}`;
+      const image = await propertyService.addImage(String(req.params.id), url);
       HELPERS(req).log({ action: 'ADD_PROPERTY_IMAGE', entity: 'Property', entityId: req.params.id, description: `Added image to property` });
       res.status(201).json(successResponse(image));
     } catch (error: any) { HELPERS(req).log({ action: 'ADD_PROPERTY_IMAGE', entity: 'Property', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(400).json({ success: false, error: { message: error.message } }); }
@@ -74,7 +77,14 @@ export class PropertyController {
 
   deleteImage = async (req: Request, res: Response) => {
     try {
+      const image = await propertyService.getImageById(String(req.params.imageId));
       await propertyService.deleteImage(String(req.params.imageId));
+      if (image?.url) {
+        const fs = await import('fs');
+        const path = await import('path');
+        const filePath = path.join(__dirname, '..', '..', '..', 'public', image.url.replace(/^\//, ''));
+        fs.promises.unlink(filePath).catch(() => {});
+      }
       HELPERS(req).log({ action: 'DELETE_PROPERTY_IMAGE', entity: 'PropertyImage', entityId: req.params.imageId, description: `Deleted property image` });
       res.json(successResponse(null, 'Image deleted'));
     } catch (error: any) { HELPERS(req).log({ action: 'DELETE_PROPERTY_IMAGE', entity: 'PropertyImage', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(400).json({ success: false, error: { message: error.message } }); }

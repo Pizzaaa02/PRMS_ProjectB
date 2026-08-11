@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   ChevronRight,
@@ -257,20 +257,33 @@ function BookingCard({ property, onBookClick }) {
 function PropertyDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const [property, setProperty] = useState(null);
+  const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [liked, setLiked] = useState(false);
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [showFullDescription, setShowFullDescription] = useState(false);
 
+  /* Detect if rendered inside a role-protected PRMS layout.
+     When true, hide the EstateSync topbar/footer so the PRMS
+     layout navbar/sidebar are the only navigation surfaces. */
+  const isInRoleLayout = ['/admin/', '/landlord/', '/tenant/', '/agent/'].some(
+    (prefix) => location.pathname.startsWith(prefix)
+  );
+
   useEffect(() => {
     let cancelled = false;
     async function fetch() {
       try {
         const res = await propertyApi.getById(id);
-        if (!cancelled && res?.data) setProperty(res.data.data);
+        if (!cancelled && res?.data) {
+          const propData = res.data.data;
+          setProperty(propData);
+          setImages(propData.images || []);
+        }
         setLoading(false);
       } catch (err) {
         if (!cancelled) {
@@ -351,30 +364,33 @@ function PropertyDetail() {
   }
 
   return (
-    <main className="property-detail-page">
-      {/* ── Top Bar ── */}
-      <header className="pd-topbar">
-        <Link to="/" className="pd-logo">EstateSync</Link>
-        <nav className="pd-topnav">
-          <Link to="/properties" className="active">Properties</Link>
-          <Link to="/dashboard">Dashboard</Link>
-          <Link to="/bookings">Bookings</Link>
-        </nav>
-        <div className="pd-topactions">
-          <button type="button" className="pd-icon-btn"><Search size={18} /></button>
-          <button type="button" className="pd-icon-btn"><UserCircle size={20} /></button>
-          <button type="button" className="pd-switch-btn">Switch Role</button>
-        </div>
-      </header>
+    <main className="property-detail-page" data-customize-id="global.page">
+      {/* ── Top Bar (EstateSync-style, only on public routes) ── */}
+      {!isInRoleLayout && (
+        <header className="pd-topbar" data-customize-id="global.header">
+          <Link to="/" className="pd-logo" data-customize-id="global.brand">EstateSync</Link>
+          <nav className="pd-topnav" data-customize-id="global.tabs">
+            <Link to="/properties" className="active">Properties</Link>
+            <Link to="/dashboard">Dashboard</Link>
+            <Link to="/bookings">Bookings</Link>
+          </nav>
+          <div className="pd-topactions" data-customize-id="global.top-actions">
+            <button type="button" className="pd-icon-btn">&lt;Search size={18} /&gt;</button>
+            <button type="button" className="pd-icon-btn">&lt;UserCircle size={20} /&gt;</button>
+            <button type="button" className="pd-switch-btn">Switch Role</button>
+          </div>
+        </header>
+      )}
 
       <motion.div
         className="pd-content"
+        data-customize-id="global.body"
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
       >
         {/* ── Breadcrumb ── */}
-        <div className="pd-breadcrumb">
+        <div className="pd-breadcrumb" data-customize-id="detail.breadcrumb">
           <Link to="/properties">Properties</Link>
           <ChevronRight size={12} />
           <span>{property.city || 'Kuala Lumpur'}</span>
@@ -383,7 +399,7 @@ function PropertyDetail() {
         </div>
 
         {/* ── Title + Rating ── */}
-        <div className="pd-title-row">
+        <div className="pd-title-row" data-customize-id="detail.title">
           <h1 className="pd-title">{property.title}</h1>
           <div className="pd-rating">
             <Star size={16} fill="#F59E0B" color="#F59E0B" />
@@ -396,12 +412,21 @@ function PropertyDetail() {
         </div>
 
         {/* ── Image Gallery ── */}
-        <ImageGallery images={property.images} />
+        <ImageGallery
+          images={images.length > 0 ? images : property?.images}
+          propertyId={id}
+          userRole={user?.role}
+          onImagesChange={(updatedImages) => {
+            setImages(updatedImages);
+            setProperty((prev) => (prev ? { ...prev, images: updatedImages } : prev));
+          }}
+          wrapperProps={{ className: 'mb-6', 'data-customize-id': 'detail.gallery' }}
+        />
 
         {/* ── Two-column layout ── */}
-        <div className="pd-body">
+        <div className="pd-body" data-customize-id="detail.body">
           {/* LEFT COLUMN */}
-          <div className="pd-left">
+          <div className="pd-left" data-customize-id="detail.left">
             {/* Hosted by section */}
             <div className="pd-host-section">
               <div className="pd-host-top">
@@ -561,43 +586,45 @@ function PropertyDetail() {
         </div>
       </motion.div>
 
-      {/* Footer */}
-      <footer className="pd-footer">
-        <div className="pd-footer-inner">
-          <div className="pd-footer-col">
-            <h4>EstateSync</h4>
-            <p>The world's most trusted platform for luxury property management and short-term rentals.</p>
-          </div>
-          <div className="pd-footer-col">
-            <h4>Support</h4>
-            <a href="#">Help Center</a>
-            <a href="#">Cancellation options</a>
-            <a href="#">Safety information</a>
-          </div>
-          <div className="pd-footer-col">
-            <h4>Hosting</h4>
-            <a href="#">List your property</a>
-            <a href="#">Hosting resources</a>
-            <a href="#">Community forum</a>
-          </div>
-          <div className="pd-footer-col">
-            <h4>Newsletter</h4>
-            <p>Get the latest travel news and property deals.</p>
-            <div className="pd-footer-newsletter">
-              <input type="email" placeholder="Email address" />
-              <button type="button">Join</button>
+      {/* Footer (EstateSync-style, only on public routes) */}
+      {!isInRoleLayout && (
+        <footer className="pd-footer">
+          <div className="pd-footer-inner">
+            <div className="pd-footer-col">
+              <h4>EstateSync</h4>
+              <p>The world's most trusted platform for luxury property management and short-term rentals.</p>
+            </div>
+            <div className="pd-footer-col">
+              <h4>Support</h4>
+              <a href="#">Help Center</a>
+              <a href="#">Cancellation options</a>
+              <a href="#">Safety information</a>
+            </div>
+            <div className="pd-footer-col">
+              <h4>Hosting</h4>
+              <a href="#">List your property</a>
+              <a href="#">Hosting resources</a>
+              <a href="#">Community forum</a>
+            </div>
+            <div className="pd-footer-col">
+              <h4>Newsletter</h4>
+              <p>Get the latest travel news and property deals.</p>
+              <div className="pd-footer-newsletter">
+                <input type="email" placeholder="Email address" />
+                <button type="button">Join</button>
+              </div>
             </div>
           </div>
-        </div>
-        <div className="pd-footer-bottom">
-          <span>© 2024 EstateSync Inc. All rights reserved.</span>
-          <div className="pd-footer-links">
-            <a href="#">Privacy</a>
-            <a href="#">Terms</a>
-            <a href="#">Sitemap</a>
+          <div className="pd-footer-bottom">
+            <span>© 2024 EstateSync Inc. All rights reserved.</span>
+            <div className="pd-footer-links">
+              <a href="#">Privacy</a>
+              <a href="#">Terms</a>
+              <a href="#">Sitemap</a>
+            </div>
           </div>
-        </div>
-      </footer>
+        </footer>
+      )}
 
       {/* ── Heart overlay on gallery ── */}
       <button

@@ -45,7 +45,7 @@ function Login() {
   }
 
   return (
-    <main className="login-page">
+    <main className="login-page" data-customize-id="global.page">
       <motion.section
         className="login-left"
         initial={{ x: -80, opacity: 0 }}
@@ -57,6 +57,8 @@ function Login() {
           initial={{ y: -18, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.15, duration: 0.45 }}
+          onClick={() => navigate('/')}
+          style={{ cursor: 'pointer' }}
         >
           <Building2 size={28} />
           <span>PRMS</span>

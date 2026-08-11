@@ -18,6 +18,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react'
+import { getImageUrl } from '../config/imageHelper';
 import { propertyApi, getApiError } from '../api'
 import { ROUTES, getAddPropertyRoute, getPropertyDetailPath } from '../config/routes'
 import './Properties.css'
@@ -279,13 +280,17 @@ function Properties() {
                       <div className="property-card">
                         {/* Image */}
                         <div className="property-card-image">
-                          {p.image || p.thumbnail ? (
-                            <img src={p.image} alt={p.name || p.title} />
-                          ) : (
-                            <div className="image-placeholder">
-                              <Building2 size={40} />
-                            </div>
-                          )}
+                          {(() => {
+                            const imageUrl = p.images?.[0]?.url || p.image || p.thumbnail;
+                            if (imageUrl) {
+                              return <img src={getImageUrl(imageUrl)} alt={p.name || p.title} />;
+                            }
+                            return (
+                              <div className="image-placeholder">
+                                <Building2 size={40} />
+                              </div>
+                            );
+                          })()}
                           <span className={`status-badge status-${stype}`}>
                             {p.status || 'Available'}
                           </span>

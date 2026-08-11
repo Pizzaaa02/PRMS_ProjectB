@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { getImageUrl } from '../config/imageHelper';
 import { bookingApi } from '../api/booking';
 import { Heart } from 'lucide-react';
 
@@ -47,7 +48,7 @@ export default function MyBookings() {
             {bookings.map(b => (
               <div key={b._id || b.id} className="property-card" onClick={() => setSelected(b)} style={{ cursor: 'pointer' }}>
                 <div className="property-card-header">
-                  <img className="property-card-img" src={b.property?.images?.[0]?.url || '/placeholder.png'} alt="" />
+                  <img className="property-card-img" src={getImageUrl(b.property?.images?.[0]?.url) || '/placeholder.png'} alt="" />
                   <span className={`status-badge status-${b.status.toLowerCase()}`}>{b.status}</span>
                 </div>
                 <h3>{b.property?.title || 'Property'}</h3>

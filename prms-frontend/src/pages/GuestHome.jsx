@@ -13,7 +13,8 @@ import {
   Sparkles,
   UserRoundCheck,
 } from 'lucide-react'
-import './GuestHome.css'
+import { getImageUrl } from '../config/imageHelper';
+import './GuestHome.css';
 
 function GuestHome() {
   const navigate = useNavigate()
@@ -337,7 +338,7 @@ function GuestHome() {
                 whileHover={{ y: -7 }}
               >
                 <div className="guest-home-image">
-                  <img src={home.image} alt={home.title} />
+                  <img src={getImageUrl(home.image)} alt={home.title} />
                   <span>Guest favorite</span>
                 </div>
 
@@ -377,7 +378,7 @@ function GuestHome() {
               transition={{ delay: index * 0.1, duration: 0.45 }}
               whileHover={{ y: -8, scale: 1.015 }}
             >
-              <img src={item.image} alt={item.name} />
+              <img src={getImageUrl(item.image)} alt={item.name} />
               <div></div>
 
               <section>
