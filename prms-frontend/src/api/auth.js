@@ -39,6 +39,12 @@ export const authApi = {
     return apiClient.put('/auth/me', data);
   },
 
+  uploadProfileImage(file) {
+    const formData = new FormData();
+    formData.append('profileImage', file);
+    return apiClient.post('/auth/me/avatar', formData);
+  },
+
   changePassword({ currentPassword, newPassword }) {
     return apiClient.post('/auth/change-password', {
       currentPassword,

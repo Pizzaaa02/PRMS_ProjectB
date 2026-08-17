@@ -42,6 +42,11 @@ function AdminLayout() {
     ? (user.full_name || user.name || 'AS').split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)
     : 'AS'
 
+  const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3500';
+  const profileImgUrl = user?.profile_img_url
+    ? (user.profile_img_url.startsWith('http') ? user.profile_img_url : (API + user.profile_img_url))
+    : null;
+
   function safeNavigate(path) {
     if (location.pathname !== path) navigate(path)
   }
@@ -114,7 +119,15 @@ function AdminLayout() {
               style={{ cursor: 'pointer' }}
               onClick={() => safeNavigate('/admin/profile')}
             >
-              {initials}
+              {profileImgUrl ? (
+                <img
+                  src={profileImgUrl}
+                  alt={user?.full_name || 'Admin'}
+                  className="admin-layout-avatar-img"
+                />
+              ) : (
+                initials
+              )}
             </motion.div>
           </div>
         </header>

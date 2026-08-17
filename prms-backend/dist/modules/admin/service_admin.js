@@ -76,7 +76,20 @@ async function getAuditLogs(page = 1, limit = 50, entity) {
     return { logs, total };
 }
 async function createAuditLog(data) {
-    return db_1.prisma.auditLog.create({ data });
+    return db_1.prisma.auditLog.create({
+        data: {
+            userId: data.userId,
+            action: data.action,
+            entity: data.entity,
+            entityId: data.entityId,
+            description: data.description,
+            ipAddress: data.ipAddress,
+            userAgent: data.userAgent,
+            module: data.module || 'Admin',
+            status: data.status || 'Success',
+            level: data.level || 'info',
+        },
+    });
 }
 async function getNotifications(userId, page = 1, limit = 20) {
     const [notifications, total] = await Promise.all([

@@ -239,10 +239,12 @@ export function SettingsProvider({ children }) {
     try {
       await adminApi.updateSetting({ key: String(key), value: String(value) });
     } catch (err) {
-      /* Revert only the failed key */
-      const reverted = { ...settingsObj, [key]: previousValue };
-      setSettingsObj(reverted);
-      applyCssVariables(reverted);
+      /* Revert only the failed key — use functional setState to avoid stale closure */
+      setSettingsObj(prev => ({
+        ...prev,
+        [key]: prev[key] === value ? previousValue : prev[key]
+      }));
+      /* Use functional setState to merge with the latest state, not a captured snapshot */
       setSettingsRaw(prev => prev.map(s => s.key === key ? { ...s, value: previousValue } : s));
       setError('Failed to save setting: ' + err.message);
     }
@@ -263,8 +265,12 @@ export function SettingsProvider({ children }) {
     }
   }, [settingsObj, applyCssVariables]);
 
+  /* Sync settingsObj to CSS variables on every change */
+  useEffect(() => {
+    applyCssVariables(settingsObj);
+  }, [settingsObj, applyCssVariables]);
+
   /* Load settings on mount */
-   
   useEffect(() => {
     loadSettings('public');
   }, [loadSettings]);

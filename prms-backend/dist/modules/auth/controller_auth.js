@@ -39,11 +39,23 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthController = void 0;
 const express_validator_1 = require("express-validator");
 const authService = __importStar(require("./service_auth"));
+const service_audit_1 = require("../admin/service_audit");
 const response_1 = require("../../utils/response");
 const config_1 = require("../../config");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const firebase_auth_1 = require("./firebase_auth");
 const db_1 = require("../../db");
+const path_1 = __importDefault(require("path"));
+const HELPERS = (req) => {
+    const ip = req.ip || req.socket.remoteAddress || '';
+    const ua = req.headers['user-agent'];
+    const url = req.originalUrl;
+    const method = req.method;
+    const log = async (ctx) => {
+        await (0, service_audit_1.recordAudit)({ ...ctx, username: ctx.username || undefined, ipAddress: ip, userAgent: ua, requestUrl: url, httpMethod: method, module: 'Authentication' });
+    };
+    return { log };
+};
 class AuthController {
     constructor() {
         this.register = async (req, res) => {
@@ -56,12 +68,14 @@ class AuthController {
                 const user = await authService.registerUser(email, password, full_name, phone, role);
                 const tokens = authService.generateTokens(user.id);
                 await authService.saveRefreshToken(user.id, tokens.refreshToken);
+                HELPERS(req).log({ userId: user.id, username: user.email, userRole: role || 'Tenant', action: 'USER_REGISTRATION', entity: 'User', entityId: user.id, description: `New user registered with role ${role || 'Tenant'}`, status: 'Success', level: 'info' });
                 res.status(201).json((0, response_1.successResponse)({
                     user: { id: user.id, email: user.email, full_name: user.full_name },
                     tokens,
                 }, 'Registration successful'));
             }
             catch (error) {
+                HELPERS(req).log({ action: 'USER_REGISTRATION', entity: 'User', description: `Registration failed: ${error.message}`, status: 'Failed', level: 'error', errorMessage: error.message });
                 res.status(400).json({ success: false, error: { message: error.message } });
             }
         };
@@ -75,6 +89,7 @@ class AuthController {
                 const user = await authService.loginUser(email, password);
                 const tokens = authService.generateTokens(user.id);
                 await authService.saveRefreshToken(user.id, tokens.refreshToken);
+                HELPERS(req).log({ userId: user.id, username: user.email, userRole: user.UserRole[0]?.role.name, action: 'USER_LOGIN', entity: 'User', entityId: user.id, description: 'User logged in successfully', status: 'Success', level: 'info' });
                 res.json((0, response_1.successResponse)({
                     user: {
                         id: user.id,
@@ -87,6 +102,7 @@ class AuthController {
                 }, 'Login successful'));
             }
             catch (error) {
+                HELPERS(req).log({ action: 'USER_LOGIN', entity: 'User', description: `Login failed: ${error.message}`, status: 'Failed', level: 'warning', errorMessage: error.message });
                 res.status(401).json({ success: false, error: { message: error.message } });
             }
         };
@@ -131,18 +147,22 @@ class AuthController {
         this.updateMe = async (req, res) => {
             try {
                 const user = await authService.updateUserProfile(req.user.id, req.body);
+                HELPERS(req).log({ userId: req.user.id, username: req.user.email, userRole: req.user.role, action: 'PROFILE_UPDATE', entity: 'User', entityId: req.user.id, description: 'User profile updated', status: 'Success', level: 'info' });
                 res.json((0, response_1.successResponse)(user, 'Profile updated'));
             }
             catch (error) {
+                HELPERS(req).log({ userId: req.user?.id, username: req.user?.email, action: 'PROFILE_UPDATE', entity: 'User', description: `Profile update failed: ${error.message}`, status: 'Failed', level: 'error', errorMessage: error.message });
                 res.status(400).json({ success: false, error: { message: error.message } });
             }
         };
         this.logout = async (req, res) => {
             try {
                 await authService.logoutUser(req.user.id);
+                HELPERS(req).log({ userId: req.user.id, username: req.user.email, userRole: req.user.role, action: 'USER_LOGOUT', entity: 'User', entityId: req.user.id, description: 'User logged out', status: 'Success', level: 'info' });
                 res.json((0, response_1.successResponse)(null, 'Logged out successfully'));
             }
             catch (error) {
+                HELPERS(req).log({ userId: req.user?.id, username: req.user?.email, action: 'USER_LOGOUT', entity: 'User', description: `Logout failed: ${error.message}`, status: 'Failed', level: 'error', errorMessage: error.message });
                 res.status(400).json({ success: false, error: { message: error.message } });
             }
         };
@@ -153,13 +173,14 @@ class AuthController {
                     return res.status(400).json({ success: false, error: { message: 'Current and new password required' } });
                 }
                 await authService.changePassword(req.user.id, currentPassword, newPassword);
+                HELPERS(req).log({ userId: req.user.id, username: req.user.email, userRole: req.user.role, action: 'PASSWORD_CHANGE', entity: 'User', entityId: req.user.id, description: 'Password changed successfully', status: 'Success', level: 'info' });
                 res.json((0, response_1.successResponse)(null, 'Password changed successfully'));
             }
             catch (error) {
+                HELPERS(req).log({ userId: req.user?.id, username: req.user?.email, action: 'PASSWORD_CHANGE', entity: 'User', description: `Password change failed: ${error.message}`, status: 'Failed', level: 'error', errorMessage: error.message });
                 res.status(400).json({ success: false, error: { message: error.message } });
             }
         };
-        /* AUTH-009: Google OAuth login */
         this.googleLogin = async (req, res) => {
             try {
                 const { idToken, email, displayName } = req.body;
@@ -172,79 +193,36 @@ class AuthController {
                     firebaseUid = await (0, firebase_auth_1.verifyFirebaseToken)(idToken);
                 }
                 else {
-                    console.warn('[DEV MODE] Firebase verification disabled');
                     if (!email) {
                         throw new Error('Email is required when Firebase verification is disabled');
                     }
                     firebaseUid = `dev-${email.toLowerCase()}`;
                 }
                 // Step 1: find by firebase_uid
-                let user = await db_1.prisma.user.findUnique({
-                    where: { firebase_uid: firebaseUid },
-                    include: {
-                        UserRole: {
-                            include: { role: true },
-                        },
-                    },
-                });
+                let user = await db_1.prisma.user.findUnique({ where: { firebase_uid: firebaseUid }, include: { UserRole: { include: { role: true } } } });
                 // Step 2: not found, find by email
                 if (!user && email) {
-                    user = await db_1.prisma.user.findUnique({
-                        where: { email },
-                        include: {
-                            UserRole: {
-                                include: { role: true },
-                            },
-                        },
-                    });
-                    // Existing email account
+                    user = await db_1.prisma.user.findUnique({ where: { email }, include: { UserRole: { include: { role: true } } } });
                     if (user) {
-                        // Already linked to another Google account?
                         if (user.firebase_uid && user.firebase_uid !== firebaseUid) {
                             throw new Error('Google account already linked');
                         }
-                        // Link Google account
-                        user = await db_1.prisma.user.update({
-                            where: { id: user.id },
-                            data: { firebase_uid: firebaseUid },
-                            include: {
-                                UserRole: {
-                                    include: { role: true },
-                                },
-                            },
-                        });
+                        user = await db_1.prisma.user.update({ where: { id: user.id }, data: { firebase_uid: firebaseUid }, include: { UserRole: { include: { role: true } } } });
                     }
                 }
                 // Step 3: create new user
                 if (!user) {
                     isNewUser = true;
                     user = await db_1.prisma.user.create({
-                        data: {
-                            firebase_uid: firebaseUid,
-                            email,
-                            full_name: displayName || '',
-                            passwordHash: null,
-                            UserRole: {
-                                create: {
-                                    role: {
-                                        connect: {
-                                            name: 'Tenant',
-                                        },
-                                    },
-                                },
-                            },
-                        },
-                        include: {
-                            UserRole: {
-                                include: { role: true },
-                            },
-                        },
+                        data: { firebase_uid: firebaseUid, email, full_name: displayName || '', passwordHash: null, UserRole: { create: { role: { connect: { name: 'Tenant' } } } } },
+                        include: { UserRole: { include: { role: true } } },
                     });
                 }
                 if (!user.is_active)
                     throw new Error('Account is suspended');
                 const tokens = authService.generateTokens(user.id);
                 await authService.saveRefreshToken(user.id, tokens.refreshToken);
+                HELPERS(req).log({ userId: user.id, username: user.email, userRole: user.UserRole[0]?.role.name || 'Tenant', action: 'GOOGLE_LOGIN', entity: 'User', entityId: user.id, description: isNewUser ? 'New Google user registered and logged in' : 'User logged in via Google', status: 'Success', level: 'info' });
                 res.json((0, response_1.successResponse)({
                     user: {
                         id: user.id,
@@ -259,6 +237,46 @@ class AuthController {
                 }));
             }
             catch (error) {
+                HELPERS(req).log({ action: 'GOOGLE_LOGIN', entity: 'User', description: `Google login failed: ${error.message}`, status: 'Failed', level: 'error', errorMessage: error.message });
+                res.status(400).json({ success: false, error: { message: error.message } });
+            }
+        };
+        this.uploadProfileImage = async (req, res) => {
+            try {
+                if (!req.file) {
+                    return res.status(400).json({ success: false, error: { message: 'No file uploaded' } });
+                }
+                const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+                if (!allowedMimes.includes(req.file.mimetype)) {
+                    req.file.webStorage.deleteFile(req.file.webStorageName);
+                    res.status(400).json({ success: false, error: { message: "Invalid file type. Use JPEG, PNG, GIF or WebP" } });
+                    return;
+                }
+                if (req.file.size > 5 * 1024 * 1024) {
+                    req.file.webStorage.deleteFile(req.file.webStorageName);
+                    res.status(400).json({ success: false, error: { message: "File too large. Maximum 5MB" } });
+                    return;
+                }
+                // Build public URL
+                const relativePath = path_1.default.relative(config_1.env.CLOUD_STORAGE_DIR, req.file.path);
+                const url = `${config_1.env.API_ENDPOINT}/uploads/${relativePath.replace(/\\/g, '/')}`;
+                // Update user's profile_img_url
+                const oldUrl = req.user.profile_img_url;
+                if (oldUrl && oldUrl.includes('/uploads/')) {
+                    const oldRelative = decodeURIComponent(new URL(oldUrl).pathname.replace('/uploads/', ''));
+                    try {
+                        req.file.webStorage.deleteFile(oldRelative);
+                    }
+                    catch {
+                        // ignore deletion errors for old avatar
+                    }
+                }
+                const updated = await authService.updateUserProfile(req.user.id, { profile_img_url: url });
+                HELPERS(req).log({ userId: req.user.id, username: req.user.email, userRole: req.user.role, action: 'PROFILE_IMAGE_UPLOAD', entity: 'User', entityId: req.user.id, description: 'Profile image uploaded', status: 'Success', level: 'info' });
+                res.json((0, response_1.successResponse)({ profile_img_url: updated.profile_img_url }, 'Profile image updated'));
+            }
+            catch (error) {
+                HELPERS(req).log({ userId: req.user?.id, username: req.user?.email, action: 'PROFILE_IMAGE_UPLOAD', entity: 'User', description: `Profile image upload failed: ${error.message}`, status: 'Failed', level: 'error', errorMessage: error.message });
                 res.status(400).json({ success: false, error: { message: error.message } });
             }
         };

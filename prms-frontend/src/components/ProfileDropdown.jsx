@@ -10,11 +10,18 @@ function ProfileDropdown({ prefix }) {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
+  const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3500';
+
   const displayName = user?.full_name || user?.name || user?.email || 'User';
 
   const initials = user?.full_name
     ? user.full_name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)
     : displayName.slice(0, 2).toUpperCase();
+
+  // Resolve profile image URL to backend public path
+  const profileImgUrl = user?.profile_img_url
+    ? (user.profile_img_url?.startsWith('http') ? user.profile_img_url : (API + user.profile_img_url))
+    : null;
 
   function safeNavigate(path) {
     setOpen(false);
@@ -44,7 +51,17 @@ function ProfileDropdown({ prefix }) {
           <span className="profile-dropdown-role">{user?.role || 'Tenant'}</span>
         </div>
         <div className="profile-dropdown-avatar-box">
-          {initials}
+          {profileImgUrl ? (
+            <img
+              src={profileImgUrl}
+              alt={displayName}
+              className="profile-dropdown-avatar"
+              onError={(e) => {
+                e.target.style.display = 'none';
+              }}
+            />
+          ) : null}
+          {!profileImgUrl && initials}
           <ChevronDown size={14} className="profile-chevron" />
         </div>
       </button>

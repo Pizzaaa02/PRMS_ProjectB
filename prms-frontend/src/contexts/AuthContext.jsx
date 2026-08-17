@@ -217,6 +217,22 @@ function AuthProvider({ children }) {
     }
   }, []);
 
+  /* ------ Upload profile image ------ */
+
+  const uploadProfileImage = useCallback(async (file) => {
+    try {
+      const { data: res } = await authApi.uploadProfileImage(file);
+      const img = res?.data?.profile_img_url ?? res?.profile_img_url;
+      const updated = normalizeUser({ ...state.user, profile_img_url: img });
+      dispatch({ type: ACTIONS.SET_USER, payload: updated });
+      return { success: true, profile_img_url: img };
+    } catch (err) {
+      const msg = getApiError(err);
+      dispatch({ type: ACTIONS.SET_ERROR, payload: msg });
+      return { success: false, error: msg };
+    }
+  }, [state.user]);
+
   /* ------ Hydration — restore session (AUTH-003/004) ------ */
 
   useEffect(() => {
@@ -247,6 +263,12 @@ function AuthProvider({ children }) {
       });
   }, []);
 
+  /* ------ Clear error ------ */
+
+  const clearError = useCallback(() => {
+    dispatch({ type: ACTIONS.CLEAR_ERROR });
+  }, []);
+
   /* ------ Value ------ */
 
   const value = {
@@ -260,7 +282,8 @@ function AuthProvider({ children }) {
     logout,
     updateProfile,
     changePassword,
-    clearError: () => dispatch({ type: ACTIONS.CLEAR_ERROR }),
+    uploadProfileImage,
+    clearError,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

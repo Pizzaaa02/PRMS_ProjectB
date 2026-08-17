@@ -51,6 +51,12 @@ app.use('/images', (req, res, next) => {
     next();
 }, express.static(path.join(__dirname, '..', 'public', 'images')));
 
+// Serve uploaded user files statically (documents, attachments)
+app.use('/files', (req, res, next) => {
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    next();
+}, express.static(path.join(__dirname, '..', 'public', 'uploads')));
+
 app.get('/health', async (req, res) => {
   try {
     await prisma.$queryRaw`SELECT 1`;

@@ -7,6 +7,7 @@ exports.updateBooking = updateBooking;
 exports.cancelBooking = cancelBooking;
 exports.getMyBookings = getMyBookings;
 exports.checkOverlap = checkOverlap;
+exports.getBookingSummary = getBookingSummary;
 const db_1 = require("../../db");
 async function getBookings(page = 1, limit = 10, userId, status) {
     const where = {};
@@ -60,4 +61,13 @@ async function checkOverlap(propertyId, startDate, endDate, excludeBookingId) {
         include: { user: { select: { id: true, full_name: true } } },
     });
     return { hasOverlap: overlaps.length > 0, overlapping: overlaps };
+}
+async function getBookingSummary() {
+    const [pending, confirmed, active, cancelled] = await Promise.all([
+        db_1.prisma.booking.count({ where: { status: 'PENDING' } }),
+        db_1.prisma.booking.count({ where: { status: 'CONFIRMED' } }),
+        db_1.prisma.booking.count({ where: { status: 'CHECKED_IN' } }),
+        db_1.prisma.booking.count({ where: { status: 'CANCELLED' } }),
+    ]);
+    return { pending, confirmed, active, cancelled, total: pending + confirmed + active + cancelled };
 }

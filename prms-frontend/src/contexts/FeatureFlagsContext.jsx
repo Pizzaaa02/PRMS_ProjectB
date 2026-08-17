@@ -19,7 +19,7 @@ export function FeatureFlagsProvider({ children }) {
 
   const loadFlags = useCallback(async () => {
     try {
-      const res = await apiClient.get('/settings');
+      const res = await apiClient.get('/admin/settings/public');
       if (res.data?.data) {
         const backendFlags = {};
         for (const s of res.data.data) {

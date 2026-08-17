@@ -36,12 +36,12 @@ export async function loginUser(email: string, password: string) {
     include: { UserRole: { include: { role: true } } },
   });
 
-  if (!user) throw new Error('Invalid credentials');
+  if (!user) throw new Error('Email not registered');
   if (!user.passwordHash) throw new Error('Please use Firebase login for this account');
   if (!user.is_active) throw new Error('Account is suspended');
 
   const valid = await bcrypt.compare(password, user.passwordHash);
-  if (!valid) throw new Error('Invalid credentials');
+  if (!valid) throw new Error('Wrong password. Please try again.');
 
   return user;
 }

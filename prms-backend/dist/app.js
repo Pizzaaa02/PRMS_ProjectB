@@ -10,7 +10,9 @@ const app_1 = require("firebase-admin/app");
 const auth_1 = require("firebase-admin/auth");
 const config_1 = require("./config");
 const db_1 = require("./db");
+const path_1 = __importDefault(require("path"));
 const logging_1 = require("./middleware/logging");
+const responseCache_1 = require("./middleware/responseCache");
 const errorHandler_1 = require("./middleware/errorHandler");
 const routes_auth_1 = __importDefault(require("./modules/auth/routes_auth"));
 const routes_user_1 = __importDefault(require("./modules/user/routes_user"));
@@ -25,6 +27,7 @@ const routes_reporting_1 = __importDefault(require("./modules/reporting/routes_r
 const routes_agent_1 = __importDefault(require("./modules/agent/routes_agent"));
 const routes_category_1 = __importDefault(require("./modules/category/routes_category"));
 const routes_theme_1 = __importDefault(require("./modules/theme/routes_theme"));
+const routes_favorite_1 = __importDefault(require("./modules/favorite/routes_favorite"));
 // Initialize Firebase if possible
 if ((0, app_1.getApps)().length === 0) {
     try {
@@ -42,7 +45,18 @@ const PORT = config_1.env.PORT;
 app.use((0, helmet_1.default)());
 app.use((0, cors_1.default)({ origin: config_1.env.CORS_ORIGIN }));
 app.use(express_1.default.json());
+app.use(responseCache_1.responseCache);
 app.use(logging_1.requestLogger);
+// Serve uploaded images statically with cross-origin CORP (frontend is on a different port)
+app.use('/images', (req, res, next) => {
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    next();
+}, express_1.default.static(path_1.default.join(__dirname, '..', 'public', 'images')));
+// Serve uploaded user files statically (documents, attachments)
+app.use('/files', (req, res, next) => {
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    next();
+}, express_1.default.static(path_1.default.join(__dirname, '..', 'public', 'uploads')));
 app.get('/health', async (req, res) => {
     try {
         await db_1.prisma.$queryRaw `SELECT 1`;
@@ -80,6 +94,9 @@ router.use('/reports', routes_reporting_1.default);
 router.use('/agents', routes_agent_1.default);
 router.use('/categories', routes_category_1.default);
 router.use('/themes', routes_theme_1.default);
+router.use('/favorites', routes_favorite_1.default);
+const routes_notification_1 = __importDefault(require("./modules/notification/routes_notification"));
+router.use('/notifications', routes_notification_1.default);
 app.use(router);
 app.use(errorHandler_1.errorHandler);
 const server = app.listen(PORT, () => {

@@ -45,14 +45,14 @@ async function loginUser(email, password) {
         include: { UserRole: { include: { role: true } } },
     });
     if (!user)
-        throw new Error('Invalid credentials');
+        throw new Error('Email not registered');
     if (!user.passwordHash)
         throw new Error('Please use Firebase login for this account');
     if (!user.is_active)
         throw new Error('Account is suspended');
     const valid = await bcryptjs_1.default.compare(password, user.passwordHash);
     if (!valid)
-        throw new Error('Invalid credentials');
+        throw new Error('Wrong password. Please try again.');
     return user;
 }
 function generateTokens(userId) {

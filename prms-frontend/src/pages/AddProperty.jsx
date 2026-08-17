@@ -170,7 +170,7 @@ export default function AddProperty() {
   const uploadImages = async (propertyId) => {
     const uploadPromises = imageFiles.map(async ({ file }) => {
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('image', file);
       return propertyApi.addImage(propertyId, formData);
     });
     await Promise.allSettled(uploadPromises);

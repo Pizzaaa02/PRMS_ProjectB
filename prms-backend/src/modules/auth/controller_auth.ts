@@ -8,6 +8,8 @@ import { env } from '../../config';
 import jwt from 'jsonwebtoken';
 import { verifyFirebaseToken } from './firebase_auth';
 import { prisma } from '../../db';
+import path from 'path';
+import fs from 'fs';
 
 const HELPERS = (req: Request) => {
   const ip = (req as any).ip || req.socket.remoteAddress || '';
@@ -209,6 +211,49 @@ export class AuthController {
       }));
     } catch (error: any) {
       HELPERS(req).log({ action: 'GOOGLE_LOGIN', entity: 'User', description: `Google login failed: ${error.message}`, status: 'Failed', level: 'error', errorMessage: error.message });
+      res.status(400).json({ success: false, error: { message: error.message } });
+    }
+  };
+
+  uploadProfileImage = async (req: AuthRequest, res: Response) => {
+    try {
+      console.log('[DBG-UP1] userId:', req.user?.id, '| file:', req.file ? req.file.filename : 'UNDEFINED', '| ct:', req.headers['content-type']);
+      if (!req.file) {
+        return res.status(400).json({ success: false, error: { message: 'No file uploaded' } });
+      }
+
+      const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      if (!allowedMimes.includes(req.file.mimetype)) {
+        fs.unlink(req.file.path, () => {});
+        return res.status(400).json({ success: false, error: { message: 'Invalid file type. Use JPEG, PNG, GIF or WebP' } });
+      }
+
+      if (req.file.size > 5 * 1024 * 1024) {
+        fs.unlink(req.file.path, () => {});
+        return res.status(400).json({ success: false, error: { message: 'File too large. Maximum 5MB' } });
+      }
+
+      // Build public URL (static route /images -> public/images/)
+      const url = `/images/${path.basename(req.file.path)}`;
+
+      // Delete old avatar file if it exists
+      const oldUrl = (req.user as any).profile_img_url;
+      if (oldUrl && oldUrl.includes('/uploads/images/')) {
+        const oldFilename = path.basename(decodeURIComponent(oldUrl));
+        const oldPath = path.join(__dirname, '..', '..', 'public', 'images', oldFilename);
+        fs.unlink(oldPath, () => {});
+      }
+
+      const updated = await authService.updateUserProfile(req.user!.id, { profile_img_url: url });
+
+      HELPERS(req).log({ userId: req.user!.id, username: req.user!.email, userRole: req.user!.role, action: 'PROFILE_IMAGE_UPLOAD', entity: 'User', entityId: req.user!.id, description: 'Profile image uploaded', status: 'Success', level: 'info' });
+
+      res.json(successResponse(
+        { profile_img_url: updated.profile_img_url },
+        'Profile image updated'
+      ));
+    } catch (error: any) {
+      HELPERS(req).log({ userId: req.user?.id, username: req.user?.email, action: 'PROFILE_IMAGE_UPLOAD', entity: 'User', description: `Profile image upload failed: ${error.message}`, status: 'Failed', level: 'error', errorMessage: error.message });
       res.status(400).json({ success: false, error: { message: error.message } });
     }
   };

@@ -37,6 +37,18 @@ exports.PropertyController = void 0;
 const express_validator_1 = require("express-validator");
 const propertyService = __importStar(require("./service_property"));
 const response_1 = require("../../utils/response");
+const service_audit_1 = require("../admin/service_audit");
+const HELPERS = (req) => {
+    const ip = req.ip || req.socket.remoteAddress || '';
+    const ua = req.headers['user-agent'];
+    const url = req.originalUrl;
+    const method = req.method;
+    const auth = req;
+    const log = async (ctx) => {
+        await (0, service_audit_1.recordAudit)({ ...ctx, userId: auth.user?.id, username: auth.user?.email || undefined, userRole: auth.user?.role, ipAddress: ip, userAgent: ua, requestUrl: url, httpMethod: method, module: 'Property', status: ctx.status || 'Success', level: ctx.level || 'info' });
+    };
+    return { log };
+};
 class PropertyController {
     constructor() {
         this.list = async (req, res) => {
@@ -44,9 +56,11 @@ class PropertyController {
                 const page = parseInt(req.query.page) || 1;
                 const limit = parseInt(req.query.limit) || 10;
                 const { properties, total } = await propertyService.getAllProperties(page, limit);
+                HELPERS(req).log({ action: 'VIEW_PROPERTIES', entity: 'Property', description: `Listed properties (page ${page})` });
                 res.json((0, response_1.paginatedResponse)(properties, page, limit, total));
             }
             catch (error) {
+                HELPERS(req).log({ action: 'VIEW_PROPERTIES', entity: 'Property', status: 'Failed', level: 'error', errorMessage: error.message });
                 res.status(500).json({ success: false, error: { message: error.message } });
             }
         };
@@ -55,9 +69,11 @@ class PropertyController {
                 const property = await propertyService.getPropertyById(String(req.params.id));
                 if (!property)
                     return res.status(404).json({ success: false, error: { message: 'Property not found' } });
+                HELPERS(req).log({ action: 'VIEW_PROPERTY', entity: 'Property', entityId: property?.id, description: `Viewed property ${property?.title || req.params.id}` });
                 res.json((0, response_1.successResponse)(property));
             }
             catch (error) {
+                HELPERS(req).log({ action: 'VIEW_PROPERTY', entity: 'Property', status: 'Failed', level: 'error', errorMessage: error.message });
                 res.status(500).json({ success: false, error: { message: error.message } });
             }
         };
@@ -67,54 +83,78 @@ class PropertyController {
                 return res.status(400).json({ success: false, error: { message: errors.array()[0].msg } });
             try {
                 const property = await propertyService.createProperty(req.body, req.user.id);
+                HELPERS(req).log({ action: 'CREATE_PROPERTY', entity: 'Property', entityId: property?.id, description: `Created property ${property?.title}` });
                 res.status(201).json((0, response_1.successResponse)(property, 'Property created'));
             }
             catch (error) {
+                HELPERS(req).log({ action: 'CREATE_PROPERTY', entity: 'Property', status: 'Failed', level: 'error', errorMessage: error.message });
                 res.status(400).json({ success: false, error: { message: error.message } });
             }
         };
         this.update = async (req, res) => {
             try {
                 const property = await propertyService.updateProperty(String(req.params.id), req.body);
+                HELPERS(req).log({ action: 'UPDATE_PROPERTY', entity: 'Property', entityId: property?.id, description: `Updated property ${property?.title || req.params.id}` });
                 res.json((0, response_1.successResponse)(property, 'Property updated'));
             }
             catch (error) {
+                HELPERS(req).log({ action: 'UPDATE_PROPERTY', entity: 'Property', status: 'Failed', level: 'error', errorMessage: error.message });
                 res.status(400).json({ success: false, error: { message: error.message } });
             }
         };
         this.deactivate = async (req, res) => {
             try {
+                const prop = await propertyService.getPropertyById(String(req.params.id));
                 await propertyService.deactivateProperty(String(req.params.id));
+                HELPERS(req).log({ action: 'DEACTIVATE_PROPERTY', entity: 'Property', entityId: prop?.id, description: `Deactivated property ${prop?.title || prop?.id}` });
                 res.json((0, response_1.successResponse)(null, 'Property deactivated'));
             }
             catch (error) {
+                HELPERS(req).log({ action: 'DEACTIVATE_PROPERTY', entity: 'Property', status: 'Failed', level: 'error', errorMessage: error.message });
                 res.status(400).json({ success: false, error: { message: error.message } });
             }
         };
         this.addImage = async (req, res) => {
             try {
-                const image = await propertyService.addImage(String(req.params.id), req.body.url);
+                const file = req.file;
+                if (!file)
+                    return res.status(400).json({ success: false, error: { message: 'No image file provided' } });
+                const url = `/images/${file.filename}`;
+                const image = await propertyService.addImage(String(req.params.id), url);
+                HELPERS(req).log({ action: 'ADD_PROPERTY_IMAGE', entity: 'Property', entityId: req.params.id, description: `Added image to property` });
                 res.status(201).json((0, response_1.successResponse)(image));
             }
             catch (error) {
+                HELPERS(req).log({ action: 'ADD_PROPERTY_IMAGE', entity: 'Property', status: 'Failed', level: 'error', errorMessage: error.message });
                 res.status(400).json({ success: false, error: { message: error.message } });
             }
         };
         this.deleteImage = async (req, res) => {
             try {
+                const image = await propertyService.getImageById(String(req.params.imageId));
                 await propertyService.deleteImage(String(req.params.imageId));
+                if (image?.url) {
+                    const fs = await Promise.resolve().then(() => __importStar(require('fs')));
+                    const path = await Promise.resolve().then(() => __importStar(require('path')));
+                    const filePath = path.join(__dirname, '..', '..', '..', 'public', image.url.replace(/^\//, ''));
+                    fs.promises.unlink(filePath).catch(() => { });
+                }
+                HELPERS(req).log({ action: 'DELETE_PROPERTY_IMAGE', entity: 'PropertyImage', entityId: req.params.imageId, description: `Deleted property image` });
                 res.json((0, response_1.successResponse)(null, 'Image deleted'));
             }
             catch (error) {
+                HELPERS(req).log({ action: 'DELETE_PROPERTY_IMAGE', entity: 'PropertyImage', status: 'Failed', level: 'error', errorMessage: error.message });
                 res.status(400).json({ success: false, error: { message: error.message } });
             }
         };
         this.myProperties = async (req, res) => {
             try {
                 const properties = await propertyService.getLandlordProperties(req.user.id);
+                HELPERS(req).log({ action: 'VIEW_MY_PROPERTIES', entity: 'Property', description: `Viewed own properties` });
                 res.json((0, response_1.successResponse)(properties));
             }
             catch (error) {
+                HELPERS(req).log({ action: 'VIEW_MY_PROPERTIES', entity: 'Property', status: 'Failed', level: 'error', errorMessage: error.message });
                 res.status(500).json({ success: false, error: { message: error.message } });
             }
         };

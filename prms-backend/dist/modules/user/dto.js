@@ -7,7 +7,7 @@ exports.createUserBody = [
     (0, express_validator_1.body)('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
     (0, express_validator_1.body)('full_name').optional().isString(),
     (0, express_validator_1.body)('phone').optional().isString(),
-    (0, express_validator_1.body)('role').optional().isIn(['Admin', 'Landlord', 'Tenant']),
+    (0, express_validator_1.body)('role').optional().isIn(['Admin', 'Landlord', 'Tenant', 'Agent']),
 ];
 exports.updateUserBody = [
     (0, express_validator_1.body)('full_name').optional().isString(),

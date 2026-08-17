@@ -2,8 +2,8 @@
 
 .property-detail-page {
   min-height: 100vh;
-  background: var(--cz-global.page-bg_color, var(--page-bg, #f8f9fb));
-  color: var(--cz-detail.left-color, var(--text-color, #1a1a1a));
+  background: #f8f9fb;
+  color: #1a1a1a;
   font-family: var(--font-family, Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
 }
 
@@ -11,7 +11,7 @@
 .pd-topbar {
   height: 56px;
   padding: 0 32px;
-  background: var(--cz-global.header-bg_color, #fff);
+  background: #fff;
   border-bottom: 1px solid var(--border-subtle, #e5e7eb);
   display: flex;
   align-items: center;
@@ -22,7 +22,7 @@
 }
 
 .pd-logo {
-  color: var(--cz-global.brand-color, var(--primary-color, #3366ff));
+  color: #3366ff;
   text-decoration: none;
   font-family: Georgia, serif;
   font-size: 18px;
@@ -92,7 +92,7 @@
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  color: var(--cz-detail.breadcrumb-color, var(--text-secondary, #94a3b8));
+  color: #94a3b8;
   padding: 16px 0 8px;
 }
 
@@ -117,7 +117,7 @@
 .pd-title {
   font-size: 26px;
   font-weight: 700;
-  color: var(--cz-detail.title-color, var(--text-color, #1a1a1a));
+  color: #1a1a1a;
   margin: 0 0 8px;
   font-family: var(--headline-font, Georgia, serif);
 }
@@ -145,7 +145,7 @@
   border-radius: 12px;
   overflow: hidden;
   margin-bottom: 32px;
-  background: var(--cz-detail.gallery-bg_color, var(--surface, #f3f4f6));
+  background: #f3f4f6;
   height: 400px;
 }
 
@@ -373,7 +373,7 @@
   padding: 10px 28px;
   border: 1px solid var(--text-color, #1a1a1a);
   border-radius: 8px;
-  background: var(--cz-detail.body-bg_color, #fff);
+  background: #fff;
   color: var(--text-color, #1a1a1a);
   font-size: 14px;
   font-weight: 600;
@@ -459,7 +459,7 @@
 .booking-card {
   position: sticky;
   top: 88px;
-  background: var(--cz-detail.right-bg_color, #fff);
+  background: #fff;
   border: 1px solid var(--border-subtle, #e5e7eb);
   border-radius: 12px;
   padding: 24px;
@@ -736,7 +736,7 @@
 
 /* ── Footer ── */
 .pd-footer {
-  background: var(--cz-detail.body-bg_color, var(--surface-container, #f3f4f6));
+  background: #f3f4f6;
   border-top: 1px solid var(--border-subtle, #e5e7eb);
   padding: 40px 48px 24px;
 }
@@ -791,7 +791,7 @@
 
 .pd-footer-newsletter button {
   padding: 8px 16px;
-  background: var(--cz-global.header-bg_color, #222);
+  background: #222;
   color: #fff;
   border: none;
   border-radius: 6px;
