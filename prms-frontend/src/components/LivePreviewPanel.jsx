@@ -1,4 +1,5 @@
 import { useSettings } from '../contexts/SettingsContext';
+import { getImageUrl } from '../config/imageHelper';
 
 export default function LivePreviewPanel({ onElementClick }) {
   const { settings } = useSettings();
@@ -19,8 +20,8 @@ export default function LivePreviewPanel({ onElementClick }) {
   /* ---- settings with defaults matching seed_settings.ts ---- */
   const primary = s.theme_primary_color || '#8a2be2';
   const secondary = s.theme_secondary_color || '#0f172a';
-  const bgColor = s.branding_background_color || '#f3f6fb';
-  const textColor = s.branding_text_color || '#111827';
+  const bgColor = s.theme_background_color || '#f3f6fb';
+  const textColor = s.theme_text_color || '#111827';
   const heroTitle = s.homepage_hero_title || 'Welcome to PRMS';
   const heroSubtitle = s.homepage_hero_subtitle || 'Your property management solution';
   const heroCta = s.homepage_hero_button_text || 'Get Started';
@@ -32,7 +33,7 @@ export default function LivePreviewPanel({ onElementClick }) {
   const footerColor = s.footer_text_color || '#6B7280';
   const footerText = s.footer_copyright_text || `© ${new Date().getFullYear()} PRMS. All rights reserved.`;
   const siteName = s.branding_site_name || 'PRMS';
-  const logoUrl = s.branding_logo_url || '';
+  const logoUrl = s.branding_logo_url ? getImageUrl(s.branding_logo_url) : '';
   const showLogo = (s.header_show_logo !== false && s.header_show_logo !== 'false') || s.header_show_logo === 'true';
 
   /* Section visibility toggles */

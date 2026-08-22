@@ -10,10 +10,19 @@ import { motion } from 'framer-motion';
 /* ---- Tree node definitions matching the reference design ---- */
 const buildTree = () => [
   {
+    id: 'body', label: 'Body', icon: <Monitor size={14} />, expandable: true,
+    children: [
+      { id: 'theme_background_color', label: 'Background', icon: <ImageIcon size={14} /> },
+      { id: 'theme_text_color', label: 'Text Color', icon: <Type size={14} /> },
+    ],
+  },
+  {
     id: 'header', label: 'Header', icon: <MenuIcon size={14} />, expandable: true,
     children: [
       { id: 'header_background_color', label: 'Background', icon: <ImageIcon size={14} /> },
       { id: 'branding_site_name', label: 'Site Name', icon: <Type size={14} /> },
+      { id: 'branding_logo_url', label: 'Logo', icon: <ImageIcon size={14} /> },
+      { id: 'branding_company_name', label: 'Company Name', icon: <Type size={14} /> },
     ],
   },
   {

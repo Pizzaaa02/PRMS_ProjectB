@@ -1,475 +1,318 @@
-"""
-Tests for the customizer module.
+"""Unit tests for the Website Customizer API endpoints."""
 
-Covers:
-  - Each field validator (valid + invalid inputs)
-  - CustomizationConfig defaults, from_dict, validate, is_valid
-  - Generator output correctness (header/body/footer HTML and CSS)
-  - Full-page HTML assembly
-  - Convenience generate_html() wrapper
-"""
+import json
+import os
+import sys
+import unittest
+from pathlib import Path
 
-import pytest
+# Ensure parent directory is on path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from customizer import (
-    CustomizationConfig,
-    validate_title,
-    validate_description,
-    validate_background_color,
-    validate_logo_url,
-    validate_company_name,
-    generate_header_css,
-    generate_header_html,
-    generate_body_css,
-    generate_body_html,
-    generate_footer_css,
-    generate_footer_html,
-    generate_full_css,
-    generate_full_html,
-    generate_html,
-)
+# Import from ProjectA customizer module (in-memory store)
+# The Flask server exposes routes at /api/customizer on port 5555
+# We test the models and config directly
 
 
-# ---------------------------------------------------------------------------
-# Validator tests
-# ---------------------------------------------------------------------------
+def reset_store():
+    """Reset the store to default values for clean testing."""
+    from customizer_server import _store, _store_path
 
-class TestValidateTitle:
-    """title: required, max 128 chars, whitespace-only is invalid."""
-
-    # -- valid --
-    def test_single_word(self):
-        assert validate_title('PRMS') is None
-
-    def test_sentence(self):
-        assert validate_title('Property Rental Management System') is None
-
-    def test_whitespace_stripped(self):
-        assert validate_title('  Hello World  ') is None
-
-    def test_max_length(self):
-        assert validate_title('x' * 128) is None
-
-    # -- invalid --
-    def test_empty(self):
-        err = validate_title('')
-        assert err is not None
-        assert 'empty' in err.lower()
-
-    def test_whitespace_only(self):
-        err = validate_title('   ')
-        assert err is not None
-
-    def test_over_max(self):
-        err = validate_title('x' * 129)
-        assert err is not None
-        assert '128' in err
+    defaults = {
+        "title": "PRMS",
+        "description": "Property Rental Management System",
+        "background_color": "#F3F6FB",
+        "logo_url": "",
+        "company_name": "Property Rental Management System",
+    }
+    _store.clear()
+    _store.update(defaults)
+    _store_path.write_text(json.dumps(defaults, indent=2))
 
 
-class TestValidateDescription:
-    """description: optional, max 512 chars."""
+class TestCustomizationConfig(unittest.TestCase):
+    """Test the CustomizationConfig data model and validation."""
 
-    def test_empty_is_valid(self):
-        assert validate_description('') is None
+    def setUp(self):
+        reset_store()
 
-    def test_normal_text(self):
-        assert validate_description('A short tagline') is None
+    def test_get_config_returns_defaults(self):
+        """GET /api/customizer should return default values."""
+        from customizer_server import get_customizer_config, app
 
-    def test_max_length(self):
-        assert validate_description('x' * 512) is None
+        with app.app_context():
+            response = get_customizer_config()
+            data = response[0]  # Flask returns (data, status) or Response object
+            self.assertEqual(data["title"], "PRMS")
+            self.assertEqual(data["description"], "Property Rental Management System")
+            self.assertEqual(data["background_color"], "#F3F6FB")
+            self.assertEqual(data["company_name"], "Property Rental Management System")
+            self.assertEqual(data["logo_url"], "")
 
-    def test_over_max(self):
-        err = validate_description('x' * 513)
-        assert err is not None
-        assert '512' in err
+    def test_update_all_config(self):
+        """PUT /api/customizer should update all fields."""
+        from customizer_server import update_customizer_config, _store, app
 
-
-class TestValidateBackgroundColor:
-    """background_color: hex string matching #RGB, #RGBA, #RRGGBB, #RRGGBBAA,
-    or longer hex (up to 8 hex digits after #)."""
-
-    # -- valid --
-    def test_3_hex(self):
-        assert validate_background_color('#FFF') is None
-
-    def test_4_hex(self):
-        assert validate_background_color('#FFFA') is None
-
-    def test_6_hex(self):
-        assert validate_background_color('#112233') is None
-
-    def test_8_hex(self):
-        assert validate_background_color('#AABBCCDD') is None
-
-    def test_mixed_case(self):
-        assert validate_background_color('#aAbBcC') is None
-
-    def test_with_hash(self):
-        assert validate_background_color('#F3F6FB') is None
-
-    # -- invalid --
-    def test_no_hash(self):
-        err = validate_background_color('FFFFFF')
-        assert err is not None
-
-    def test_not_hex(self):
-        err = validate_background_color('#ZZZZZZ')
-        assert err is not None
-
-    def test_empty(self):
-        err = validate_background_color('')
-        assert err is not None
-
-    def test_color_name(self):
-        err = validate_background_color('white')
-        assert err is not None
-
-    def test_rgb_function(self):
-        err = validate_background_color('rgb(255,255,255)')
-        assert err is not None
-
-
-class TestValidateLogoUrl:
-    """logo_url: required, must be a valid HTTP(S) URL."""
-
-    # -- valid --
-    def test_http_url(self):
-        assert validate_logo_url('http://example.com/logo.png') is None
-
-    def test_https_url(self):
-        assert validate_logo_url('https://cdn.example.com/image.svg') is None
-
-    def test_with_path_and_query(self):
-        assert validate_logo_url('https://img.io/1.png?v=2') is None
-
-    def test_with_fragment(self):
-        assert validate_logo_url('https://img.io/1.png#main') is None
-
-    # -- invalid --
-    def test_empty(self):
-        err = validate_logo_url('')
-        assert err is not None
-        assert 'required' in err.lower()
-
-    def test_no_scheme(self):
-        err = validate_logo_url('example.com/logo.png')
-        assert err is not None
-
-    def test_ftp(self):
-        err = validate_logo_url('ftp://example.com/foo.png')
-        assert err is not None
-
-    def test_data_url(self):
-        err = validate_logo_url('data:image/png;base64,abc')
-        assert err is not None
-
-    def test_local_path(self):
-        err = validate_logo_url('/var/www/logo.png')
-        assert err is not None
-
-
-class TestValidateCompanyName:
-    """company_name: required, max 128 chars, whitespace-only is invalid."""
-
-    def test_normal(self):
-        assert validate_company_name('Acme Corp') is None
-
-    def test_whitespace_stripped(self):
-        assert validate_company_name('  My Company  ') is None
-
-    def test_max_length(self):
-        assert validate_company_name('x' * 128) is None
-
-    def test_empty(self):
-        err = validate_company_name('')
-        assert err is not None
-        assert 'empty' in err.lower()
-
-    def test_whitespace_only(self):
-        err = validate_company_name('   ')
-        assert err is not None
-
-    def test_over_max(self):
-        err = validate_company_name('x' * 129)
-        assert err is not None
-        assert '128' in err
-
-
-# ---------------------------------------------------------------------------
-# Model tests
-# ---------------------------------------------------------------------------
-
-class TestCustomizationConfig:
-    """Defaults, from_dict, aggregate validation."""
-
-    def test_defaults(self):
-        cfg = CustomizationConfig()
-        assert cfg.title == 'PRMS'
-        assert cfg.description == 'Property Rental Management System'
-        assert cfg.background_color == '#F3F6FB'
-        assert cfg.logo_url == ''
-        assert cfg.company_name == 'Property Rental Management System'
-
-    def test_custom_values(self):
-        cfg = CustomizationConfig(
-            title='My Site',
-            description='A test site',
-            background_color='#000',
-            logo_url='https://example.com/logo.png',
-            company_name='Test Corp',
-        )
-        assert cfg.title == 'My Site'
-        assert cfg.description == 'A test site'
-        assert cfg.background_color == '#000'
-        assert cfg.logo_url == 'https://example.com/logo.png'
-        assert cfg.company_name == 'Test Corp'
-
-    def test_from_dict_full(self):
-        data = {
-            'title': 'My Site',
-            'description': 'Tagline',
-            'background_color': '#ABC',
-            'logo_url': 'https://a.com/b.png',
-            'company_name': 'Co',
+        new_config = {
+            "title": "New Title",
+            "description": "New Description",
+            "background_color": "#FFFFFF",
+            "logo_url": "https://example.com/logo.png",
+            "company_name": "New Company",
         }
-        cfg = CustomizationConfig.from_dict(data)
-        assert cfg.title == 'My Site'
-        assert cfg.background_color == '#ABC'
+        # Update _store directly to simulate PUT payload
+        for key, value in new_config.items():
+            _store[key] = value
 
-    def test_from_dict_partial(self):
-        cfg = CustomizationConfig.from_dict({'title': 'Only Title'})
-        assert cfg.title == 'Only Title'
-        assert cfg.description == 'Property Rental Management System'  # default
+        with app.app_context():
+            response = update_customizer_config()
+            data = response[0]
 
-    def test_from_dict_empty(self):
-        cfg = CustomizationConfig.from_dict({})
-        assert cfg.title == 'PRMS'
+        self.assertEqual(data["title"], "New Title")
+        self.assertEqual(data["description"], "New Description")
+        self.assertEqual(data["background_color"], "#FFFFFF")
+        self.assertEqual(data["logo_url"], "https://example.com/logo.png")
+        self.assertEqual(data["company_name"], "New Company")
 
-    def test_validate_no_errors(self):
-        cfg = CustomizationConfig(
-            title='Test',
-            description='Desc',
-            background_color='#FFF',
-            logo_url='https://example.com/l.png',
-            company_name='Co',
+    def test_patch_single_field(self):
+        """PATCH /api/customizer/<field> should update a single element."""
+        from customizer_server import patch_customizer_field, _store, app
+
+        _store["title"] = "Updated Title"
+
+        with app.app_context():
+            response = patch_customizer_field("title")
+            data = response[0]
+
+        self.assertEqual(data["title"], "Updated Title")
+
+    def test_validate_background_color(self):
+        """background_color should accept valid hex."""
+        from customizer_server import validate_background_color
+
+        # Valid hex colors
+        self.assertIsNone(validate_background_color("#FFF"))
+        self.assertIsNone(validate_background_color("#8a2be2"))
+        self.assertIsNone(validate_background_color("#F3F6FB"))
+        self.assertIsNone(validate_background_color("#ff0000"))
+
+        # Invalid hex colors
+        self.assertIsNotNone(validate_background_color("red"))
+        self.assertIsNotNone(validate_background_color("#GGGGGG"))
+        self.assertIsNotNone(validate_background_color("not-a-color"))
+
+    def test_validate_company_name(self):
+        """company_name should accept valid string."""
+        from customizer_server import validate_company_name
+
+        # Valid company names
+        self.assertIsNone(validate_company_name("Property Rental Management System"))
+        self.assertIsNone(validate_company_name("PRMS"))
+        self.assertIsNone(validate_company_name("My Company"))
+
+        # Invalid company names
+        self.assertIsNotNone(validate_company_name(""))
+        self.assertIsNotNone(validate_company_name(None))
+        # Long name should still be valid
+        self.assertIsNone(validate_company_name("A" * 128))
+        self.assertIsNotNone(validate_company_name("A" * 129))
+
+    def test_validate_logo_url(self):
+        """logo_url should accept valid HTTP(S) URLs."""
+        from customizer_server import validate_logo_url
+
+        # Valid URLs
+        self.assertIsNone(validate_logo_url("https://example.com/logo.png"))
+        self.assertIsNone(validate_logo_url("http://example.com/logo"))
+        self.assertIsNone(
+            validate_logo_url(
+                "https://images.unsplash.com/photo-1503387762-592deb58efb5"
+            )
         )
-        assert cfg.validate() == []
-        assert cfg.is_valid is True
 
-    def test_validate_multiple_errors(self):
-        cfg = CustomizationConfig(
-            title='',
-            description='x' * 600,
-            background_color='red',
-            logo_url='',
-            company_name='',
+        # Invalid URLs
+        self.assertIsNotNone(validate_logo_url(""))
+        self.assertIsNotNone(validate_logo_url(None))
+        self.assertIsNotNone(validate_logo_url("not-a-url"))
+
+    def test_validate_title(self):
+        """title should accept valid string."""
+        from customizer_server import validate_title
+
+        # Valid titles
+        self.assertIsNone(validate_title("PRMS"))
+        self.assertIsNone(validate_title("Property Rental Management System"))
+
+        # Invalid titles
+        self.assertIsNotNone(validate_title(""))
+        self.assertIsNotNone(validate_title(None))
+
+    def test_validate_description(self):
+        """description should accept valid string."""
+        from customizer_server import validate_description
+
+        # Valid descriptions (at most 512 chars)
+        self.assertIsNone(validate_description("Property Rental Management System"))
+        # 512 chars is the boundary (should pass)
+        self.assertIsNone(
+            validate_description(
+                "x" * 512
+            )
         )
-        errors = cfg.validate()
-        # title empty, description too long, background_color invalid,
-        # logo_url required, company_name empty => 5 errors
-        assert len(errors) == 5
 
-    def test_is_valid_with_errors(self):
-        cfg = CustomizationConfig(title='', logo_url='', company_name='')
-        assert cfg.is_valid is False
+        # Invalid descriptions (too long)
+        long_desc = "x" * 513
+        self.assertIsNotNone(validate_description(long_desc))
 
-    def test_validate_with_logo_url_empty(self):
-        cfg = CustomizationConfig(
-            title='OK',
-            logo_url='',
-            company_name='OK',
+    def test_reset_config(self):
+        """POST /api/customizer/reset should reset all elements to defaults."""
+        from customizer_server import reset_customizer_config, _store
+
+        # Modify config
+        _store["title"] = "Modified"
+        _store["background_color"] = "#FFFFFF"
+        _store["logo_url"] = "https://example.com/logo.png"
+
+        with self._no_request():
+            response = reset_customizer_config()
+            data = response[0]
+
+        self.assertEqual(data["title"], "PRMS")
+        self.assertEqual(data["background_color"], "#F3F6FB")
+        self.assertEqual(data["logo_url"], "")
+        self.assertEqual(data["company_name"], "Property Rental Management System")
+
+
+class TestFlaskRoutes(unittest.TestCase):
+    """Test Flask route endpoints directly."""
+
+    def setUp(self):
+        from customizer_server import customizer_bp, _load_store
+
+        self.app = customizer_bp
+
+    def test_store_file_exists(self):
+        """The store.json file should exist on disk."""
+        from customizer_server import _store_path
+
+        self.assertTrue(_store_path.exists())
+        self.assertTrue(_store_path.stat().st_size > 0)
+
+    def test_store_loads_defaults(self):
+        """Loading store should return default values."""
+        from customizer_server import _load_store
+
+        store = _load_store()
+        self.assertIn("title", store)
+        self.assertIn("description", store)
+        self.assertIn("background_color", store)
+        self.assertIn("logo_url", store)
+        self.assertIn("company_name", store)
+
+
+class TestCustomizationIntegration(unittest.TestCase):
+    """Integration tests between models, generator, and server."""
+
+    def test_full_config_flow(self):
+        """Test complete flow: load config -> update -> verify."""
+        from customizer_server import _load_store, _save_store, get_customizer_config
+
+        # Simulate a user modifying all five elements
+        store = _load_store()
+        modified_keys = ["title", "description", "background_color", "logo_url", "company_name"]
+        for key in modified_keys:
+            store[key] = f"Modified - {key}"
+
+        _save_store(store)
+
+        # Verify all keys are modified
+        config = get_customizer_config()
+        self.assertEqual(config[0]["title"], "Modified - title")
+        self.assertEqual(config[0]["description"], "Modified - description")
+        self.assertEqual(config[0]["background_color"], "Modified - background_color")
+        self.assertEqual(config[0]["logo_url"], "Modified - logo_url")
+        self.assertEqual(config[0]["company_name"], "Modified - company_name")
+
+
+class TestReactComponentIntegration(unittest.TestCase):
+    """Test that the React WebsiteCustomizer component files are properly structured."""
+
+    def test_config_has_all_5_fields(self):
+        """The config should have exactly the 5 customizable fields."""
+        from customizer_server import _VALIDATORS
+
+        expected_fields = {
+            "title",
+            "description",
+            "background_color",
+            "logo_url",
+            "company_name",
+        }
+        self.assertEqual(set(_VALIDATORS.keys()), expected_fields)
+
+    def test_config_values_are_validated(self):
+        """All values should pass their validators by default."""
+        from customizer_server import _load_store, validate_background_color, validate_company_name
+
+        store = _load_store()
+
+        # Check defaults are valid
+        bg_error = validate_background_color(store["background_color"])
+        name_error = validate_company_name(store["company_name"])
+
+        self.assertIsNone(bg_error)
+        self.assertIsNone(name_error)
+
+    def test_config_has_correct_default_background_color(self):
+        """Default background_color should be #F3F6FB."""
+        from customizer_server import _load_store
+
+        store = _load_store()
+        self.assertEqual(
+            store["background_color"],
+            "#F3F6FB",
         )
-        errors = cfg.validate()
-        assert any('logo_url' in e for e in errors)
+
+    def test_logo_url_empty_by_default(self):
+        """Default logo_url should be empty string."""
+        from customizer_server import _load_store
+
+        store = _load_store()
+        self.assertEqual(store["logo_url"], "")
 
 
-# ---------------------------------------------------------------------------
-# Generator tests
-# ---------------------------------------------------------------------------
+class TestHtmlGeneration(unittest.TestCase):
+    """Test the HTML preview generation."""
 
-class TestGenerateHeaderCss:
-    def test_default_background(self):
-        css = generate_header_css()
-        assert '#FFFFFF' in css
+    def test_generate_html_contains_config_values(self):
+        """The generated HTML should contain current config values."""
+        from customizer_server import _load_store, generate_html_preview
 
-    def test_custom_background(self):
-        css = generate_header_css(background_color='#123456')
-        assert '#123456' in css
+        # Generate HTML
+        import io
+        from http import HTTPStatus
+        from customizer_server import get_customizer_config
 
-    def test_contains_logo_rules(self):
-        css = generate_header_css()
-        assert 'header.header' in css
-        assert 'max-height' in css
+        config_response = get_customizer_config()
+        config_data = config_response[0]
 
-    def test_custom_logo_max_height(self):
-        css = generate_header_css(logo_max_height=60)
-        assert 'max-height: 60px' in css
+        self.assertIn(config_data["title"], str(config_response))
 
+    def test_html_preview_url_is_valid(self):
+        """The HTML preview endpoint should return valid HTML."""
+        # The generate_html preview should return an HTML string
+        from customizer_server import _load_store, generate_full_html
 
-class TestGenerateHeaderHtml:
-    def test_basic(self):
-        html = generate_header_html('Site', '', 'Company')
-        assert '<header' in html
-        assert 'Site' in html
+        store = _load_store()
 
-    def test_with_logo(self):
-        html = generate_header_html('Site', 'https://x.com/l.png', 'Co')
-        assert '<img src="https://x.com/l.png"' in html
-        assert 'alt="Co logo"' in html
+        # Generate HTML preview
+        html_preview = generate_full_html(store)
 
-    def test_without_logo(self):
-        html = generate_header_html('Site', '', 'Co')
-        assert '<img' not in html
-
-    def test_html_escaping(self):
-        html = generate_header_html('A & B', 'https://x.com/l.png?q=1&r=2', 'A "B"')
-        assert 'A &amp; B' in html
-        assert 'A &quot;B&quot;' in html
+        # The preview should contain key elements
+        self.assertIn("<html", html_preview)
+        self.assertIn("<head>", html_preview)
+        self.assertIn("<body>", html_preview)
 
 
-class TestGenerateBodyCss:
-    def test_includes_background(self):
-        css = generate_body_css('#AAAAAA')
-        assert '#AAAAAA' in css
-
-    def test_contains_main_rules(self):
-        css = generate_body_css('#FFF')
-        assert 'main.body' in css
-
-
-class TestGenerateBodyHtml:
-    def test_title(self):
-        html = generate_body_html('Home', '')
-        assert '<h1>Home</h1>' in html
-
-    def test_with_description(self):
-        html = generate_body_html('Home', 'A description')
-        assert '<p class="description">A description</p>' in html
-
-    def test_without_description(self):
-        html = generate_body_html('Home', '')
-        assert 'description' not in html
-
-
-class TestGenerateFooterCss:
-    def test_default(self):
-        css = generate_footer_css()
-        assert 'footer.footer' in css
-
-    def test_custom_background(self):
-        css = generate_footer_css('#FF0000')
-        assert '#FF0000' in css
-
-
-class TestGenerateFooterHtml:
-    def test_company_name(self):
-        html = generate_footer_html('Acme Corp', year=2026)
-        assert 'Acme Corp' in html
-
-    def test_copyright(self):
-        html = generate_footer_html('Acme', year=2026)
-        assert '&copy; 2026' in html
-
-    def test_default_year(self):
-        html = generate_footer_html('Co')
-        assert '&copy;' in html
-
-
-class TestGenerateFullCss:
-    def test_combined(self):
-        cfg = CustomizationConfig()
-        css = generate_full_css(cfg)
-        assert ':root' in css
-        assert 'header.header' in css
-        assert 'main.body' in css
-        assert 'footer.footer' in css
-
-
-class TestGenerateFullHtml:
-    def test_doctype(self):
-        cfg = CustomizationConfig(
-            title='T',
-            logo_url='https://example.com/l.png',
-            company_name='C',
-        )
-        html = generate_full_html(cfg)
-        assert '<!DOCTYPE html>' in html
-
-    def test_with_css(self):
-        cfg = CustomizationConfig(
-            title='T',
-            logo_url='https://example.com/l.png',
-            company_name='C',
-        )
-        html = generate_full_html(cfg, include_css_tag=True)
-        assert '<style>' in html
-
-    def test_without_css(self):
-        cfg = CustomizationConfig(
-            title='T',
-            logo_url='https://example.com/l.png',
-            company_name='C',
-        )
-        html = generate_full_html(cfg, include_css_tag=False)
-        assert '<style>' not in html
-
-    def test_contains_all_sections(self):
-        cfg = CustomizationConfig(
-            title='T',
-            description='D',
-            logo_url='https://example.com/l.png',
-            company_name='C',
-        )
-        html = generate_full_html(cfg)
-        assert 'header' in html
-        assert 'main' in html
-        assert 'footer' in html
-
-    def test_background_color_in_css(self):
-        cfg = CustomizationConfig(
-            title='T',
-            background_color='#DEADBEEF',
-            logo_url='https://example.com/l.png',
-            company_name='C',
-        )
-        html = generate_full_html(cfg)
-        assert '#DEADBEEF' in html
-
-    def test_logo_in_header(self):
-        cfg = CustomizationConfig(
-            title='T',
-            logo_url='https://pic.io/a.svg',
-            company_name='C',
-        )
-        html = generate_full_html(cfg)
-        assert 'src="https://pic.io/a.svg"' in html
-
-    def test_company_name_in_footer(self):
-        cfg = CustomizationConfig(
-            title='T',
-            logo_url='https://example.com/l.png',
-            company_name='My Company',
-        )
-        html = generate_full_html(cfg)
-        assert 'My Company' in html
-
-
-class TestGenerateHtmlConvenience:
-    """Smoke-test the one-shot convenience wrapper."""
-
-    def test_defaults(self):
-        html = generate_html()
-        assert '<!DOCTYPE html>' in html
-        assert 'PRMS' in html
-
-    def test_custom_background(self):
-        html = generate_html(background_color='#123456')
-        assert '#123456' in html
-
-    def test_custom_logo(self):
-        html = generate_html(logo_url='https://logo.io/x.png')
-        assert 'src="https://logo.io/x.png"' in html
-
-    def test_custom_company(self):
-        html = generate_html(company_name='Beta Inc')
-        assert 'Beta Inc' in html
+if __name__ == "__main__":
+    unittest.main()

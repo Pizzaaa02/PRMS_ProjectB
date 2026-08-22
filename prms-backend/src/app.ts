@@ -57,6 +57,12 @@ app.use('/files', (req, res, next) => {
     next();
 }, express.static(path.join(__dirname, '..', 'public', 'uploads')));
 
+// Serve generated thumbnails statically
+app.use('/api/files/thumbnails', (req, res, next) => {
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    next();
+}, express.static(path.join(__dirname, '..', 'public', 'thumbnails')));
+
 app.get('/health', async (req, res) => {
   try {
     await prisma.$queryRaw`SELECT 1`;
@@ -95,6 +101,9 @@ router.use('/themes', themeRoutes);
 router.use('/favorites', favoriteRoutes);
 import notificationRoutes from './modules/notification/routes_notification';
 router.use('/notifications', notificationRoutes);
+
+import customizerRoutes from './modules/customizer/routes_customizer';
+router.use('/customizer', customizerRoutes);
 
 app.use(router);
 app.use(errorHandler);

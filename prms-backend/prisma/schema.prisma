@@ -392,6 +392,7 @@ model UserProfileFile {
   fileSize       Int
   category       String   // "image" | "document"
   url            String
+  thumbnailUrl   String?
   description    String?
   created_at     DateTime @default(now())
 

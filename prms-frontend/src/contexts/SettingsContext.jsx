@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { adminApi } from '../api/admin';
+import { getImageUrl } from '../config/imageHelper';
 
 const SettingsContext = createContext(null);
 
@@ -289,6 +290,7 @@ export function SettingsProvider({ children }) {
       if (val === undefined) return fallback;
       return String(val).toLowerCase() === 'true';
     },
+    logoUrl: settingsObj.branding_logo_url ? getImageUrl(settingsObj.branding_logo_url) : '',
   }), [settingsObj, settingsRaw, loading, error, resolvedTheme, currentThemeId, updateSetting, bulkUpdateSettings, loadSettings]);
 
   return (

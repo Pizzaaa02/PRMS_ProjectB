@@ -287,11 +287,11 @@ function AdminDashboard() {
           background: 'rgba(239,68,68,0.08)',
           border: '1px solid rgba(239,68,68,0.25)',
           borderRadius: 'var(--radius-md)',
-          padding: '12px 16px',
+          padding: 'var(--spacing-sm) var(--spacing-md)',
           marginBottom: 'var(--spacing-md)',
           display: 'flex',
           alignItems: 'center',
-          gap: '10px',
+          gap: 'var(--spacing-sm)',
           color: 'var(--status-error)',
           fontSize: '14px',
         }}>
@@ -362,7 +362,7 @@ function AdminDashboard() {
                 </div>
               ))
             ) : !users.length ? (
-              <div style={{ padding: '24px 12px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '14px' }}>
+              <div style={{ padding: 'var(--spacing-lg) var(--spacing-sm)', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '14px' }}>
                 No users found
               </div>
             ) : (
@@ -417,7 +417,7 @@ function AdminDashboard() {
                   </div>
                 ))
               ) : !mappedLogs.length ? (
-                <div style={{ padding: '16px 0', textAlign: 'center', color: 'var(--secondary-fixed)', fontSize: '13px' }}>
+                <div style={{ padding: 'var(--spacing-md) 0', textAlign: 'center', color: 'var(--secondary-fixed)', fontSize: '13px' }}>
                   No audit events recorded
                 </div>
               ) : (
