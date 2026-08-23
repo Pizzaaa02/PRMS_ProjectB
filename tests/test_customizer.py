@@ -5,6 +5,7 @@ import os
 import sys
 import unittest
 from pathlib import Path
+from http import HTTPStatus
 
 # Ensure parent directory is on path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -30,6 +31,20 @@ def reset_store():
     _store_path.write_text(json.dumps(defaults, indent=2))
 
 
+def _unsubscriptable_response(response):
+    """Extract JSON data from Flask response regardless of format."""
+    # If it's already a dict, return as-is
+    if isinstance(response, dict):
+        return response
+    # If it's a tuple (response, status_code), extract the first element
+    if isinstance(response, tuple):
+        response = response[0]
+    # If it's a Response-like object with get_json()
+    if hasattr(response, "get_json"):
+        return response.get_json()
+    return response
+
+
 class TestCustomizationConfig(unittest.TestCase):
     """Test the CustomizationConfig data model and validation."""
 
@@ -40,9 +55,9 @@ class TestCustomizationConfig(unittest.TestCase):
         """GET /api/customizer should return default values."""
         from customizer_server import get_customizer_config, app
 
-        with app.app_context():
+        with app.test_request_context():
             response = get_customizer_config()
-            data = response[0]  # Flask returns (data, status) or Response object
+            data = _unsubscriptable_response(response)
             self.assertEqual(data["title"], "PRMS")
             self.assertEqual(data["description"], "Property Rental Management System")
             self.assertEqual(data["background_color"], "#F3F6FB")
@@ -64,9 +79,9 @@ class TestCustomizationConfig(unittest.TestCase):
         for key, value in new_config.items():
             _store[key] = value
 
-        with app.app_context():
-            response = update_customizer_config()
-            data = response[0]
+        with app.test_client() as client:
+            response = client.put("/api/customizer", json=new_config)
+            data = _unsubscriptable_response(response)
 
         self.assertEqual(data["title"], "New Title")
         self.assertEqual(data["description"], "New Description")
@@ -76,13 +91,11 @@ class TestCustomizationConfig(unittest.TestCase):
 
     def test_patch_single_field(self):
         """PATCH /api/customizer/<field> should update a single element."""
-        from customizer_server import patch_customizer_field, _store, app
+        from customizer_server import app
 
-        _store["title"] = "Updated Title"
-
-        with app.app_context():
-            response = patch_customizer_field("title")
-            data = response[0]
+        with app.test_client() as client:
+            response = client.patch("/api/customizer/title", json={"title": "Updated Title"})
+            data = _unsubscriptable_response(response)
 
         self.assertEqual(data["title"], "Updated Title")
 
@@ -166,16 +179,16 @@ class TestCustomizationConfig(unittest.TestCase):
 
     def test_reset_config(self):
         """POST /api/customizer/reset should reset all elements to defaults."""
-        from customizer_server import reset_customizer_config, _store
+        from customizer_server import reset_customizer_config, _store, app
 
         # Modify config
         _store["title"] = "Modified"
         _store["background_color"] = "#FFFFFF"
         _store["logo_url"] = "https://example.com/logo.png"
 
-        with self._no_request():
-            response = reset_customizer_config()
-            data = response[0]
+        with app.test_client() as client:
+            response = client.post("/api/customizer/reset")
+            data = _unsubscriptable_response(response)
 
         self.assertEqual(data["title"], "PRMS")
         self.assertEqual(data["background_color"], "#F3F6FB")
@@ -187,9 +200,7 @@ class TestFlaskRoutes(unittest.TestCase):
     """Test Flask route endpoints directly."""
 
     def setUp(self):
-        from customizer_server import customizer_bp, _load_store
-
-        self.app = customizer_bp
+        reset_store()
 
     def test_store_file_exists(self):
         """The store.json file should exist on disk."""
@@ -213,9 +224,12 @@ class TestFlaskRoutes(unittest.TestCase):
 class TestCustomizationIntegration(unittest.TestCase):
     """Integration tests between models, generator, and server."""
 
+    def setUp(self):
+        reset_store()
+
     def test_full_config_flow(self):
         """Test complete flow: load config -> update -> verify."""
-        from customizer_server import _load_store, _save_store, get_customizer_config
+        from customizer_server import _load_store, _save_store, app
 
         # Simulate a user modifying all five elements
         store = _load_store()
@@ -225,17 +239,26 @@ class TestCustomizationIntegration(unittest.TestCase):
 
         _save_store(store)
 
-        # Verify all keys are modified
-        config = get_customizer_config()
-        self.assertEqual(config[0]["title"], "Modified - title")
-        self.assertEqual(config[0]["description"], "Modified - description")
-        self.assertEqual(config[0]["background_color"], "Modified - background_color")
-        self.assertEqual(config[0]["logo_url"], "Modified - logo_url")
-        self.assertEqual(config[0]["company_name"], "Modified - company_name")
+        # Verify all keys are modified via test client
+        with app.test_client() as client:
+            response = client.get("/api/customizer")
+            data = _unsubscriptable_response(response)
+            self.assertEqual(data["title"], "Modified - title")
+            self.assertEqual(data["description"], "Modified - description")
+            self.assertEqual(data["background_color"], "Modified - background_color")
+            self.assertEqual(data["logo_url"], "Modified - logo_url")
+            self.assertEqual(data["company_name"], "Modified - company_name")
+
+
+# Need to import app at the right level
+from customizer_server import app
 
 
 class TestReactComponentIntegration(unittest.TestCase):
     """Test that the React WebsiteCustomizer component files are properly structured."""
+
+    def setUp(self):
+        reset_store()
 
     def test_config_has_all_5_fields(self):
         """The config should have exactly the 5 customizable fields."""
@@ -284,19 +307,24 @@ class TestReactComponentIntegration(unittest.TestCase):
 class TestHtmlGeneration(unittest.TestCase):
     """Test the HTML preview generation."""
 
+    def setUp(self):
+        reset_store()
+
     def test_generate_html_contains_config_values(self):
         """The generated HTML should contain current config values."""
-        from customizer_server import _load_store, generate_html_preview
+        from customizer_server import _load_store, generate_html_preview, app
 
-        # Generate HTML
-        import io
-        from http import HTTPStatus
-        from customizer_server import get_customizer_config
+        # Generate HTML via test client
+        with app.test_client() as client:
+            html_response = client.get("/api/customizer/generate-html")
+            html = html_response.get_data(as_text=True)
 
-        config_response = get_customizer_config()
-        config_data = config_response[0]
-
-        self.assertIn(config_data["title"], str(config_response))
+        # Check that the HTML contains the default config title
+        store = _load_store()
+        self.assertIn(store["title"], html)
+        self.assertIn("<html", html)
+        self.assertIn("<head>", html)
+        self.assertIn("<body>", html)
 
     def test_html_preview_url_is_valid(self):
         """The HTML preview endpoint should return valid HTML."""
@@ -305,8 +333,18 @@ class TestHtmlGeneration(unittest.TestCase):
 
         store = _load_store()
 
-        # Generate HTML preview
-        html_preview = generate_full_html(store)
+        # Generate HTML preview - pass dict directly (generator accepts dict)
+        # First convert store to CustomizationConfig-like structure
+        from customizer.models import CustomizationConfig
+
+        config = CustomizationConfig(
+            title=store.get("title", "PRMS"),
+            description=store.get("description", "PRMS"),
+            background_color=store.get("background_color", "#F3F6FB"),
+            logo_url=store.get("logo_url", ""),
+            company_name=store.get("company_name", "PRMS"),
+        )
+        html_preview = generate_full_html(config)
 
         # The preview should contain key elements
         self.assertIn("<html", html_preview)
