@@ -1,1 +1,0 @@
-{"root":["./src/app.ts","./src/config.ts","./src/modules/auth/firebase_auth.ts","./src/modules/auth/service_auth.ts"],"version":"6.0.3"}
