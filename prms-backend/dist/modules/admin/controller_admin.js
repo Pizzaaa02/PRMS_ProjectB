@@ -96,6 +96,20 @@ class AdminController {
                 res.status(400).json({ success: false, error: { message: error.message } });
             }
         };
+        this.uploadLogo = async (req, res) => {
+            try {
+                const file = req.file;
+                if (!file) {
+                    return res.status(400).json({ success: false, error: { message: 'No logo file uploaded' } });
+                }
+                const filePath = `/files/${file.filename}`;
+                const setting = await adminService.uploadSystemSetting('branding_logo_url', filePath);
+                res.json((0, response_1.successResponse)(setting, 'Logo uploaded'));
+            }
+            catch (error) {
+                res.status(500).json({ success: false, error: { message: error.message } });
+            }
+        };
         this.getAuditLogs = async (req, res) => {
             try {
                 const page = parseInt(req.query.page) || 1;

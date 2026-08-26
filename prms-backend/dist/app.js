@@ -43,7 +43,10 @@ const app = (0, express_1.default)();
 const router = express_1.default.Router();
 const PORT = config_1.env.PORT;
 app.use((0, helmet_1.default)());
-app.use((0, cors_1.default)({ origin: config_1.env.CORS_ORIGIN }));
+// Parse CORS_ORIGIN: supports single string or comma-separated list → array
+const corsOrigins = config_1.env.CORS_ORIGIN.split(',').map((o) => o.trim());
+const corsOriginValue = corsOrigins.length === 1 ? corsOrigins[0] : corsOrigins;
+app.use((0, cors_1.default)({ origin: corsOriginValue }));
 app.use(express_1.default.json());
 app.use(responseCache_1.responseCache);
 app.use(logging_1.requestLogger);
@@ -57,6 +60,16 @@ app.use('/files', (req, res, next) => {
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     next();
 }, express_1.default.static(path_1.default.join(__dirname, '..', 'public', 'uploads')));
+// Serve generated thumbnails statically
+app.use('/api/files/thumbnails', (req, res, next) => {
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    next();
+}, express_1.default.static(path_1.default.join(__dirname, '..', 'public', 'thumbnails')));
+// Serve uploaded property media (images, videos, documents) statically
+app.use('/uploads/properties', (req, res, next) => {
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    next();
+}, express_1.default.static(path_1.default.join(__dirname, '..', 'uploads', 'properties')));
 app.get('/health', async (req, res) => {
     try {
         await db_1.prisma.$queryRaw `SELECT 1`;
@@ -97,6 +110,8 @@ router.use('/themes', routes_theme_1.default);
 router.use('/favorites', routes_favorite_1.default);
 const routes_notification_1 = __importDefault(require("./modules/notification/routes_notification"));
 router.use('/notifications', routes_notification_1.default);
+const routes_customizer_1 = __importDefault(require("./modules/customizer/routes_customizer"));
+router.use('/customizer', routes_customizer_1.default);
 app.use(router);
 app.use(errorHandler_1.errorHandler);
 const server = app.listen(PORT, () => {

@@ -1,8 +1,16 @@
 import { useAuth } from '../contexts/AuthContext';
+import { getFullUrl } from '../config/apiBaseUrl';
 import { Camera, Settings } from 'lucide-react';
+
+function resolveProfileImg(rawUrl) {
+  return getFullUrl(rawUrl);
+}
 
 function ProfileHeader() {
   const { user, updateProfile } = useAuth();
+
+  const profileImgUrl = resolveProfileImg(user?.profile_img_url);
+
   const handleUpdateName = async () => {
     // Demo: update profile name
     const newName = prompt('Enter new full name:', user?.full_name || '');
@@ -14,8 +22,8 @@ function ProfileHeader() {
   return (
     <header className="profile-header">
       <div className="profile-avatar">
-        {user?.profile_img_url ? (
-          <img src={user.profile_img_url} alt="Profile" />
+        {profileImgUrl ? (
+          <img src={profileImgUrl} alt="Profile" />
         ) : (
           <div className="avatar-fallback">
             <Camera size={32} />

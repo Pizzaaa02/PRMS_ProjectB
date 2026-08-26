@@ -12,6 +12,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { propertyApi } from '../api';
+import { getFullUrl } from '../config/apiBaseUrl';
 import './ImageGallery.css';
 
 const PLACEHOLDER_IMAGES = [
@@ -23,11 +24,9 @@ const PLACEHOLDER_IMAGES = [
 ];
 
 function getImageUrl(img) {
-  if (typeof img === 'string') return img;
+  if (typeof img === 'string') return getFullUrl(img);
   if (img && img.url) {
-    const url = img.url;
-    if (url.startsWith('http://') || url.startsWith('https://')) return url;
-    return `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3500'}${url}`;
+    return getFullUrl(img.url);
   }
   if (img && img.path) return img.path;
   return '';

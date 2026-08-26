@@ -14,7 +14,7 @@
  * REST endpoints and reflected instantly in the preview.
  */
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import "./WebsiteCustomizer.css";
 
 // ---------- API client ----------
@@ -22,6 +22,20 @@ import "./WebsiteCustomizer.css";
 const API_BASE = import.meta.env?.VITE_API_URL
   ? `${import.meta.env.VITE_API_URL}`
   : "http://localhost:5555";
+
+// ------ section management ------
+const STATIC_HEADER_BG = { backgroundColor: "#FFFFFF" };
+const STATIC_FOOTER_BG = { backgroundColor: "#F3F4F6" };
+
+const DEFAULT_SECTIONS = {
+  hero: { text: "Hero Section", visibility: true, lock: false },
+  search_bar: { text: "Search Bar", visibility: true, lock: false },
+  featured: { text: "Featured Properties", visibility: true, lock: false },
+  features: { text: "Our Features", visibility: true, lock: false },
+  testimonials: { text: "Testimonials", visibility: true, lock: false },
+  cta_section: { text: "Call to Action", visibility: true, lock: false },
+  footer: { text: "Footer", visibility: true, lock: false },
+};
 
 async function fetchConfig() {
   const res = await fetch(`${API_BASE}/api/customizer`);
@@ -67,6 +81,8 @@ async function resetConfig() {
 
 // ---------- Color picker input ----------
 
+const COLOR_INPUT_TEXT_WIDTH = { width: 90 };
+
 function ColorInput({ value, onChange, label }) {
   const [open, setOpen] = useState(false);
   return (
@@ -100,7 +116,7 @@ function ColorInput({ value, onChange, label }) {
           onChange={(e) => onChange(e.target.value)}
           className="wc-color-compact"
           placeholder="#F3F6FB"
-          style={{ width: 90 }}
+          style={COLOR_INPUT_TEXT_WIDTH}
         />
       </div>
     </div>
@@ -183,7 +199,7 @@ function LivePreview({ config, onElementClick }) {
   return (
     <div className="wc-preview-area">
       <div className={`wc-preview-section ${highlight === "header" ? "wc-highlight" : ""} wc-section-header`} onClick={() => sectionClick("header")}>
-        <div className="wc-header-bar" style={{ backgroundColor: "#FFFFFF" }}>
+        <div className="wc-header-bar" style={STATIC_HEADER_BG}>
           {logoUrl && (
             <img src={logoUrl} alt="Logo" className="wc-preview-logo" />
           )}
@@ -197,7 +213,7 @@ function LivePreview({ config, onElementClick }) {
         </div>
       </div>
       <div className={`wc-preview-section ${highlight === "footer" ? "wc-highlight" : ""} wc-section-footer`} onClick={() => sectionClick("footer")}>
-        <div className="wc-footer-bar" style={{ backgroundColor: "#F3F4F6" }}>
+        <div className="wc-footer-bar" style={STATIC_FOOTER_BG}>
           <span className="wc-footer-brand">{config.company_name || "Property Rental Management System"}</span>
         </div>
       </div>

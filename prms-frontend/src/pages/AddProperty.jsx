@@ -131,7 +131,7 @@ function AddProperty() {
     }
     setSubmitting(true);
     try {
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || window.location.origin || 'http://localhost:3500';
       const token = localStorage.getItem('accessToken');
       const endpoint = id ? `/properties/${id}` : '/properties';
 

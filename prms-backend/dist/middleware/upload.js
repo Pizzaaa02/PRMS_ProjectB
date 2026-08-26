@@ -16,7 +16,7 @@ const storage = multer_1.default.diskStorage({
         const id = req.user?.id || 'guest';
         const ts = Date.now();
         const ext = path_1.default.extname(file.originalname).toLowerCase();
-        const safeExt = ['/jpg', '/jpeg', '/png', '/gif', '/webp', '/bmp'].includes(ext) ? ext : '.jpg';
+        const safeExt = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'].includes(ext) ? ext : '.jpg';
         cb(null, `${id}-${ts}-${Math.random().toString(36).slice(2, 8)}${safeExt}`);
     },
 });

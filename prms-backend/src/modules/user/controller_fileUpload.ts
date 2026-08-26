@@ -37,8 +37,11 @@ export class FileUploadController {
       const userId = (req as AuthRequest).user!.id;
       const url = `/files/${file.filename}`;
 
-      // Determine category: image or document
-      const category = file.mimetype.startsWith('image/') ? 'image' : 'document';
+      // Determine category: image, video, or document
+      let category;
+      if (file.mimetype.startsWith('image/')) category = 'image';
+      else if (file.mimetype.startsWith('video/')) category = 'video';
+      else category = 'document';
 
       const result = await fileUploadService.uploadFile(userId, {
         originalName: file.originalname,

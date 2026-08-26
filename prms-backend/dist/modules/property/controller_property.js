@@ -38,6 +38,7 @@ const express_validator_1 = require("express-validator");
 const propertyService = __importStar(require("./service_property"));
 const response_1 = require("../../utils/response");
 const service_audit_1 = require("../admin/service_audit");
+const db_1 = require("../../db");
 const HELPERS = (req) => {
     const ip = req.ip || req.socket.remoteAddress || '';
     const ua = req.headers['user-agent'];
@@ -119,9 +120,9 @@ class PropertyController {
                 const file = req.file;
                 if (!file)
                     return res.status(400).json({ success: false, error: { message: 'No image file provided' } });
-                const url = `/images/${file.filename}`;
+                const url = `/uploads/properties/${file.filename}`;
                 const image = await propertyService.addImage(String(req.params.id), url);
-                HELPERS(req).log({ action: 'ADD_PROPERTY_IMAGE', entity: 'Property', entityId: req.params.id, description: `Added image to property` });
+                HELPERS(req).log({ action: 'ADD_PROPERTY_IMAGE', entity: 'Property', entityId: String(req.params.id), description: `Added image to property` });
                 res.status(201).json((0, response_1.successResponse)(image));
             }
             catch (error) {
@@ -136,10 +137,10 @@ class PropertyController {
                 if (image?.url) {
                     const fs = await Promise.resolve().then(() => __importStar(require('fs')));
                     const path = await Promise.resolve().then(() => __importStar(require('path')));
-                    const filePath = path.join(__dirname, '..', '..', '..', 'public', image.url.replace(/^\//, ''));
+                    const filePath = path.join(__dirname, '..', '..', '..', 'uploads', 'properties', image.url.replace(/^\/uploads\/properties\//, ''));
                     fs.promises.unlink(filePath).catch(() => { });
                 }
-                HELPERS(req).log({ action: 'DELETE_PROPERTY_IMAGE', entity: 'PropertyImage', entityId: req.params.imageId, description: `Deleted property image` });
+                HELPERS(req).log({ action: 'DELETE_PROPERTY_IMAGE', entity: 'PropertyImage', entityId: String(req.params.imageId), description: `Deleted property image` });
                 res.json((0, response_1.successResponse)(null, 'Image deleted'));
             }
             catch (error) {
@@ -156,6 +157,106 @@ class PropertyController {
             catch (error) {
                 HELPERS(req).log({ action: 'VIEW_MY_PROPERTIES', entity: 'Property', status: 'Failed', level: 'error', errorMessage: error.message });
                 res.status(500).json({ success: false, error: { message: error.message } });
+            }
+        };
+        this.addVideo = async (req, res) => {
+            try {
+                const file = req.file;
+                if (!file)
+                    return res.status(400).json({ success: false, error: { message: 'No video file provided' } });
+                const url = `/uploads/properties/${file.filename}`;
+                // Generate thumbnail for video
+                let thumbnailUrl = '';
+                try {
+                    const { generateThumbnail } = await Promise.resolve().then(() => __importStar(require('../../utils/generateThumbnail')));
+                    const path = await Promise.resolve().then(() => __importStar(require('path')));
+                    const sourcePath = path.join(__dirname, '..', '..', '..', 'uploads', 'properties', file.filename);
+                    thumbnailUrl = await generateThumbnail(sourcePath);
+                }
+                catch (e) {
+                    console.warn('Video thumbnail generation skipped:', e);
+                }
+                const image = await propertyService.addImage(String(req.params.id), url, thumbnailUrl || undefined);
+                // Override type to 'video' since addImage defaults to 'image'
+                await db_1.prisma.propertyImage.update({
+                    where: { id: image.id },
+                    data: { type: 'video' },
+                });
+                HELPERS(req).log({ action: 'ADD_PROPERTY_VIDEO', entity: 'Property', entityId: String(req.params.id), description: `Added video to property` });
+                res.status(201).json((0, response_1.successResponse)(image));
+            }
+            catch (error) {
+                HELPERS(req).log({ action: 'ADD_PROPERTY_VIDEO', entity: 'Property', status: 'Failed', level: 'error', errorMessage: error.message });
+                res.status(400).json({ success: false, error: { message: error.message } });
+            }
+        };
+        this.deleteVideo = async (req, res) => {
+            try {
+                const urlToRemove = req.body?.url || req.query.url;
+                if (!urlToRemove)
+                    return res.status(400).json({ success: false, error: { message: 'Video URL required in body or query' } });
+                const prop = await propertyService.removeVideoFromProperty(String(req.params.id), urlToRemove);
+                if (prop === null)
+                    return res.status(404).json({ success: false, error: { message: 'Video URL not found on this property' } });
+                // Clean up file from disk
+                if (urlToRemove) {
+                    const fs = await Promise.resolve().then(() => __importStar(require('fs')));
+                    const path = await Promise.resolve().then(() => __importStar(require('path')));
+                    const filePath = path.join(__dirname, '..', '..', '..', 'uploads', 'properties', urlToRemove.replace(/^\/uploads\/properties\//, ''));
+                    fs.promises.unlink(filePath).catch(() => { });
+                }
+                HELPERS(req).log({ action: 'DELETE_PROPERTY_VIDEO', entity: 'Property', entityId: String(req.params.id), description: `Removed video from property` });
+                res.json((0, response_1.successResponse)(prop, 'Video deleted'));
+            }
+            catch (error) {
+                HELPERS(req).log({ action: 'DELETE_PROPERTY_VIDEO', entity: 'Property', status: 'Failed', level: 'error', errorMessage: error.message });
+                res.status(400).json({ success: false, error: { message: error.message } });
+            }
+        };
+        this.addDocument = async (req, res) => {
+            try {
+                const file = req.file;
+                if (!file)
+                    return res.status(400).json({ success: false, error: { message: 'No document file provided' } });
+                const url = `/uploads/properties/${file.filename}`;
+                // Store document as PropertyImage with type='document' and original filename
+                const image = await db_1.prisma.propertyImage.create({
+                    data: {
+                        propertyId: String(req.params.id),
+                        url,
+                        type: 'document',
+                        documentName: file.originalname,
+                    },
+                });
+                HELPERS(req).log({ action: 'ADD_PROPERTY_DOCUMENT', entity: 'Property', entityId: String(req.params.id), description: `Added document to property` });
+                res.status(201).json((0, response_1.successResponse)(image));
+            }
+            catch (error) {
+                HELPERS(req).log({ action: 'ADD_PROPERTY_DOCUMENT', entity: 'Property', status: 'Failed', level: 'error', errorMessage: error.message });
+                res.status(400).json({ success: false, error: { message: error.message } });
+            }
+        };
+        this.deleteDocument = async (req, res) => {
+            try {
+                const urlToRemove = req.body?.url || req.query.url;
+                if (!urlToRemove)
+                    return res.status(400).json({ success: false, error: { message: 'Document URL required in body or query' } });
+                const prop = await propertyService.removeDocumentFromProperty(String(req.params.id), urlToRemove);
+                if (prop === null)
+                    return res.status(404).json({ success: false, error: { message: 'Document URL not found on this property' } });
+                // Clean up file from disk
+                if (urlToRemove) {
+                    const fs = await Promise.resolve().then(() => __importStar(require('fs')));
+                    const path = await Promise.resolve().then(() => __importStar(require('path')));
+                    const filePath = path.join(__dirname, '..', '..', '..', 'uploads', 'properties', urlToRemove.replace(/^\/uploads\/properties\//, ''));
+                    fs.promises.unlink(filePath).catch(() => { });
+                }
+                HELPERS(req).log({ action: 'DELETE_PROPERTY_DOCUMENT', entity: 'Property', entityId: String(req.params.id), description: `Removed document from property` });
+                res.json((0, response_1.successResponse)(prop, 'Document deleted'));
+            }
+            catch (error) {
+                HELPERS(req).log({ action: 'DELETE_PROPERTY_DOCUMENT', entity: 'Property', status: 'Failed', level: 'error', errorMessage: error.message });
+                res.status(400).json({ success: false, error: { message: error.message } });
             }
         };
     }

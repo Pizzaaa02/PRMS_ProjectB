@@ -3,14 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { User, Settings, LogOut, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { getFullUrl } from '../config/apiBaseUrl';
 import './ProfileDropdown.css';
 
 function ProfileDropdown({ prefix }) {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-
-  const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3500';
 
   const displayName = user?.full_name || user?.name || user?.email || 'User';
 
@@ -19,9 +18,7 @@ function ProfileDropdown({ prefix }) {
     : displayName.slice(0, 2).toUpperCase();
 
   // Resolve profile image URL to backend public path
-  const profileImgUrl = user?.profile_img_url
-    ? (user.profile_img_url?.startsWith('http') ? user.profile_img_url : (API + user.profile_img_url))
-    : null;
+  const profileImgUrl = user?.profile_img_url ? getFullUrl(user.profile_img_url) : null;
 
   function safeNavigate(path) {
     setOpen(false);

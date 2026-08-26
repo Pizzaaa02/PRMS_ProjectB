@@ -71,7 +71,7 @@ const AgentSidebar = () => {
                 to={item.path}
                 className={clsx(
                   'sidebar-link',
-                  location.pathname === item.path && 'active'
+                  location.pathname.startsWith(item.path) && 'active'
                 )}
               >
                 <span className="sidebar-icon">{item.icon}</span>

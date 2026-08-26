@@ -1,6 +1,6 @@
 import { propertyApi } from '../api';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3500';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || window.location.origin || 'http://localhost:3500';
 
 export function getImageUrl(url) {
   if (!url) return '';

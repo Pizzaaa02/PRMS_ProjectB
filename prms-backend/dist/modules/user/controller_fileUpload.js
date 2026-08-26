@@ -50,6 +50,18 @@ const HELPERS = (req) => {
 };
 class FileUploadController {
     constructor() {
+        this.getUserMedia = async (req, res) => {
+            try {
+                const userId = req.user.id;
+                const fileType = req.query.fileType;
+                const { getUserMedia: _getUserMedia } = await Promise.resolve().then(() => __importStar(require('./service_fileUpload')));
+                const media = await _getUserMedia(userId, fileType);
+                res.json((0, response_1.successResponse)({ media }));
+            }
+            catch (error) {
+                res.status(500).json({ success: false, error: { message: error.message } });
+            }
+        };
         this.upload = async (req, res) => {
             try {
                 const file = req.file;
@@ -57,8 +69,14 @@ class FileUploadController {
                     return res.status(400).json({ success: false, error: { message: 'No file provided' } });
                 const userId = req.user.id;
                 const url = `/files/${file.filename}`;
-                // Determine category: image or document
-                const category = file.mimetype.startsWith('image/') ? 'image' : 'document';
+                // Determine category: image, video, or document
+                let category;
+                if (file.mimetype.startsWith('image/'))
+                    category = 'image';
+                else if (file.mimetype.startsWith('video/'))
+                    category = 'video';
+                else
+                    category = 'document';
                 const result = await fileUploadService.uploadFile(userId, {
                     originalName: file.originalname,
                     storageName: file.filename,
@@ -84,7 +102,7 @@ class FileUploadController {
                 const category = req.query.category;
                 const { files, total } = await fileUploadService.getUserFiles(userId, page, limit, category);
                 HELPERS(req).log({ action: 'LIST_FILES', entity: 'UserProfileFile', description: `Listed files (page ${page})` });
-                res.json((0, response_1.paginatedResponse)(files, page, limit, total));
+                res.json((0, response_1.successResponse)({ files, total }));
             }
             catch (error) {
                 HELPERS(req).log({ action: 'LIST_FILES', entity: 'UserProfileFile', status: 'Failed', level: 'error', errorMessage: error.message });
@@ -93,7 +111,7 @@ class FileUploadController {
         };
         this.getById = async (req, res) => {
             try {
-                const file = await fileUploadService.getFileById(String(req.params.id));
+                const file = await fileUploadService.getFileById(String(req.params.fileId));
                 if (!file)
                     return res.status(404).json({ success: false, error: { message: 'File not found' } });
                 HELPERS(req).log({ action: 'VIEW_FILE', entity: 'UserProfileFile', entityId: file.id, description: `Viewed file ${file.originalName}` });
@@ -107,7 +125,7 @@ class FileUploadController {
         this.remove = async (req, res) => {
             try {
                 const userId = req.user.id;
-                const fileId = String(req.params.id);
+                const fileId = String(req.params.fileId);
                 // Get file details before deletion
                 const file = await fileUploadService.getFileById(fileId);
                 if (!file)

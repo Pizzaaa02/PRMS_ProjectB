@@ -88,9 +88,11 @@ const buildTree = () => [
 
 const TREE = buildTree();
 
-function TreeNode({ node, depth, selectedId, onSelect }) {
+const TreeNode = memo(function TokenTreeNode({ node, depth, selectedId, onSelect }) {
   const [expanded, setExpanded] = useState(true);
   const isSelected = selectedId === node.id;
+  const paddingLeft = depth * 12 + 12;
+  const style = useMemo(() => ({ paddingLeft: `${paddingLeft}px` }), [paddingLeft]);
 
   const handleClick = useCallback(() => {
     if (node.expandable) {
@@ -103,7 +105,7 @@ function TreeNode({ node, depth, selectedId, onSelect }) {
     <div>
       <div
         className={`pt-row ${isSelected ? 'pt-row-active' : ''}`}
-        style={{ paddingLeft: `${depth * 12 + 12}px` }}
+        style={style}
         onClick={handleClick}
       >
         {node.expandable && (
@@ -141,17 +143,19 @@ function SearchInput({ value, onChange }) {
   );
 }
 
-export default function PageTree({ selectedId, onSelect }) {
+export const PageTree = memo(function PageTree({ selectedId, onSelect }) {
   const [filter, setFilter] = useState('');
 
-  const filtered = TREE.filter((group) => {
-    if (!filter) return true;
+  const filtered = useMemo(() => {
+    if (!filter) return TREE;
     const lower = filter.toLowerCase();
-    return (
-      group.label.toLowerCase().includes(lower) ||
-      group.children?.some((c) => c.label.toLowerCase().includes(lower))
-    );
-  });
+    return TREE.filter((group) => {
+      return (
+        group.label.toLowerCase().includes(lower) ||
+        group.children?.some((c) => c.label.toLowerCase().includes(lower))
+      );
+    });
+  }, [filter]);
 
   return (
     <div className="pt-sidebar">
@@ -187,4 +191,4 @@ export default function PageTree({ selectedId, onSelect }) {
       </div>
     </div>
   );
-}
+});

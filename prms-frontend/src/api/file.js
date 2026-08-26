@@ -74,3 +74,12 @@ export function deletePropertyImage(imageId) {
       return { success: false, error: { message: msg } };
     });
 }
+
+export function getPublicUrl(fileId) {
+  return client.axios.get(`/users/files/${fileId}/public-url`)
+    .then(res => res.data)
+    .catch(err => {
+      const msg = err.response?.data?.error?.message || err.message;
+      return { success: false, error: { message: msg } };
+    });
+}

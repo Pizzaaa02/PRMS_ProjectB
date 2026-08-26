@@ -745,9 +745,66 @@
   align-items: center;
   justify-content: center;
   gap: 12px;
+  padding: 24px 16px;
+  color: var(--text-secondary, #64748b);
+}
+
+.pe-section-empty-text {
   color: var(--text-secondary, #64748b);
   font-size: 14px;
-  margin-top: 16px;
+}
+
+/* ---- Building Facilities list ---- */
+.pe-facilities-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 36px;
+  padding: 4px 0;
+}
+
+.pe-facility-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--primary-color, #3366ff);
+  color: white;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.pe-facility-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 0;
+  opacity: 0.8;
+  transition: opacity 0.15s;
+}
+
+.pe-facility-remove:hover {
+  opacity: 1;
+}
+
+/* ---- Add facility row ---- */
+.pe-add-facility-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.pe-add-facility-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* ---- Toast ---- */
@@ -949,4 +1006,133 @@
 
 .pe-add-amenity-form button {
   flex-shrink: 0;
+}
+
+
+/* Upload status indicators */
+.pe-upload-success {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #22c55e;
+  font-size: 0.875rem;
+  margin-top: 0.75rem;
+}
+
+.pe-upload-error {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #ef4444;
+  font-size: 0.875rem;
+  margin-top: 0.75rem;
+}
+
+/* ================= DOCUMENTS ================= */
+.pe-documents-empty {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--color-muted);
+}
+
+.pe-documents-empty svg {
+  color: var(--color-muted);
+  opacity: 0.5;
+  margin-bottom: 0.5rem;
+}
+
+.pe-documents-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pe-document-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.pe-document-item:hover {
+  background: var(--color-secondary-bg);
+  border-color: var(--color-primary);
+}
+
+.pe-document-info {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.pe-document-icon {
+  flex-shrink: 0;
+  color: var(--color-primary);
+}
+
+.pe-document-name {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.pe-document-size {
+  font-size: 0.75rem;
+  color: var(--color-muted);
+  margin-left: auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pe-document-actions {
+  display: flex;
+  gap: 0.4rem;
+  margin-left: 0.75rem;
+  flex-shrink: 0;
+}
+
+.pe-document-download {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4rem;
+  border-radius: var(--radius-md);
+  color: var(--color-primary);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+}
+
+.pe-document-download:hover {
+  background: var(--color-primary-light);
+  border-color: var(--color-primary);
+}
+
+.pe-document-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4rem;
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.pe-document-remove:hover {
+  color: var(--color-red);
+  background: var(--color-red-light);
+  border-color: var(--color-red);
 }

@@ -8,6 +8,7 @@ import {
   X,
   Image as ImageIcon,
   Video,
+  FileText,
   AlertTriangle,
   CheckCircle,
   GripVertical,
@@ -251,39 +252,72 @@ function MediaItem({ item, type = 'image', onUpdate, onRemove }) {
 
 /* ================= ADD MEDIA MODAL ================= */
 
-function AddMediaModal({ isOpen, onClose, type, onAdd, categories }) {
+function AddMediaModal({ isOpen, onClose, type, propertyId, onAdd, categories }) {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [addedSuccess, setAddedSuccess] = useState(false);
+  const [uploadError, setUploadError] = useState('');
   const fileInputRef = { current: null };
 
   const handleFiles = useCallback((files) => {
-    const mediaFiles = Array.from(files).filter((f) =>
-      type === 'image' ? f.type.startsWith('image/') : f.type.startsWith('video/')
-    );
+    const mediaFiles = Array.from(files).filter((f) => {
+      if (type === 'image') return f.type.startsWith('image/');
+      if (type === 'video') return f.type.startsWith('video/');
+      // Documents: allow pdf, doc, docx, xls, xlsx, ppt, pptx, txt, zip
+      const docTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument', 'application/vnd.ms-excel', 'application/vnd.ms-powerpoint', 'text/plain', 'application/zip'];
+      return docTypes.some((t) => f.type.includes(t.split('/')[1])) || f.type.includes('pdf') || f.type.includes('word') || f.type.includes('excel') || f.type.includes('powerpoint') || f.type.includes('text');
+    });
     setSelectedFiles((prev) => [...prev, ...mediaFiles]);
   }, [type]);
 
   const handleAdd = async () => {
     if (selectedFiles.length === 0) return;
     setUploading(true);
-    const results = [];
-    for (const file of selectedFiles) {
-      const blobUrl = URL.createObjectURL(file);
-      results.push({
-        id: `new-${Date.now()}-${file.name}-${Math.random().toString(36).slice(2, 6)}`,
-        url: blobUrl,
-        file,
-        alt: file.name.replace(/\.[^.]+$/, ''),
-        type,
-      });
-    }
-    setTimeout(() => {
+    setUploadError('');
+    try {
+      const results = [];
+      for (const file of selectedFiles) {
+        // Determine the correct field name for the backend route
+        const field = type === 'image' ? 'image' : type === 'video' ? 'video' : 'document';
+        if (!propertyId) {
+          // Fallback: no propertyId yet — use blob URL
+          results.push({
+            id: `new-${Date.now()}-${file.name}-${Math.random().toString(36).slice(2, 6)}`,
+            url: URL.createObjectURL(file),
+            file,
+            documentName: file.name,
+            type,
+          });
+          continue;
+        }
+        // Upload to backend via the correct API endpoint
+        const fd = new FormData();
+        fd.append(field, file);
+        const uploadFn = type === 'image' ? propertyApi.addImage : type === 'video' ? propertyApi.addVideo : propertyApi.addDocument;
+        const res = await uploadFn(propertyId, fd);
+        const serverData = res?.data?.data;
+        if (serverData) {
+          results.push({ id: serverData.id, url: serverData.url, documentName: serverData.documentName || file.name, type });
+        } else {
+          results.push({
+            id: `new-${Date.now()}-${file.name}-${Math.random().toString(36).slice(2, 6)}`,
+            url: URL.createObjectURL(file),
+            file,
+            documentName: file.name,
+            type,
+          });
+        }
+      }
       onAdd(results);
       setSelectedFiles([]);
       setAddedSuccess(true);
       setTimeout(() => setAddedSuccess(false), 2000);
-    }, 600);
+    } catch (err) {
+      setUploadError(err.response?.data?.error?.message || err.message || 'Upload failed.');
+      setTimeout(() => setUploadError(''), 4000);
+    } finally {
+      setUploading(false);
+    }
   };
 
   const onFileInput = (e) => handleFiles(e.target.files);
@@ -298,7 +332,7 @@ function AddMediaModal({ isOpen, onClose, type, onAdd, categories }) {
         animate={{ opacity: 1, y: 0 }}
       >
         <div className="pe-modal-header">
-          <h2 className="pe-modal-title">{type === 'image' ? 'Add Images' : 'Add Videos'}</h2>
+          <h2 className="pe-modal-title">{type === 'image' ? 'Add Images' : type === 'video' ? 'Add Videos' : 'Add Documents'}</h2>
           <button onClick={onClose} className="pe-modal-close" aria-label="Close dialog">
             <X size={20} />
           </button>
@@ -363,6 +397,18 @@ function AddMediaModal({ isOpen, onClose, type, onAdd, categories }) {
               )}
             </button>
           </div>
+
+          {/* Upload status messages */}
+          {addedSuccess && (
+            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pe-upload-success">
+              <CheckCircle size={16} /> Uploaded successfully
+            </motion.p>
+          )}
+          {uploadError && (
+            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pe-upload-error">
+              <AlertTriangle size={16} /> {uploadError}
+            </motion.p>
+          )}
         </div>
       </motion.div>
     </div>
@@ -438,10 +484,15 @@ function PropertyEdit() {
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
   const [description, setDescription] = useState('');
+  const [floorArea, setFloorArea] = useState('');
+  const [petPolicy, setPetPolicy] = useState('');
+  const [buildingFacilities, setBuildingFacilities] = useState([]);
+  const [newFacility, setNewFacility] = useState('');
 
   // Media
   const [images, setImages] = useState([]);
   const [videos, setVideos] = useState([]);
+  const [documents, setDocuments] = useState([]);
   const [categories] = useState([{ id: 'cat-1', name: 'Living Room' }, { id: 'cat-2', name: 'Bedroom' }, { id: 'cat-3', name: 'Kitchen' }, { id: 'cat-4', name: 'Bathroom' }, { id: 'cat-5', name: 'Exterior' }]);
 
   // Amenities (many-to-many: Property -> Amenity via PropertyAmenity join)
@@ -467,9 +518,14 @@ function PropertyEdit() {
           setCity(prop.city || '');
           setState(prop.state || '');
           setDescription(prop.description || '');
+          setFloorArea(prop.floorArea || '');
+          setPetPolicy(prop.petPolicy || '');
+          setBuildingFacilities(prop.buildingFacilities || []);
           setImages(prop.images || []);
           // Videos may be stored as PropertyImage with url ending in video types
           setVideos(prop.videos || []);
+          // Documents are also PropertyImage records with type='document'
+          setDocuments(prop.documents || []);
           setAmenities(prop.amenities || []);
         }
         setLoading(false);
@@ -534,6 +590,9 @@ function PropertyEdit() {
         city: city.trim() || null,
         state: state.trim() || null,
         description: description.trim(),
+        floorArea: floorArea.trim() || null,
+        petPolicy: petPolicy.trim() || null,
+        buildingFacilities: buildingFacilities.filter((f) => f.trim()).length > 0 ? buildingFacilities.filter((f) => f.trim()) : [],
         images,
         videos,
         amenities,
@@ -575,6 +634,17 @@ function PropertyEdit() {
 
   const removeVideo = (vidId) => {
     setVideos((prev) => prev.filter((v) => v.id !== vidId));
+  };
+
+  /* ---- Document handlers ---- */
+  const addDocument = (newDocs) => {
+    setDocuments((prev) => [...prev, ...newDocs]);
+    setShowMediaModal(null);
+    setToast({ message: `${newDocs.length} document${newDocs.length > 1 ? 's' : ''} added.`, type: 'success' });
+  };
+
+  const removeDocument = (docId) => {
+    setDocuments((prev) => prev.filter((d) => d.id !== docId));
   };
 
   /* ---- Amenities handlers ---- */
@@ -813,6 +883,87 @@ function PropertyEdit() {
               </label>
               <textarea id="editDesc" className="pe-textarea" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Describe your property..." rows={4} />
             </div>
+
+            {/* Floor Area */}
+            <div className="pe-group">
+              <label htmlFor="editFloorArea" className="pe-field-label">
+                <Info size={18} />
+                Floor Area
+              </label>
+              <input
+                id="editFloorArea"
+                className="pe-input"
+                type="text"
+                inputMode="numeric"
+                value={floorArea}
+                onChange={(e) => setFloorArea(e.target.value)}
+                placeholder="e.g. 850 sq ft"
+              />
+              <span id="floorAreaHelp" className="pe-field-help">The total floor area of the property.</span>
+            </div>
+
+            {/* Pet Policy */}
+            <div className="pe-group">
+              <label htmlFor="editPetPolicy" className="pe-field-label">
+                <Info size={18} />
+                Pet Policy
+              </label>
+              <textarea
+                id="editPetPolicy"
+                className="pe-textarea"
+                value={petPolicy}
+                onChange={(e) => setPetPolicy(e.target.value)}
+                placeholder="e.g. Pets allowed with deposit..."
+                rows={3}
+              />
+              <span id="petPolicyHelp" className="pe-field-help">Specify any pet-friendly policies or restrictions.</span>
+            </div>
+
+            {/* Building Facilities */}
+            <div className="pe-group">
+              <span className="pe-field-label">
+                <Building2 size={18} />
+                Building Facilities
+              </span>
+              <div className="pe-facilities-list">
+                {buildingFacilities.map((facility, i) => (
+                  <span key={i} className="pe-facility-tag">
+                    {facility}
+                    <button type="button" className="pe-facility-remove" onClick={() => setBuildingFacilities((prev) => prev.filter((_, idx) => idx !== i))} aria-label={`Remove ${facility}`}>
+                      <X size={14} />
+                    </button>
+                  </span>
+                ))}
+                {buildingFacilities.length === 0 && <span className="pe-section-empty-text">No facility chips added yet.</span>}
+              </div>
+              <div className="pe-add-facility-row">
+                <input
+                  className="pe-input"
+                  type="text"
+                  placeholder="Add facility (e.g. Gym, Pool)..."
+                  value={newFacility}
+                  onChange={(e) => setNewFacility(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && newFacility.trim()) {
+                      setBuildingFacilities((prev) => [...prev, newFacility.trim()]);
+                      setNewFacility('');
+                    }
+                  }}
+                />
+                <button
+                  className="pe-btn-primary pe-add-facility-btn"
+                  onClick={() => {
+                    if (newFacility.trim()) {
+                      setBuildingFacilities((prev) => [...prev, newFacility.trim()]);
+                      setNewFacility('');
+                    }
+                  }}
+                  disabled={!newFacility.trim()}
+                >
+                  <Plus size={16} /> Add
+                </button>
+              </div>
+            </div>
           </section>
 
           {/* --- Media Section --- */}
@@ -897,6 +1048,55 @@ function PropertyEdit() {
             </div>
           </section>
 
+          {/* --- Documents --- */}
+          <section className="pe-section" aria-labelledby="document-heading">
+            <div className="pe-section-header">
+              <div className="pe-section-title-row" id="document-heading">
+                <FileText size={20} />
+                Documents
+                <span className="pe-section-count">{documents.length}</span>
+              </div>
+              <button className="pe-btn-icon" onClick={() => setShowMediaModal('document')} aria-label="Add new documents">
+                <Plus size={20} />
+                Add
+              </button>
+            </div>
+            {documents.length === 0 ? (
+              <div className="pe-documents-empty">
+                <FileText size={32} />
+                <p>No documents yet. Upload property documents here.</p>
+                <button className="pe-btn-secondary" onClick={() => setShowMediaModal('document')}>
+                  <Plus size={16} />
+                  Upload Document
+                </button>
+              </div>
+            ) : (
+              <div className="pe-documents-list">
+                {documents.map((doc) => (
+                  <div key={doc.id} className="pe-document-item">
+                    <div className="pe-document-info">
+                      <FileText size={18} className="pe-document-icon" />
+                      <span className="pe-document-name" title={doc.documentName || doc.url}>{doc.documentName || doc.url}</span>
+                      <span className="pe-document-size">{doc.url}</span>
+                    </div>
+                    <div className="pe-document-actions">
+                      <a href={doc.url} target="_blank" rel="noopener noreferrer" className="pe-document-download" aria-label="Download document">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                          <polyline points="7 10 12 15 17 10" />
+                          <line x1="12" y1="15" x2="12" y2="3" />
+                        </svg>
+                      </a>
+                      <button onClick={() => removeDocument(doc.id)} className="pe-document-remove" aria-label="Remove document">
+                        <X size={16} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
           {/* --- Amenities --- */}
           <section className="pe-section" aria-labelledby="amenity-heading">
             <div className="pe-section-header">
@@ -962,6 +1162,10 @@ function PropertyEdit() {
                 <span className="pe-summary-value">{videos.length}</span>
               </div>
               <div className="pe-summary-row">
+                <span className="pe-summary-label">Documents</span>
+                <span className="pe-summary-value">{documents.length}</span>
+              </div>
+              <div className="pe-summary-row">
                 <span className="pe-summary-label">Amenities</span>
                 <span className="pe-summary-value">{amenities.length}</span>
               </div>
@@ -971,7 +1175,7 @@ function PropertyEdit() {
       </div>
 
       {/* Media Add Modal */}
-      <AddMediaModal isOpen={!!showMediaModal} onClose={() => setShowMediaModal(null)} type={showMediaModal} onAdd={showMediaModal === 'image' ? addImage : addVideo} categories={categories} />
+      <AddMediaModal isOpen={!!showMediaModal} onClose={() => setShowMediaModal(null)} type={showMediaModal} propertyId={id} onAdd={showMediaModal === 'image' ? addImage : showMediaModal === 'video' ? addVideo : addDocument} categories={categories} />
 
       {/* Amenity Add Modal */}
       {showAmenityModal && (

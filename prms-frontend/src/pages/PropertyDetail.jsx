@@ -26,6 +26,7 @@ import { propertyApi } from '../api';
 import { useAuth } from '../contexts/AuthContext';
 import TenantBookingModal from '../components/TenantBookingModal';
 import ImageGallery from '../components/ImageGallery';
+import { VideoUploader, DocumentUploader } from '../components/MediaUploader';
 import './PropertyDetail.css';
 
 /* ================= AMENITY ICON MAP ================= */
@@ -448,6 +449,7 @@ function PropertyDetail() {
                   </h2>
                   <p className="pd-capacity-line">
                     {capacity || 10} guests · {bedrooms || 5} bedrooms · {bathrooms || 4.5} baths
+                    {property?.floorArea && ` · ${property.floorArea} sq ft`}
                   </p>
                 </div>
                 <div className="pd-host-right">
@@ -550,6 +552,62 @@ function PropertyDetail() {
                   )}
                 </div>
                 <div className="pd-divider" />
+              </>
+            )}
+
+            {/* Building Facilities */}
+            {property?.buildingFacilities && property.buildingFacilities.length > 0 && (
+              <>
+                <div className="pd-divider" />
+                <div className="pd-section">
+                  <h3 className="pd-section-title">Building Facilities</h3>
+                  <div className="pd-facilities-chips">
+                    {property.buildingFacilities.map((facility, i) => (
+                      <span className="pd-facility-chip" key={i}>
+                        {facility}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Pet Policy */}
+            {property?.petPolicy && (
+              <>
+                <div className="pd-divider" />
+                <div className="pd-section">
+                  <h3 className="pd-section-title">
+                    {' '}Pet Policy
+                  </h3>
+                  <p className="pd-pet-policy-text">{property.petPolicy}</p>
+                </div>
+              </>
+            )}
+
+            {/* Video & Document sections (visible when logged in and can edit) */}
+            {(user?.role === "Landlord" || user?.role === "Admin" || user?.role === "landlord" || user?.role === "admin") && (
+              <>
+                <div className="pd-divider" />
+                <div className="pd-section">
+                  <VideoUploader
+                    propertyId={id}
+                    videos={property?.videoUrls || []}
+                    onChange={(updated) => {
+                      setProperty((prev) => prev ? { ...prev, videoUrls: updated } : prev);
+                    }}
+                  />
+                </div>
+                <div className="pd-divider" />
+                <div className="pd-section">
+                  <DocumentUploader
+                    propertyId={id}
+                    documents={property?.documentUrls || []}
+                    onChange={(updated) => {
+                      setProperty((prev) => prev ? { ...prev, documentUrls: updated } : prev);
+                    }}
+                  />
+                </div>
               </>
             )}
 
