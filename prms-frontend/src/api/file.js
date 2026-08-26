@@ -2,12 +2,6 @@ import { apiClient } from './ApiClient';
 
 const client = apiClient;
 
-/**
- * Upload a file to the user's profile.
- * @param {File} file - The file object from an input element
- * @param {string} [description] - Optional description
- * @returns {Promise<{success: boolean, data: Object}>}
- */
 export function uploadFile(file, description = '') {
   const formData = new FormData();
   formData.append('file', file);
@@ -24,18 +18,18 @@ export function uploadFile(file, description = '') {
     });
 }
 
-/**
- * List files for the current user (paginated).
- * @param {number} [page=1]
- * @param {number} [limit=10]
- * @param {'image'|'document'} [category]
- * @returns {Promise<Object>}
- */
+export function downloadFile(fileId) {
+  return client.axios.get(`/users/files/${fileId}/download`)
+    .then(res => res.data)
+    .catch(err => {
+      const msg = err.response?.data?.error?.message || err.message;
+      return { success: false, error: { message: msg } };
+    });
+}
+
 export function listFiles(page = 1, limit = 10, category = undefined) {
   const params = { page, limit };
-  if (category) {
-    params.category = category;
-  }
+  if (category) params.category = category;
   return client.axios.get('/users/files', { params })
     .then(res => res.data)
     .catch(err => {
@@ -44,11 +38,16 @@ export function listFiles(page = 1, limit = 10, category = undefined) {
     });
 }
 
-/**
- * Get a single file by ID.
- * @param {string} fileId
- * @returns {Promise<Object>}
- */
+export function getUserMedia(fileType) {
+  const params = fileType ? { fileType } : {};
+  return client.axios.get('/users/my-media', { params })
+    .then(res => res.data)
+    .catch(err => {
+      const msg = err.response?.data?.error?.message || err.message;
+      return { success: false, error: { message: msg } };
+    });
+}
+
 export function getFile(fileId) {
   return client.axios.get(`/users/files/${fileId}`)
     .then(res => res.data)
@@ -58,13 +57,26 @@ export function getFile(fileId) {
     });
 }
 
-/**
- * Delete a file by ID.
- * @param {string} fileId
- * @returns {Promise<Object>}
- */
 export function deleteFile(fileId) {
   return client.axios.delete(`/users/files/${fileId}`)
+    .then(res => res.data)
+    .catch(err => {
+      const msg = err.response?.data?.error?.message || err.message;
+      return { success: false, error: { message: msg } };
+    });
+}
+
+export function deletePropertyImage(imageId) {
+  return client.axios.delete(`/users/my-media/images/${imageId}`)
+    .then(res => res.data)
+    .catch(err => {
+      const msg = err.response?.data?.error?.message || err.message;
+      return { success: false, error: { message: msg } };
+    });
+}
+
+export function getPublicUrl(fileId) {
+  return client.axios.get(`/users/files/${fileId}/public-url`)
     .then(res => res.data)
     .catch(err => {
       const msg = err.response?.data?.error?.message || err.message;

@@ -76,10 +76,13 @@ export const ROUTES = {
     properties: '/agent/properties',
     propertyDetail: (id: string) => `/agent/properties/${id}`,
     bookings: '/agent/bookings',
+    finance: '/agent/finance',
     maintenance: '/agent/maintenance',
+    reports: '/agent/reports',
     categories: '/agent/categories',
     settings: '/agent/settings',
     profile: '/agent/profile',
+    customizer: '/agent/settings/customizer',
     help: '/agent/help',
   } as const,
 

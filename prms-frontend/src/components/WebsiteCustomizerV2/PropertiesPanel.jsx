@@ -1,9 +1,9 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import {
   Type as TypeIcon, ImageIcon, Palette, Maximize2,
   AlignLeft, AlignCenter, AlignRight, AlignJustify,
   Eye, EyeOff, Lock, Unlock, Grid3X3, List,
-  DivideIcon as Divide
+  DivideIcon as Divide, Upload, X
 } from 'lucide-react';
 
 /* ---- Content properties (first tab in the reference) ---- */
@@ -176,15 +176,61 @@ function PropertyRow({ field, value, onChange }) {
           </button>
         </div>
       );
+    case 'file':
+      return (
+        <div className="rp-row rp-file-row">
+          <label className="rp-label">
+            <span className="rp-field-icon">{field.icon}</span>
+            {field.label}
+          </label>
+          <div className="rp-file-wrap">
+            {value ? (
+              <div className="rp-file-preview">
+                <img src={value} alt="Preview" className="rp-file-preview-img" />
+                <button
+                  type="button"
+                  className="rp-file-remove"
+                  onClick={() => onChange(field.key, '')}
+                  title="Remove image"
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            ) : (
+              <label className="rp-file-drop">
+                <Upload size={14} />
+                <span className="rp-file-drop-text">Upload</span>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/gif"
+                  className="rp-file-input"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    if (field.onUpload) {
+                      await field.onUpload(file, (url) => onChange(field.key, url));
+                    }
+                    // Reset input so the same file can be re-selected
+                    e.target.value = '';
+                  }}
+                />
+              </label>
+            )}
+          </div>
+        </div>
+      );
     default:
       return null;
   }
 }
 
-export default function PropertiesPanel({ selectedId, properties, onChange }) {
+export default function PropertiesPanel({ selectedId, properties, onChange, contentFields, styleFields }) {
   const [activeTab, setActiveTab] = useState('content');
 
-  const fields = activeTab === 'content' ? CONTENT_FIELDS : STYLE_FIELDS;
+  // Allow parent to override fields (e.g. to inject onUpload callbacks)
+  const cFields = contentFields || CONTENT_FIELDS;
+  const sFields = styleFields || STYLE_FIELDS;
+  const fields = activeTab === 'content' ? cFields : sFields;
 
   const tabIcons = useMemo(() => [
     { id: 'content', label: 'Content', icon: <TypeIcon size={14} /> },

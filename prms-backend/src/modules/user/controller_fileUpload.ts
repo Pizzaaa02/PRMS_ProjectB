@@ -17,6 +17,18 @@ const HELPERS = (req: Request) => {
 };
 
 export class FileUploadController {
+  getUserMedia = async (req: Request, res: Response) => {
+    try {
+      const userId = (req as AuthRequest).user!.id;
+      const fileType = req.query.fileType as string | undefined;
+      const { getUserMedia: _getUserMedia } = await import('./service_fileUpload');
+      const media = await _getUserMedia(userId, fileType);
+      res.json(successResponse({ media }));
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: { message: error.message } });
+    }
+  };
+
   upload = async (req: Request, res: Response) => {
     try {
       const file = (req as any).file;
@@ -25,8 +37,11 @@ export class FileUploadController {
       const userId = (req as AuthRequest).user!.id;
       const url = `/files/${file.filename}`;
 
-      // Determine category: image or document
-      const category = file.mimetype.startsWith('image/') ? 'image' : 'document';
+      // Determine category: image, video, or document
+      let category;
+      if (file.mimetype.startsWith('image/')) category = 'image';
+      else if (file.mimetype.startsWith('video/')) category = 'video';
+      else category = 'document';
 
       const result = await fileUploadService.uploadFile(userId, {
         originalName: file.originalname,
@@ -55,7 +70,7 @@ export class FileUploadController {
 
       const { files, total } = await fileUploadService.getUserFiles(userId, page, limit, category);
       HELPERS(req).log({ action: 'LIST_FILES', entity: 'UserProfileFile', description: `Listed files (page ${page})` });
-      res.json(paginatedResponse(files, page, limit, total));
+      res.json(successResponse({ files, total }));
     } catch (error: any) {
       HELPERS(req).log({ action: 'LIST_FILES', entity: 'UserProfileFile', status: 'Failed', level: 'error', errorMessage: error.message });
       res.status(500).json({ success: false, error: { message: error.message } });
@@ -64,7 +79,7 @@ export class FileUploadController {
 
   getById = async (req: Request, res: Response) => {
     try {
-      const file = await fileUploadService.getFileById(String(req.params.id));
+      const file = await fileUploadService.getFileById(String(req.params.fileId));
       if (!file) return res.status(404).json({ success: false, error: { message: 'File not found' } });
       HELPERS(req).log({ action: 'VIEW_FILE', entity: 'UserProfileFile', entityId: file.id, description: `Viewed file ${file.originalName}` });
       res.json(successResponse(file));
@@ -77,7 +92,7 @@ export class FileUploadController {
   remove = async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).user!.id;
-      const fileId = String(req.params.id);
+      const fileId = String(req.params.fileId);
 
       // Get file details before deletion
       const file = await fileUploadService.getFileById(fileId);

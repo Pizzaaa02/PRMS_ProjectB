@@ -18,6 +18,6 @@ exports.env = {
     GCP_SA_KEY: process.env.GCP_SA_KEY,
     RATE_LIMIT_WINDOW_MS: parseInt(process.env.RATE_LIMIT_WINDOW_MS || "900000", 10),
     RATE_LIMIT_MAX_REQUESTS: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || "100", 10),
-    CORS_ORIGIN: process.env.CORS_ORIGIN || "http://localhost:5173",
+    CORS_ORIGIN: process.env.CORS_ORIGIN || "http://localhost:5173,http://localhost:5174,http://localhost:5175",
     ENABLE_FIREBASE_VERIFY: process.env.ENABLE_FIREBASE_VERIFY === "true",
 };

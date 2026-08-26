@@ -1,523 +1,1016 @@
-import { useState, useEffect, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { propertyApi } from '../api';
-import { ROUTES, getPropertyRoute, roleToPath } from '../config/routes';
-import { categoryApi } from '../api/categories';
-import './AddProperty.css';
+import { useCustomization } from '../contexts/CustomizationContext';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft,
-  Check,
-  FileImage,
-  Loader2,
-  Plus,
-  Save,
+  MapPin,
+  DollarSign,
   Upload,
+  ArrowLeft,
   X,
+  Save,
+  LayoutGrid,
+  Image as ImageIcon,
 } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
+import './AddProperty.css';
 
-
-const UNDEAD_PROPERTY_TYPES = [
-  { value: 'apartment', label: 'Apartment' },
-  { value: 'condo', label: 'Condo / Apartment' },
-  { value: 'serviced residence', label: 'Serviced Residence' },
-  { value: 'studio', label: 'Studio' },
-  { value: 'loft', label: 'Loft' },
-  { value: 'house', label: 'House / Bungalow' },
-  { value: 'shoplot', label: 'Shoplot / Commercial' },
-  { value: 'other', label: 'Other' },
+const PROPERTY_TYPES = [
+  'Apartment',
+  'House',
+  'Condo',
+  'Townhouse',
+  'Studio',
+  'Duplex',
 ];
 
-const AMENITY_OPTIONS = [
-  'WiFi', 'Parking', 'Air conditioning', 'Laundry', 'Swimming pool',
-  'Gym', 'Pet friendly', 'Security', 'Elevator', 'Balcony',
-  'Garden', 'BBQ area', 'Study room', 'Storage', 'Furnished',
+const PROPERTY_STATUS = [
+  'AVAILABLE',
+  'RENTED',
+  'MAINTENANCE',
+  'INACTIVE',
 ];
 
-export default function AddProperty() {
+const CATEGORIES = [
+  'Residential',
+  'Commercial',
+  'Luxury',
+  'Student Housing',
+  'Pet Friendly',
+  'Short-term',
+];
+
+const defaultImagePlaceholders = [];
+
+function AddProperty() {
   const { user } = useAuth();
+  const { themeColors } = useCustomization();
+  const { id } = useParams();
   const navigate = useNavigate();
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
-  const [amenityInput, setAmenityInput] = useState('');
-  const [categories, setCategories] = useState([]);
-  const [uploadingImages, setUploadingImages] = useState(false);
-
-  // Image files: array of { file: File, preview: string }
-  const [imageFiles, setImageFiles] = useState([]);
-  const fileInputRef = useRef(null);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const { data } = await categoryApi.shared();
-        setCategories(data?.data ?? []);
-      } catch (e) {
-        console.error('Failed to load categories', e);
-      }
-    })();
-  }, []);
-
-  const [form, setForm] = useState({
+  const [formData, setFormData] = useState({
     title: '',
-    address: '',
-    categoryId: '',
-    rent: '',
-    city: '',
-    state: '',
+    propertyType: 'Apartment',
+    status: 'AVAILABLE',
+    monthlyRent: '',
     availableFrom: '',
     availableTo: '',
-    status: 'AVAILABLE',
+    address: '',
+    city: '',
+    state: '',
     amenities: [],
-    images: [],
+    categoryId: '',
   });
 
-  const change = (field, value) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
+  const [images, setImages] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
+  const [errors, setErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
+  const [activeSection, setActiveSection] = useState('basic');
+
+  const accentColor = themeColors?.accentColor || '#D4A574';
+  const successColor = themeColors?.successColor || '#27AE60';
+  const primaryColor = themeColors?.primaryColor || '#667eea';
+  const headingColor = themeColors?.headingColor || '#2d3748';
+  const textColor = themeColors?.textColor || '#4a5568';
+  const bgColor = themeColors?.bgColor || '#f7fafc';
+  const cardBg = themeColors?.scaffoldColor || '#ffffff';
+  const borderColor = themeColors?.textColor ? `${themeColors.textColor}30`
+    : '#e2e8f0';
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    setErrors((prev) => ({ ...prev, [name]: '' }));
   };
 
-  /* Toggle amenity */
-  const toggleAmenity = (a) => {
-    setForm((prev) => {
-      const exists = prev.amenities.find((x) => x.name === a);
+  const AMENITY_OPTIONS = [
+    'WiFi', 'Parking', 'Laundry', 'Pool', 'Gym', 'Elevator',
+    'Air Conditioning', 'Balcony', 'Garden', 'Pet Friendly',
+    'Furnished', 'Security', 'Storage', 'Dishwasher',
+  ];
+
+  const toggleAmenity = (amenityName) => {
+    setFormData((prev) => {
+      const exists = prev.amenities.includes(amenityName);
       return {
         ...prev,
         amenities: exists
-          ? prev.amenities.filter((x) => x.name !== a)
-          : [...prev.amenities, { name: a }],
+          ? prev.amenities.filter((a) => a !== amenityName)
+          : [...prev.amenities, amenityName],
       };
     });
-    if (amenityInput === a) setAmenityInput('');
   };
 
-  /* Add custom amenity from input */
-  const addAmenity = (e) => {
-    e.preventDefault();
-    const trimmed = amenityInput.trim();
-    if (trimmed && !form.amenities.find((x) => x.name === trimmed)) {
-      setForm((prev) => ({
-        ...prev,
-        amenities: [...prev.amenities, { name: trimmed }],
-      }));
-      setAmenityInput('');
-    }
-  };
-
-  /* Remove amenity */
-  const removeAmenity = (name) => {
-    setForm((prev) => ({
-      ...prev,
-      amenities: prev.amenities.filter((a) => a.name !== name),
-    }));
-  };
-
-  /* ── Image file handling ── */
-
-  /* Handle file selection */
-  const MAX_IMAGE_FILES = 5;
-  const MAX_IMAGE_SIZE_MB = 5;
-
-  const handleFileSelect = (e) => {
+  const handleImageUpload = (e) => {
     const files = Array.from(e.target.files || []);
-    let currentCount = imageFiles.length;
-    for (const file of files) {
-      // Size check (5 MB)
-      if (file.size > MAX_IMAGE_SIZE_MB * 1024 * 1024) {
-        setError(`"${file.name}" exceeds ${MAX_IMAGE_SIZE_MB} MB and was skipped`);
-        continue;
-      }
-      // Quick type check
-      if (!file.type.startsWith('image/')) continue;
-      // Count check
-      if (currentCount >= MAX_IMAGE_FILES) {
-        setError(`Maximum ${MAX_IMAGE_FILES} images allowed`);
-        break;
-      }
-      const preview = URL.createObjectURL(file);
-      currentCount += 1;
-      setImageFiles((prev) => [...prev, { file, preview }]);
-    }
-    // Reset input so the same file can be re-selected
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    setImages((prev) => [...prev, ...files]);
+    const previews = files.map((file) => URL.createObjectURL(file));
+    setImagePreviews((prev) => [...prev, ...previews]);
   };
 
-  /* Remove a queued image by index */
-  const removeImage = (idx) => {
-    setImageFiles((prev) => {
-      const updated = prev.filter((_, i) => i !== idx);
-      return updated;
-    });
+  const handleRemoveImage = (index) => {
+    setImages((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
-  /* Trigger hidden file input */
-  const triggerFileInput = () => {
-    fileInputRef.current?.click();
+  const validateForm = () => {
+    const newErrors = {};
+    if (!formData.title.trim()) newErrors.title = 'Property title is required';
+    if (!formData.address.trim()) newErrors.address = 'Address is required';
+    if (!formData.monthlyRent || Number(formData.monthlyRent) <= 0)
+      newErrors.monthlyRent = 'Valid monthly rent is required';
+    if (!formData.city.trim()) newErrors.city = 'City is required';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
-  /* Validate */
-  const validate = () => {
-    if (!form.title) return 'Title is required';
-    if (!form.address) return 'Address is required';
-    if (!form.rent || Number(form.rent) <= 0) return 'Valid rental price is required';
-    if (!form.city) return 'City is required';
-    return null;
-  };
-
-  /* Upload image files to the backend */
-  const uploadImages = async (propertyId) => {
-    const uploadPromises = imageFiles.map(async ({ file }) => {
-      const formData = new FormData();
-      formData.append('image', file);
-      return propertyApi.addImage(propertyId, formData);
-    });
-    await Promise.allSettled(uploadPromises);
-  };
-
-  /* Submit */
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-
-    const validationError = validate();
-    if (validationError) {
-      setError(validationError);
-      return;
+    e?.preventDefault?.();
+    if (id) {
+      if (!validateForm()) return;
     }
-
-    setLoading(true);
-    setUploadingImages(false);
+    setSubmitting(true);
     try {
-      const payload = {
-        ...form,
-        rent: Number(form.rent),
-        availableFrom: form.availableFrom || undefined,
-        availableTo: form.availableTo || undefined,
-        images: [], // images are uploaded separately after creation
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || window.location.origin || 'http://localhost:3500';
+      const token = localStorage.getItem('accessToken');
+      const endpoint = id ? `/properties/${id}` : '/properties';
+
+      // Build JSON body — align frontend fields to backend DTO (schema source of truth)
+      // Backend service_property.ts handles categoryId internally; do not forward it.
+      const body = {
+        title: formData.title,
+        address: formData.address,
+        property_type: formData.propertyType?.toLowerCase(),
+        rent: parseFloat(formData.monthlyRent) || 0,
+        city: formData.city,
+        state: formData.state,
+        status: formData.status,
+        availableFrom: formData.availableFrom || undefined,
+        availableTo: formData.availableTo || undefined,
+        amenities: formData.amenities?.map?.(a => ({ name: a })) || [],
       };
-      const res = await propertyApi.create(payload);
-      if (res?.data?.success) {
-        const propertyId = res.data.data.id;
 
-        // Upload images if any were selected
-        if (imageFiles.length > 0) {
-          setUploadingImages(true);
-          await uploadImages(propertyId);
+      const res = await fetch(`${apiBaseUrl}${endpoint}`, {
+        method: id ? 'PUT' : 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
+
+      const result = await res.json();
+
+      if (res.ok) {
+        const createdId = result.data?.id;
+        // Upload images separately via the image endpoint
+        if (createdId && images.length > 0) {
+          for (const img of images) {
+            const imgFD = new FormData();
+            imgFD.append('image', img);
+            await fetch(`${apiBaseUrl}/properties/${createdId}/images`, {
+              method: 'POST',
+              headers: { Authorization: `Bearer ${token}` },
+              body: imgFD,
+            });
+          }
         }
-
-        setSuccess(true);
-        setTimeout(() => navigate(getPropertyRoute(user?.role)), 1200);
+        setTimeout(() => {
+          navigate('/dashboard/properties');
+        }, 800);
       } else {
-        setError(res?.data?.error?.message || 'Property creation failed');
+        setErrors({
+          submit: result.error?.message || result.message || 'Failed to save property',
+        });
       }
     } catch (err) {
-      setError(
-        err.response?.data?.error?.message || 'Failed to create property'
-      );
+      setErrors({ submit: err.message || 'Network error' });
     } finally {
-      // Revoke all object URLs to free memory
-      imageFiles.forEach(({ preview }) => URL.revokeObjectURL(preview));
-      setLoading(false);
-      setUploadingImages(false);
+      setSubmitting(false);
     }
+  };
+
+  const handleSaveAndNew = async () => {
+    await handleSubmit();
+    setFormData({
+      title: '',
+      propertyType: 'Apartment',
+      status: 'AVAILABLE',
+      monthlyRent: '',
+      availableFrom: '',
+      availableTo: '',
+      address: '',
+      city: '',
+      state: '',
+      amenities: [],
+      categoryId: '',
+    });
+    setImages([]);
+    setImagePreviews([]);
+  };
+
+  const sectionNav = [
+    { key: 'basic', label: 'Basic Info', icon: LayoutGrid, count: 0 },
+    { key: 'pricing', label: 'Pricing', icon: DollarSign, count: 0 },
+    { key: 'location', label: 'Location', icon: MapPin, count: 0 },
+    { key: 'media', label: 'Images', icon: ImageIcon, count: images.length },
+  ];
+
+  const inputStyle = {
+    background: cardBg,
+    border: `1px solid ${borderColor}`,
+    borderRadius: '6px',
+    color: headingColor,
+    fontWeight: 400,
+    fontSize: '15px',
+    letterSpacing: '-0.01em',
+    transition: 'border-color 0.2s, box-shadow 0.2s',
+  };
+
+  const labelStyle = {
+    color: textColor,
+    fontWeight: 500,
+    fontSize: '13px',
+    letterSpacing: '0.02em',
+    marginBottom: '6px',
   };
 
   return (
-    <div className="add-property-page" data-customize-id="global.content">
-      <header className="add-property-header">
-        <div className="add-property-header-left">
-          <Link to={getPropertyRoute(user?.role)} className="back-link">
-            <ArrowLeft size={20} />
-            Properties
-          </Link>
-          <h1>Add a new property</h1>
-        </div>
-        <div className="add-property-header-right">
-          <Link to={roleToPath(user?.role)} className="close-link">
-            <X size={20} />
-          </Link>
-        </div>
-      </header>
-
-      {/* Success state */}
-      <AnimatePresence>
-        {success && (
-          <motion.div
-            className="add-property-success"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+    <div
+      className="add-property-page"
+      style={{
+        background: bgColor,
+        minHeight: 'calc(100vh - 80px)',
+        fontFamily: "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+      }}
+    >
+        {/* Page Header */}
+        <div
+          className="add-property-header"
+          style={{
+            background: cardBg,
+            borderBottom: `1px solid ${borderColor}`,
+            padding: '16px 24px',
+            position: 'sticky',
+            top: 68,
+            zIndex: 50,
+            backdropFilter: 'saturate(180%) blur(8px)',
+          }}
+        >
+          <div
+            className="header-inner"
+            style={{
+              maxWidth: '1200px',
+              margin: '0 auto',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
           >
-            <motion.div className="success-check">
-              <Check size={22} />
-            </motion.div>
-            <h2>Property added successfully</h2>
-            <p>Redirecting to your properties list...</p>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <button
+                onClick={() => navigate('/dashboard/properties')}
+                style={{
+                  background: `${textColor}10`,
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '8px',
+                  color: textColor,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+              >
+                <ArrowLeft size={16} />
+              </button>
+              <div>
+                <h1
+                  className="page-title"
+                  style={{
+                    fontSize: '20px',
+                    fontWeight: 600,
+                    letterSpacing: '-0.03em',
+                    color: headingColor,
+                    margin: 0,
+                  }}
+                >
+                  {id ? 'Edit Property' : 'Add New Property'}
+                </h1>
+                <p
+                  className="page-subtitle"
+                  style={{
+                    fontSize: '13px',
+                    color: textColor,
+                    margin: 0,
+                    opacity: 0.7,
+                  }}
+                >
+                  {id ? 'Update your property listing details' : 'Fill in the details for your new property listing'}
+                </p>
+              </div>
 
-      {!success && (
-        <form onSubmit={handleSubmit} className="add-property-form">
-          {error && (
-            <div className="form-alert-error">
-              <span>{error}</span>
+              <button
+                className="btn btn-primary"
+                onClick={handleSubmit}
+                disabled={submitting}
+                style={{
+                  background: primaryColor,
+                  color: '#fff',
+                  padding: '8px 20px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  border: 'none',
+                  borderRadius: '6px',
+                }}
+              >
+                <Save size={15} />
+                {submitting ? 'Saving...' : 'Save & Publish'}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Section Navigation */}
+        <div
+          className="section-nav"
+          style={{
+            maxWidth: '1200px',
+            margin: '0 auto',
+            padding: '16px 24px',
+            display: 'flex',
+            gap: '4px',
+            overflowX: 'auto',
+          }}
+        >
+          {sectionNav.map((section) => {
+            const Icon = section.icon;
+            const isActive = activeSection === section.key;
+            return (
+              <button
+                key={section.key}
+                onClick={() => {
+                  setActiveSection(section.key);
+                  document
+                    .getElementById(`section-${section.key}`)
+                    ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }}
+                style={{
+                  background: isActive ? `${primaryColor}12` : 'transparent',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '10px 18px',
+                  color: isActive ? primaryColor : textColor,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  fontSize: '13px',
+                  fontWeight: isActive ? 600 : 500,
+                  transition: 'all 0.2s',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                <Icon size={16} />
+                {section.label}
+                {section.count > 0 && (
+                  <span
+                    style={{
+                      background: `${primaryColor}20`,
+                      color: primaryColor,
+                      borderRadius: '999px',
+                      padding: '1px 8px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                    }}
+                  >
+                    {section.count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Form Content */}
+        <form onSubmit={handleSubmit} className="add-property-form" style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px 60px' }}>
+          {/* Error Banner */}
+          {errors.submit && (
+            <div
+              className="error-banner"
+              style={{
+                background: '#fff5f5',
+                border: '1px solid #fed7d7',
+                borderRadius: '8px',
+                padding: '14px 18px',
+                marginBottom: '20px',
+                color: '#c53030',
+                fontSize: '14px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+              }}
+            >
+              <X size={16} />
+              {errors.submit}
             </div>
           )}
 
-          <div className="add-property-columns">
-            {/* LEFT column */}
-            <div className="add-property-left">
-              <section className="form-section">
-                <h2>Basic details</h2>
-
-                <label>
-                  Title <span className="required">*</span>
-                  <input
-                    type="text"
-                    placeholder="e.g. Green Garden Apartment"
-                    value={form.title}
-                    onChange={(e) => change('title', e.target.value)}
-                  />
-                </label>
-
-                <label>
-                  Category
-                  <select
-                    value={form.categoryId || ''}
-                    onChange={(e) => change('categoryId', e.target.value)}
+          {/* ---- BASIC INFO SECTION ---- */}
+          <div id="section-basic" className="form-section" style={{ marginBottom: '20px' }}>
+            <div
+              className="section-card"
+              style={{
+                background: cardBg,
+                borderRadius: '12px',
+                border: `1px solid ${borderColor}`,
+                overflow: 'hidden',
+                boxShadow: 'rgba(0, 0, 0, 0.02) 0px 1px 3px',
+              }}
+            >
+              {/* Section Header */}
+              <div
+                className="section-header"
+                style={{
+                  padding: '20px 24px',
+                  borderBottom: `1px solid ${borderColor}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                }}
+              >
+                <div
+                  style={{
+                    background: `${primaryColor}12`,
+                    borderRadius: '8px',
+                    padding: '8px',
+                    color: primaryColor,
+                    display: 'flex',
+                  }}
+                >
+                  <LayoutGrid size={18} />
+                </div>
+                <div>
+                  <h2
+                    style={{
+                      fontSize: '15px',
+                      fontWeight: 600,
+                      color: headingColor,
+                      margin: 0,
+                      letterSpacing: '-0.02em',
+                    }}
                   >
-                    <option value="">Select a category...</option>
-                    {categories.map((c) => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
-                </label>
+                    Basic Information
+                  </h2>
+                  <p
+                    style={{
+                      fontSize: '12px',
+                      color: textColor,
+                      margin: 0,
+                      opacity: 0.6,
+                    }}
+                  >
+                    Core details about your property
+                  </p>
+                </div>
+              </div>
 
-                <label>
-                  Monthly rental (RM) <span className="required">*</span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="1"
-                    placeholder="e.g. 1800"
-                    value={form.rent}
-                    onChange={(e) => change('rent', e.target.value)}
-                  />
-                </label>
-
-                <label>
-                  Full address <span className="required">*</span>
-                  <input
-                    type="text"
-                    placeholder="Street, building, unit number..."
-                    value={form.address}
-                    onChange={(e) => change('address', e.target.value)}
-                  />
-                </label>
-              </section>
-
-              <section className="form-section">
-                <h2>Location</h2>
-
-                <div className="field-row">
-                  <label>
-                    City <span className="required">*</span>
+              <div className="section-body" style={{ padding: '24px' }}>
+                {/* Title & Type Row */}
+                <div
+                  className="form-grid"
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 200px',
+                    gap: '16px',
+                    marginBottom: '16px',
+                  }}
+                >
+                  <div className="form-group">
+                    <label style={labelStyle}>Property Title <span style={{ color: '#e53e3e' }}>*</span></label>
                     <input
                       type="text"
-                      placeholder="e.g. Kuala Lumpur"
-                      value={form.city}
-                      onChange={(e) => change('city', e.target.value)}
+                      name="title"
+                      placeholder="e.g. Modern Downtown Apartment"
+                      value={formData.title}
+                      onChange={handleInputChange}
+                      className={errors.title ? 'input-error' : ''}
+                      style={{ ...inputStyle, width: '100%', padding: '10px 14px', outline: 'none' }}
                     />
-                  </label>
+                    {errors.title && (
+                      <span className="field-error" style={{ color: '#e53e3e', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                        {errors.title}
+                      </span>
+                    )}
+                  </div>
 
-                  <label>
-                    State
-                    <input
-                      type="text"
-                      placeholder="e.g. Kuala Lumpur"
-                      value={form.state}
-                      onChange={(e) => change('state', e.target.value)}
-                    />
-                  </label>
-                </div>
-              </section>
-
-              <section className="form-section">
-                <h2>Availability</h2>
-
-                <div className="field-row">
-                  <label>
-                    Available from
-                    <input
-                      type="date"
-                      value={form.availableFrom}
-                      onChange={(e) => change('availableFrom', e.target.value)}
-                    />
-                  </label>
-
-                  <label>
-                    Available until
-                    <input
-                      type="date"
-                      value={form.availableTo}
-                      onChange={(e) => change('availableTo', e.target.value)}
-                    />
-                  </label>
+                  <div className="form-group">
+                    <label style={labelStyle}>Property Type</label>
+                    <select
+                      name="propertyType"
+                      value={formData.propertyType}
+                      onChange={handleInputChange}
+                      style={{ ...inputStyle, width: '100%', padding: '10px 14px', outline: 'none', appearance: 'none', paddingRight: '32px', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='${encodeURIComponent(textColor)}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center' }}
+                    >
+                      {PROPERTY_TYPES.map((t) => (
+                        <option key={t} value={t}>
+                          {t}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
 
-                <label>
-                  Status
-                  <select
-                    value={form.status}
-                    onChange={(e) => change('status', e.target.value)}
-                  >
-                    <option value="AVAILABLE">Available</option>
-                    <option value="OCCUPIED">Occupied</option>
-                    <option value="MAINTENANCE">Under maintenance</option>
-                    <option value="INACTIVE">Inactive (hidden)</option>
-                  </select>
-                </label>
-              </section>
-            </div>
+                {/* Description — removed: not in Property model */}
 
-            {/* RIGHT column */}
-            <div className="add-property-right">
-              <section className="form-section">
-                <h2>Amenities</h2>
+                {/* Status, Category, Amenities Row */}
+                <div
+                  className="form-grid"
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr 1fr',
+                    gap: '16px',
+                  }}
+                >
+                  <div className="form-group">
+                    <label style={labelStyle}>Status</label>
+                    <select
+                      name="status"
+                      value={formData.status}
+                      onChange={handleInputChange}
+                      style={{ ...inputStyle, width: '100%', padding: '10px 14px', outline: 'none' }}
+                    >
+                      {PROPERTY_STATUS.map((s) => (
+                        <option key={s} value={s}>
+                          {s.charAt(0) + s.slice(1).toLowerCase()}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-                <div className="amenity-grid">
-                  {AMENITY_OPTIONS.map((a) => {
-                    const selected = form.amenities.some((x) => x.name === a);
-                    return (
-                      <button
-                        key={a}
-                        type="button"
-                        className={`amenity-chip ${selected ? 'active' : ''}`}
-                        onClick={() => toggleAmenity(a)}
-                      >
-                        {selected && <Check size={14} />}
-                        {a}
-                      </button>
-                    );
-                  })}
-                </div>
+                  <div className="form-group">
+                    <label style={labelStyle}>Category</label>
+                    <select
+                      name="categoryId"
+                      value={formData.categoryId}
+                      onChange={handleInputChange}
+                      style={{ ...inputStyle, width: '100%', padding: '10px 14px', outline: 'none' }}
+                    >
+                      <option value="">Select category</option>
+                      {CATEGORIES.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-                {/* Custom amenity input */}
-                <div className="custom-amenity-row">
-                  <input
-                    type="text"
-                    placeholder="Add custom amenity..."
-                    value={amenityInput}
-                    onChange={(e) => setAmenityInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && addAmenity(e)}
-                  />
-                  <button type="button" className="add-amenity-btn" onClick={addAmenity}>
-                    <Plus size={18} />
-                  </button>
-                </div>
-
-                {/* Selected amenities list */}
-                {form.amenities.length > 0 && (
-                  <div className="selected-amenities">
-                    <span className="selected-label">Selected ({form.amenities.length}):</span>
-                    <div className="selected-tags">
-                      {form.amenities.map((a) => (
-                        <span key={a.name} className="selected-tag">
-                          {a.name}
-                          <button
-                            type="button"
-                            className="remove-tag"
-                            onClick={() => removeAmenity(a.name)}
-                          >
-                            <X size={12} />
-                          </button>
-                        </span>
+                  <div className="form-group">
+                    <label style={labelStyle}>Amenities</label>
+                    <div
+                      style={{
+                        ...inputStyle,
+                        padding: '10px 14px',
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: '6px',
+                        minHeight: '42px',
+                      }}
+                    >
+                      {AMENITY_OPTIONS.map((a) => (
+                        <button
+                          type="button"
+                          key={a}
+                          onClick={() => toggleAmenity(a)}
+                          style={{
+                            background: formData.amenities.includes(a)
+                              ? primaryColor
+                              : 'transparent',
+                            border: `1px solid ${formData.amenities.includes(a) ? primaryColor : borderColor}`,
+                            color: formData.amenities.includes(a) ? '#fff' : textColor,
+                            borderRadius: '4px',
+                            padding: '3px 10px',
+                            cursor: 'pointer',
+                            fontSize: '12px',
+                            fontWeight: formData.amenities.includes(a) ? 600 : 400,
+                            transition: 'all 0.15s',
+                          }}
+                        >
+                          {a}
+                        </button>
                       ))}
                     </div>
                   </div>
-                )}
-              </section>
+                </div>
+              </div>
+            </div>
+          </div>
 
-              <section className="form-section">
-                <h2>Property images</h2>
-                <p className="section-hint">
-                  Upload images from your device. Up to 5 images, max 5 MB each.
-                </p>
+          {/* ---- PRICING SECTION ---- */}
+          <div id="section-pricing" className="form-section" style={{ marginBottom: '20px' }}>
+            <div
+              className="section-card"
+              style={{
+                background: cardBg,
+                borderRadius: '12px',
+                border: `1px solid ${borderColor}`,
+                overflow: 'hidden',
+                boxShadow: 'rgba(0, 0, 0, 0.02) 0px 1px 3px',
+              }}
+            >
+              <div
+                className="section-header"
+                style={{
+                  padding: '20px 24px',
+                  borderBottom: `1px solid ${borderColor}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                }}
+              >
+                <div
+                  style={{
+                    background: `${successColor}12`,
+                    borderRadius: '8px',
+                    padding: '8px',
+                    color: successColor,
+                    display: 'flex',
+                  }}
+                >
+                  <DollarSign size={18} />
+                </div>
+                <div>
+                  <h2 style={{ fontSize: '15px', fontWeight: 600, color: headingColor, margin: 0, letterSpacing: '-0.02em' }}>
+                    Pricing & Details
+                  </h2>
+                  <p style={{ fontSize: '12px', color: textColor, margin: 0, opacity: 0.6 }}>
+                    Rental price and availability period
+                  </p>
+                </div>
+              </div>
 
-                {/* Upload button */}
-                <div className="image-upload-area">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    style={{ display: 'none' }}
-                    onChange={handleFileSelect}
-                  />
-                  <button
-                    type="button"
-                    className="image-upload-btn"
-                    onClick={triggerFileInput}
-                  >
-                    <Upload size={18} />
-                    Upload images
-                  </button>
+              <div className="section-body" style={{ padding: '24px' }}>
+                {/* Rent — only price field in Property model */}
+                <div className="form-group" style={{ marginBottom: '16px' }}>
+                  <label style={labelStyle}>Monthly Rent ($) <span style={{ color: '#e53e3e' }}>*</span></label>
+                  <div style={{ position: 'relative' }}>
+                    <span
+                      style={{
+                        position: 'absolute',
+                        left: '14px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        color: successColor,
+                        fontWeight: 600,
+                        fontSize: '15px',
+                      }}
+                    >
+                      $
+                    </span>
+                    <input
+                      type="number"
+                      name="monthlyRent"
+                      placeholder="0.00"
+                      value={formData.monthlyRent}
+                      onChange={handleInputChange}
+                      className={errors.monthlyRent ? 'input-error' : ''}
+                      min="0"
+                      step="0.01"
+                      style={{
+                        ...inputStyle,
+                        width: '100%',
+                        padding: '10px 14px 10px 32px',
+                        outline: 'none',
+                        fontVariantNumeric: 'tabular-nums',
+                      }}
+                    />
+                  </div>
+                  {errors.monthlyRent && (
+                    <span className="field-error" style={{ color: '#e53e3e', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                      {errors.monthlyRent}
+                    </span>
+                  )}
                 </div>
 
-                {/* Image previews or default placeholder */}
-                {imageFiles.length > 0 ? (
-                  <div className="image-list">
-                    {imageFiles.map(({ preview }, idx) => (
-                      <div key={idx} className="image-thumb">
-                        <img src={preview} alt={`Image ${idx + 1}`} />
+                {/* Available From / To Row — both in Property model */}
+                <div
+                  className="form-grid"
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '16px',
+                  }}
+                >
+                  <div className="form-group">
+                    <label style={labelStyle}>Available From</label>
+                    <input
+                      type="date"
+                      name="availableFrom"
+                      value={formData.availableFrom}
+                      onChange={handleInputChange}
+                      style={{ ...inputStyle, width: '100%', padding: '10px 14px', outline: 'none' }}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label style={labelStyle}>Available To</label>
+                    <input
+                      type="date"
+                      name="availableTo"
+                      value={formData.availableTo}
+                      onChange={handleInputChange}
+                      style={{ ...inputStyle, width: '100%', padding: '10px 14px', outline: 'none' }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ---- LOCATION SECTION ---- */}
+          <div id="section-location" className="form-section" style={{ marginBottom: '20px' }}>
+            <div
+              className="section-card"
+              style={{
+                background: cardBg,
+                borderRadius: '12px',
+                border: `1px solid ${borderColor}`,
+                overflow: 'hidden',
+                boxShadow: 'rgba(0, 0, 0, 0.02) 0px 1px 3px',
+              }}
+            >
+              <div
+                className="section-header"
+                style={{
+                  padding: '20px 24px',
+                  borderBottom: `1px solid ${borderColor}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                }}
+              >
+                <div
+                  style={{
+                    background: `${accentColor}14`,
+                    borderRadius: '8px',
+                    padding: '8px',
+                    color: accentColor,
+                    display: 'flex',
+                  }}
+                >
+                  <MapPin size={18} />
+                </div>
+                <div>
+                  <h2 style={{ fontSize: '15px', fontWeight: 600, color: headingColor, margin: 0, letterSpacing: '-0.02em' }}>
+                    Location
+                  </h2>
+                  <p style={{ fontSize: '12px', color: textColor, margin: 0, opacity: 0.6 }}>
+                    Where your property is located
+                  </p>
+                </div>
+              </div>
+
+              <div className="section-body" style={{ padding: '24px' }}>
+                {/* Address */}
+                <div className="form-group" style={{ marginBottom: '16px' }}>
+                  <label style={labelStyle}>Street Address <span style={{ color: '#e53e3e' }}>*</span></label>
+                  <input
+                    type="text"
+                    name="address"
+                    placeholder="Full street address with number"
+                    value={formData.address}
+                    onChange={handleInputChange}
+                    className={errors.address ? 'input-error' : ''}
+                    style={{ ...inputStyle, width: '100%', padding: '10px 14px', outline: 'none' }}
+                  />
+                  {errors.address && (
+                    <span className="field-error" style={{ color: '#e53e3e', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                      {errors.address}
+                    </span>
+                  )}
+                </div>
+
+                {/* City, State Row — only location fields in Property model besides address */}
+                <div
+                  className="form-grid"
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '16px',
+                  }}
+                >
+                  <div className="form-group">
+                    <label style={labelStyle}>City <span style={{ color: '#e53e3e' }}>*</span></label>
+                    <input
+                      type="text"
+                      name="city"
+                      placeholder="City name"
+                      value={formData.city}
+                      onChange={handleInputChange}
+                      className={errors.city ? 'input-error' : ''}
+                      style={{ ...inputStyle, width: '100%', padding: '10px 14px', outline: 'none' }}
+                    />
+                    {errors.city && (
+                      <span className="field-error" style={{ color: '#e53e3e', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                        {errors.city}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="form-group">
+                    <label style={labelStyle}>State / Province</label>
+                    <input
+                      type="text"
+                      name="state"
+                      placeholder="State or province"
+                      value={formData.state}
+                      onChange={handleInputChange}
+                      style={{ ...inputStyle, width: '100%', padding: '10px 14px', outline: 'none' }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ---- IMAGES SECTION ---- */}
+          <div id="section-media" className="form-section">
+            <div
+              className="section-card"
+              style={{
+                background: cardBg,
+                borderRadius: '12px',
+                border: `1px solid ${borderColor}`,
+                overflow: 'hidden',
+                boxShadow: 'rgba(0, 0, 0, 0.02) 0px 1px 3px',
+              }}
+            >
+              <div
+                className="section-header"
+                style={{
+                  padding: '20px 24px',
+                  borderBottom: `1px solid ${borderColor}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                }}
+              >
+                <div
+                  style={{
+                    background: `${accentColor}14`,
+                    borderRadius: '8px',
+                    padding: '8px',
+                    color: accentColor,
+                    display: 'flex',
+                  }}
+                >
+                  <ImageIcon size={18} />
+                </div>
+                <div>
+                  <h2 style={{ fontSize: '15px', fontWeight: 600, color: headingColor, margin: 0, letterSpacing: '-0.02em' }}>
+                    Property Images
+                  </h2>
+                  <p style={{ fontSize: '12px', color: textColor, margin: 0, opacity: 0.6 }}>
+                    Upload high-quality photos to showcase your property
+                  </p>
+                </div>
+              </div>
+
+              <div className="section-body" style={{ padding: '24px' }}>
+                {/* Upload Zone */}
+                <label
+                  className="image-upload-zone"
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: `2px dashed ${borderColor}`,
+                    borderRadius: '12px',
+                    padding: '48px 24px',
+                    cursor: 'pointer',
+                    background: `${textColor}04`,
+                    transition: 'border-color 0.2s, background 0.2s',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = primaryColor + '60';
+                    e.currentTarget.style.background = `${primaryColor}08`;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = borderColor;
+                    e.currentTarget.style.background = `${textColor}04`;
+                  }}
+                >
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    style={{ display: 'none' }}
+                  />
+                  <div
+                    style={{
+                      width: '48px',
+                      height: '48px',
+                      borderRadius: '50%',
+                      background: `${primaryColor}12`,
+                      color: primaryColor,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginBottom: '16px',
+                    }}
+                  >
+                    <Upload size={22} />
+                  </div>
+                  <p
+                    style={{
+                      fontSize: '14px',
+                      fontWeight: 500,
+                      color: headingColor,
+                      margin: '0 0 4px',
+                    }}
+                  >
+                    Click to upload or drag and drop
+                  </p>
+                  <p
+                    style={{
+                      fontSize: '12px',
+                      color: textColor,
+                      margin: 0,
+                      opacity: 0.5,
+                    }}
+                  >
+                    PNG, JPG or WebP up to 10MB each
+                  </p>
+                </label>
+
+                {/* Image Previews */}
+                {imagePreviews.length > 0 && (
+                  <div
+                    className="image-preview-grid"
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
+                      gap: '12px',
+                      marginTop: '20px',
+                    }}
+                  >
+                    {imagePreviews.map((preview, index) => (
+                      <div
+                        key={index}
+                        style={{
+                          position: 'relative',
+                          aspectRatio: '4/3',
+                          borderRadius: '8px',
+                          overflow: 'hidden',
+                          border: `1px solid ${borderColor}`,
+                        }}
+                      >
+                        <img
+                          src={preview}
+                          alt={`Property image ${index + 1}`}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            display: 'block',
+                          }}
+                        />
                         <button
-                          type="button"
-                          className="remove-image"
-                          onClick={() => removeImage(idx)}
+                          onClick={() => handleRemoveImage(index)}
+                          style={{
+                            position: 'absolute',
+                            top: '6px',
+                            right: '6px',
+                            width: '24px',
+                            height: '24px',
+                            borderRadius: '50%',
+                            background: 'rgba(0,0,0,0.6)',
+                            color: '#fff',
+                            border: 'none',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '12px',
+                          }}
                         >
                           <X size={14} />
                         </button>
                       </div>
                     ))}
                   </div>
-                ) : (
-                  <div className="image-list">
-                    <div className="image-thumb image-thumb-default">
-                      <img
-                        src="http://localhost:3500/images/92d9ae18-6837-4f1c-95fc-31a2e0cad4df-1786324589235-igd6f8.jpg"
-                        alt="Default property image"
-                      />
-                      <span className="image-thumb-label">Default image</span>
-                    </div>
-                  </div>
                 )}
-              </section>
+              </div>
             </div>
           </div>
-
-          {/* Submit bar */}
-          <div className="submit-bar">
-            <Link to={getPropertyRoute(user?.role)} className="cancel-btn">
-              Cancel
-            </Link>
-            <button type="submit" className="save-btn" disabled={loading}>
-              {loading ? (
-                <>
-                  <Loader2 size={18} className="spin-icon" />
-                  {uploadingImages ? 'Uploading images...' : 'Saving...'}
-                </>
-              ) : (
-                <>
-                  <Save size={18} />
-                  Save property
-                </>
-              )}
-            </button>
-          </div>
         </form>
-      )}
-    </div>
+      </div>
   );
 }
+
+export default AddProperty;

@@ -39,7 +39,9 @@ export const env = {
     10
   ),
 
-  CORS_ORIGIN: process.env.CORS_ORIGIN || "http://localhost:5173",
+  
+  CORS_ORIGIN: process.env.CORS_ORIGIN || "http://localhost:5173,http://localhost:5174,http://localhost:5175",
+  
     
   ENABLE_FIREBASE_VERIFY: process.env.ENABLE_FIREBASE_VERIFY === "true",
 };

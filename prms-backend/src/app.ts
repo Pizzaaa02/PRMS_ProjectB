@@ -40,7 +40,11 @@ const router = express.Router();
 const PORT = env.PORT;
 
 app.use(helmet());
-app.use(cors({ origin: env.CORS_ORIGIN }));
+// Parse CORS_ORIGIN: supports single string or comma-separated list → array
+const corsOrigins = env.CORS_ORIGIN.split(',').map((o: string) => o.trim());
+const corsOriginValue = corsOrigins.length === 1 ? corsOrigins[0] : corsOrigins;
+
+app.use(cors({ origin: corsOriginValue }));
 app.use(express.json());
 app.use(responseCache);
 app.use(requestLogger);
@@ -56,6 +60,18 @@ app.use('/files', (req, res, next) => {
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     next();
 }, express.static(path.join(__dirname, '..', 'public', 'uploads')));
+
+// Serve generated thumbnails statically
+app.use('/api/files/thumbnails', (req, res, next) => {
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    next();
+}, express.static(path.join(__dirname, '..', 'public', 'thumbnails')));
+
+// Serve uploaded property media (images, videos, documents) statically
+app.use('/uploads/properties', (req, res, next) => {
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    next();
+}, express.static(path.join(__dirname, '..', 'uploads', 'properties')));
 
 app.get('/health', async (req, res) => {
   try {
@@ -95,6 +111,9 @@ router.use('/themes', themeRoutes);
 router.use('/favorites', favoriteRoutes);
 import notificationRoutes from './modules/notification/routes_notification';
 router.use('/notifications', notificationRoutes);
+
+import customizerRoutes from './modules/customizer/routes_customizer';
+router.use('/customizer', customizerRoutes);
 
 app.use(router);
 app.use(errorHandler);

@@ -34,7 +34,7 @@ import AdminLayout from './components/AdminLayout';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminSimplePage from './pages/AdminSimplePage';
 import AddProperty from './pages/AddProperty';
-import EditProperty from './pages/EditProperty';
+import PropertyEdit from './pages/PropertyEdit';
 import Settings from './pages/Settings';
 
 /*  Landlord  */
@@ -107,6 +107,14 @@ function AppRoutes() {
       <Route path="/properties" element={<GuestProperties />} />
 
       {/*  Issue #12: PropertyDetail page (lazy-loaded)  */}
+      <Route
+        path="/properties/edit/:id"
+        element={
+          <SuspenseWrapper>
+            <PropertyEdit />
+          </SuspenseWrapper>
+        }
+      />
       <Route
         path="/properties/:id"
         element={
@@ -191,7 +199,8 @@ function AppRoutes() {
           }
         />
         <Route path="properties/add" element={<AddProperty />} />
-        <Route path="properties/edit/:id" element={<EditProperty />} />
+        <Route path="properties/edit" element={<PropertyEdit />} />
+        <Route path="properties/edit/:id" element={<PropertyEdit />} />
         <Route
           path="properties/:id"
           element={<PropertyDetail />}
@@ -259,7 +268,8 @@ function AppRoutes() {
           }
         />
         <Route path="properties/add" element={<AddProperty />} />
-        <Route path="properties/edit/:id" element={<EditProperty />} />
+        <Route path="properties/edit" element={<PropertyEdit />} />
+        <Route path="properties/edit/:id" element={<PropertyEdit />} />
         <Route path="properties/:id" element={<PropertyDetail />} />
         <Route path="bookings" element={<LandlordBookings />} />
         <Route
@@ -359,6 +369,30 @@ function AppRoutes() {
         <Route path="maintenance" element={<AgentMaintenance />} />
         <Route path="categories" element={<AgentCategories />} />
         <Route path="settings" element={<Settings />} />
+        <Route
+          path="settings/customizer"
+          element={
+            <SuspenseWrapper>
+              <WebsiteCustomizer />
+            </SuspenseWrapper>
+          }
+        />
+        <Route
+          path="finance"
+          element={
+            <SuspenseWrapper>
+              <FinanceDashboard />
+            </SuspenseWrapper>
+          }
+        />
+        <Route
+          path="reports"
+          element={
+            <SuspenseWrapper>
+              <AdminReports />
+            </SuspenseWrapper>
+          }
+        />
         <Route path="help" element={<AgentSimplePage label="Help Center" />} />
       </Route>
 

@@ -5,6 +5,7 @@ import {
   ChevronRight,
   Clock,
   Droplets,
+  Edit3,
   Heart,
   Loader2,
   MapPin,
@@ -25,6 +26,7 @@ import { propertyApi } from '../api';
 import { useAuth } from '../contexts/AuthContext';
 import TenantBookingModal from '../components/TenantBookingModal';
 import ImageGallery from '../components/ImageGallery';
+import { VideoUploader, DocumentUploader } from '../components/MediaUploader';
 import './PropertyDetail.css';
 
 /* ================= AMENITY ICON MAP ================= */
@@ -274,6 +276,17 @@ function PropertyDetail() {
     (prefix) => location.pathname.startsWith(prefix)
   );
 
+  /* Detect if the current user is the property owner */
+  const isPropertyOwner = (() => {
+    if (!user || !property || !property.owner) return false;
+    const userRole = (user.role || '').toLowerCase();
+    // Admin can edit any property; landlord/owner can edit their own
+    if (userRole.includes('admin')) return true;
+    if (property.owner.id === user.id) return true;
+    if (property.ownerId === user.id) return true;
+    return false;
+  })();
+
   useEffect(() => {
     let cancelled = false;
     async function fetch() {
@@ -436,13 +449,35 @@ function PropertyDetail() {
                   </h2>
                   <p className="pd-capacity-line">
                     {capacity || 10} guests · {bedrooms || 5} bedrooms · {bathrooms || 4.5} baths
+                    {property?.floorArea && ` · ${property.floorArea} sq ft`}
                   </p>
                 </div>
-                {owner && (
-                  <div className="pd-host-avatar">
-                    <UserCircle size={48} />
-                  </div>
-                )}
+                <div className="pd-host-right">
+                  {owner && (
+                    <div className="pd-host-avatar">
+                      <UserCircle size={48} />
+                    </div>
+                  )}
+                  {isPropertyOwner && (
+                    <motion.button
+                      className="pd-edit-btn"
+                      onClick={() => {
+                        const lower = (user?.role || '').toLowerCase();
+                        const prefix = lower.includes('admin')
+                          ? '/admin/properties/edit'
+                          : lower.includes('landlord')
+                            ? '/landlord/properties/edit'
+                            : '/properties/edit';
+                        navigate(`${prefix}/${id}`);
+                      }}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.97 }}
+                    >
+                      <Edit3 size={16} />
+                      Edit Property
+                    </motion.button>
+                  )}
+                </div>
               </div>
 
               {/* Badges */}
@@ -517,6 +552,62 @@ function PropertyDetail() {
                   )}
                 </div>
                 <div className="pd-divider" />
+              </>
+            )}
+
+            {/* Building Facilities */}
+            {property?.buildingFacilities && property.buildingFacilities.length > 0 && (
+              <>
+                <div className="pd-divider" />
+                <div className="pd-section">
+                  <h3 className="pd-section-title">Building Facilities</h3>
+                  <div className="pd-facilities-chips">
+                    {property.buildingFacilities.map((facility, i) => (
+                      <span className="pd-facility-chip" key={i}>
+                        {facility}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Pet Policy */}
+            {property?.petPolicy && (
+              <>
+                <div className="pd-divider" />
+                <div className="pd-section">
+                  <h3 className="pd-section-title">
+                    {' '}Pet Policy
+                  </h3>
+                  <p className="pd-pet-policy-text">{property.petPolicy}</p>
+                </div>
+              </>
+            )}
+
+            {/* Video & Document sections (visible when logged in and can edit) */}
+            {(user?.role === "Landlord" || user?.role === "Admin" || user?.role === "landlord" || user?.role === "admin") && (
+              <>
+                <div className="pd-divider" />
+                <div className="pd-section">
+                  <VideoUploader
+                    propertyId={id}
+                    videos={property?.videoUrls || []}
+                    onChange={(updated) => {
+                      setProperty((prev) => prev ? { ...prev, videoUrls: updated } : prev);
+                    }}
+                  />
+                </div>
+                <div className="pd-divider" />
+                <div className="pd-section">
+                  <DocumentUploader
+                    propertyId={id}
+                    documents={property?.documentUrls || []}
+                    onChange={(updated) => {
+                      setProperty((prev) => prev ? { ...prev, documentUrls: updated } : prev);
+                    }}
+                  />
+                </div>
               </>
             )}
 

@@ -14,6 +14,13 @@ export const adminApi = {
   updateSetting(data) {
     return apiClient.put('/admin/settings', data);
   },
+  uploadLogo(logoFile) {
+    const formData = new FormData();
+    formData.append('logo', logoFile);
+    return apiClient.post('/admin/settings/logo', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
   bulkUpdateSettings(dataArray) {
     return apiClient.put('/admin/settings/bulk', { settings: dataArray });
   },
@@ -67,6 +74,29 @@ export const adminApi = {
   /* Theme / Published theme */
   getThemeById(themeId) {
     return apiClient.get(`/admin/themes/${themeId}`);
+  },
+
+  /* Website Customizer (Flask API) */
+  // These use the standalone Flask customizer server at /api/customizer
+
+  getCustomizerConfig() {
+    return apiClient.get('/admin/customizer');
+  },
+
+  updateCustomizerConfig(data) {
+    return apiClient.put('/admin/customizer', data);
+  },
+
+  patchCustomizerField(field, value) {
+    return apiClient.patch(`/admin/customizer/${field}`, { [field]: value });
+  },
+
+  generateCustomizerHtml() {
+    return apiClient.get('/admin/customizer/generate-html');
+  },
+
+  resetCustomizerConfig() {
+    return apiClient.post('/admin/customizer/reset', {});
   },
 
 };

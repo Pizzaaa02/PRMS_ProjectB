@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getSystemSettings = getSystemSettings;
 exports.updateSystemSetting = updateSystemSetting;
+exports.uploadSystemSetting = uploadSystemSetting;
 exports.addSystemSetting = addSystemSetting;
 exports.getSystemSettingsByCategory = getSystemSettingsByCategory;
 exports.getPublicSystemSettings = getPublicSystemSettings;
@@ -29,6 +30,17 @@ async function updateSystemSetting(key, value) {
         where: { key: String(key) },
         update: { value: String(value) },
         create: { key: String(key), value: String(value), category },
+    });
+}
+async function uploadSystemSetting(key, filePath) {
+    if (!key || key === 'undefined') {
+        throw new Error('Setting key is required');
+    }
+    const category = String(key).split('_')[0] ?? 'general';
+    return db_1.prisma.systemSetting.upsert({
+        where: { key: String(key) },
+        update: { value: filePath, category },
+        create: { key: String(key), value: filePath, category },
     });
 }
 async function addSystemSetting(key, value, category = 'general', description) {

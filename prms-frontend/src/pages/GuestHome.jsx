@@ -118,7 +118,10 @@ function GuestHome() {
     <main className="guest-page">
       <header className="guest-navbar" data-customize-id="global.header" style={{ backgroundColor: headerBg }}>
         <Link to="/" className="guest-logo">
-          PRMS
+          {settings?.branding_logo_url ? (
+            <img src={getImageUrl(settings.branding_logo_url)} alt="Logo" className="guest-logo-img" />
+          ) : null}
+          <span>{settings?.branding_site_name || 'PRMS'}</span>
         </Link>
 
         <nav>

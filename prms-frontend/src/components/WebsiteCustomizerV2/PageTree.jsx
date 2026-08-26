@@ -10,10 +10,19 @@ import { motion } from 'framer-motion';
 /* ---- Tree node definitions matching the reference design ---- */
 const buildTree = () => [
   {
+    id: 'body', label: 'Body', icon: <Monitor size={14} />, expandable: true,
+    children: [
+      { id: 'theme_background_color', label: 'Background', icon: <ImageIcon size={14} /> },
+      { id: 'theme_text_color', label: 'Text Color', icon: <Type size={14} /> },
+    ],
+  },
+  {
     id: 'header', label: 'Header', icon: <MenuIcon size={14} />, expandable: true,
     children: [
       { id: 'header_background_color', label: 'Background', icon: <ImageIcon size={14} /> },
       { id: 'branding_site_name', label: 'Site Name', icon: <Type size={14} /> },
+      { id: 'branding_logo_url', label: 'Logo', icon: <ImageIcon size={14} /> },
+      { id: 'branding_company_name', label: 'Company Name', icon: <Type size={14} /> },
     ],
   },
   {
@@ -79,9 +88,11 @@ const buildTree = () => [
 
 const TREE = buildTree();
 
-function TreeNode({ node, depth, selectedId, onSelect }) {
+const TreeNode = memo(function TokenTreeNode({ node, depth, selectedId, onSelect }) {
   const [expanded, setExpanded] = useState(true);
   const isSelected = selectedId === node.id;
+  const paddingLeft = depth * 12 + 12;
+  const style = useMemo(() => ({ paddingLeft: `${paddingLeft}px` }), [paddingLeft]);
 
   const handleClick = useCallback(() => {
     if (node.expandable) {
@@ -94,7 +105,7 @@ function TreeNode({ node, depth, selectedId, onSelect }) {
     <div>
       <div
         className={`pt-row ${isSelected ? 'pt-row-active' : ''}`}
-        style={{ paddingLeft: `${depth * 12 + 12}px` }}
+        style={style}
         onClick={handleClick}
       >
         {node.expandable && (
@@ -132,17 +143,19 @@ function SearchInput({ value, onChange }) {
   );
 }
 
-export default function PageTree({ selectedId, onSelect }) {
+export const PageTree = memo(function PageTree({ selectedId, onSelect }) {
   const [filter, setFilter] = useState('');
 
-  const filtered = TREE.filter((group) => {
-    if (!filter) return true;
+  const filtered = useMemo(() => {
+    if (!filter) return TREE;
     const lower = filter.toLowerCase();
-    return (
-      group.label.toLowerCase().includes(lower) ||
-      group.children?.some((c) => c.label.toLowerCase().includes(lower))
-    );
-  });
+    return TREE.filter((group) => {
+      return (
+        group.label.toLowerCase().includes(lower) ||
+        group.children?.some((c) => c.label.toLowerCase().includes(lower))
+      );
+    });
+  }, [filter]);
 
   return (
     <div className="pt-sidebar">
@@ -178,4 +191,4 @@ export default function PageTree({ selectedId, onSelect }) {
       </div>
     </div>
   );
-}
+});

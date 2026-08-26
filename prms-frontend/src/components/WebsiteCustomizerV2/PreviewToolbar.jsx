@@ -1,13 +1,15 @@
 import { Monitor, Smartphone, Tablet } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-export default function PreviewToolbar({ device, onDeviceChange }) {
-  const devices = [
-    { id: 'desktop', label: 'Desktop', icon: <Monitor size={16} /> },
-    { id: 'tablet', label: 'Tablet', icon: <Tablet size={16} /> },
-    { id: 'mobile', label: 'Mobile', icon: <Smartphone size={16} /> },
-  ];
+const DEVICES = [
+  { id: 'desktop', label: 'Desktop', icon: <Monitor size={16} /> },
+  { id: 'tablet', label: 'Tablet', icon: <Tablet size={16} /> },
+  { id: 'mobile', label: 'Mobile', icon: <Smartphone size={16} /> },
+];
 
+const TAP_SCALE = { scale: 0.95 };
+
+export default function PreviewToolbar({ device, onDeviceChange }) {
   return (
     <div className="pt-toolbar">
       {/* Left section: Page path / breadcrumb */}
@@ -20,13 +22,13 @@ export default function PreviewToolbar({ device, onDeviceChange }) {
 
       {/* Center: Device toggle */}
       <div className="pt-toolbar-center">
-        {devices.map((dev) => (
+        {DEVICES.map((dev) => (
           <motion.button
             key={dev.id}
             type="button"
             className={`pt-device-btn ${device === dev.id ? 'pt-device-active' : ''}`}
             onClick={() => onDeviceChange(dev.id)}
-            whileTap={{ scale: 0.95 }}
+            whileTap={TAP_SCALE}
             title={dev.label}
           >
             {dev.icon}

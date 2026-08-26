@@ -1,7 +1,7 @@
 import axios from 'axios';
+import {getApiBaseUrl} from '../config/apiBaseUrl';
 
-const BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || 'http://localhost:3500';
+const BASE_URL = getApiBaseUrl();
 
 /* ------------------------------------------------------------------ */
 /* Core Axios instance                                                */

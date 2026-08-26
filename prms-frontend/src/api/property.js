@@ -22,6 +22,8 @@ export const propertyApi = {
   deactivate(id) {
     return apiClient.delete(`/properties/${id}`);
   },
+
+  /* Images */
   addImage(propertyId, formData) {
     return apiClient.post(`/properties/${propertyId}/images`, formData, {
       headers: { 'Content-Type': undefined },
@@ -29,5 +31,37 @@ export const propertyApi = {
   },
   deleteImage(imageId) {
     return apiClient.delete(`/properties/images/${imageId}`);
+  },
+
+  /* Videos */
+  addVideo(propertyId, formData) {
+    return apiClient.post(`/properties/${propertyId}/videos`, formData, {
+      headers: { 'Content-Type': undefined },
+    });
+  },
+  deleteVideo(propertyId, url) {
+    return apiClient.delete(`/properties/${propertyId}/videos`, {
+      params: { url: encodeURIComponent(url) },
+    });
+  },
+
+  /* Documents */
+  addDocument(propertyId, formData) {
+    return apiClient.post(`/properties/${propertyId}/documents`, formData, {
+      headers: { 'Content-Type': undefined },
+    });
+  },
+  deleteDocument(propertyId, url) {
+    return apiClient.delete(`/properties/${propertyId}/documents`, {
+      params: { url: encodeURIComponent(url) },
+    });
+  },
+
+  // Generic uploadFile endpoint (kept for progress callbacks)
+  uploadFile(formData, onUploadProgress) {
+    return apiClient.post('/upload/file', formData, {
+      headers: { 'Content-Type': undefined },
+      onUploadProgress,
+    });
   },
 };

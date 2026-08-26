@@ -2,6 +2,7 @@ import express from 'express';
 import { authenticate } from '../../middleware/auth';
 import { adminOnly } from '../../middleware/rbac';
 import { AdminController } from './controller_admin';
+import upload from '../../middleware/fileUpload';
 
 const router = express.Router();
 const ctrl = new AdminController();
@@ -15,6 +16,7 @@ router.get('/settings/public', ctrl.getPublicSettings);
 router.put('/settings', adminOnly, ctrl.updateSetting);
 router.put('/settings/bulk', adminOnly, ctrl.bulkUpdateSettings);
 router.post('/settings', adminOnly, ctrl.addSetting);
+router.post('/settings/logo', adminOnly, upload.single('logo'), ctrl.uploadLogo);
 
 // Audit logs - admin only
 router.get('/audit-logs', adminOnly, ctrl.getAuditLogs);

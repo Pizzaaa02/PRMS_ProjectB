@@ -13,6 +13,8 @@ if (!fs_1.default.existsSync(UPLOAD_DIR)) {
 const ALLOWED_EXTENSIONS = new Set([
     // Images
     '.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg',
+    // Videos
+    '.mp4', '.webm', '.avi', '.mov', '.mkv', '.m4v',
     // Documents
     '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
     '.txt', '.csv', '.rtf', '.odt',

@@ -19,6 +19,18 @@ export async function updateSystemSetting(key: string, value: string) {
   });
 }
 
+export async function uploadSystemSetting(key: string, filePath: string) {
+  if (!key || key === 'undefined') {
+    throw new Error('Setting key is required');
+  }
+  const category = String(key).split('_')[0] ?? 'general';
+  return prisma.systemSetting.upsert({
+    where: { key: String(key) },
+    update: { value: filePath, category },
+    create: { key: String(key), value: filePath, category },
+  });
+}
+
 export async function addSystemSetting(key: string, value: string, category = 'general', description?: string) {
   return prisma.systemSetting.create({ data: { key, value, category, description } });
 }

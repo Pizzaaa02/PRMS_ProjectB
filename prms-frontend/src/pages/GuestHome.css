@@ -30,6 +30,15 @@
   font-weight: 800;
   color: var(--on-primary);
   text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.guest-logo-img {
+  height: 28px;
+  width: auto;
+  object-fit: contain;
 }
 
 .guest-navbar nav {

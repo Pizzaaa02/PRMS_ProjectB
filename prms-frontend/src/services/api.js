@@ -1,4 +1,6 @@
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3500';
+import {getApiBaseUrl} from '../config/apiBaseUrl';
+
+const API_BASE = getApiBaseUrl();
 
 export async function login(email, password) {
   const response = await fetch(`${API_BASE}/auth/login`, {

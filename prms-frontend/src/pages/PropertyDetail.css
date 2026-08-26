@@ -275,6 +275,36 @@
   margin: 8px 0;
 }
 
+/* Host right side — avatar + edit button */
+.pd-host-right {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Edit property button */
+.pd-edit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid var(--border-subtle, #e5e7eb);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-color, #1a1a1a);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: var(--font-family, Inter, system-ui, sans-serif);
+}
+
+.pd-edit-btn:hover {
+  background: var(--surface-hover, #f7f7f7);
+  border-color: var(--text-secondary, #b0b0b0);
+}
+
 /* Host badges */
 .pd-badges {
   margin-top: 20px;
@@ -385,11 +415,36 @@
   background: var(--surface-hover, #f1f5f9);
 }
 
+/* ── Building Facilities Chips ── */
+.pd-facilities-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pd-facility-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  background: var(--primary-color, #3366ff);
+  color: white;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* ── Pet Policy ── */
+.pd-pet-policy-text {
+  color: var(--text-secondary, #64748b);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
 /* ── Map ── */
 .pd-map {
   border-radius: 8px;
   overflow: hidden;
-  margin-top: 4px;
+  background: var(--surface-2, #f1f5f9);
 }
 
 .pd-map-location {
@@ -399,6 +454,7 @@
 }
 
 .pd-map-iframe {
+  border: none;
   border-radius: 8px;
 }
 
@@ -413,6 +469,7 @@
   gap: 8px;
   color: var(--text-secondary, #94a3b8);
   font-size: 14px;
+  padding: 40px;
 }
 
 /* ── Reviews ── */

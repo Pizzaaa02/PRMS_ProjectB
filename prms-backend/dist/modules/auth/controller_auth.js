@@ -46,6 +46,7 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const firebase_auth_1 = require("./firebase_auth");
 const db_1 = require("../../db");
 const path_1 = __importDefault(require("path"));
+const fs_1 = __importDefault(require("fs"));
 const HELPERS = (req) => {
     const ip = req.ip || req.socket.remoteAddress || '';
     const ua = req.headers['user-agent'];
@@ -243,33 +244,27 @@ class AuthController {
         };
         this.uploadProfileImage = async (req, res) => {
             try {
+                console.log('[DBG-UP1] userId:', req.user?.id, '| file:', req.file ? req.file.filename : 'UNDEFINED', '| ct:', req.headers['content-type']);
                 if (!req.file) {
                     return res.status(400).json({ success: false, error: { message: 'No file uploaded' } });
                 }
                 const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
                 if (!allowedMimes.includes(req.file.mimetype)) {
-                    req.file.webStorage.deleteFile(req.file.webStorageName);
-                    res.status(400).json({ success: false, error: { message: "Invalid file type. Use JPEG, PNG, GIF or WebP" } });
-                    return;
+                    fs_1.default.unlink(req.file.path, () => { });
+                    return res.status(400).json({ success: false, error: { message: 'Invalid file type. Use JPEG, PNG, GIF or WebP' } });
                 }
                 if (req.file.size > 5 * 1024 * 1024) {
-                    req.file.webStorage.deleteFile(req.file.webStorageName);
-                    res.status(400).json({ success: false, error: { message: "File too large. Maximum 5MB" } });
-                    return;
+                    fs_1.default.unlink(req.file.path, () => { });
+                    return res.status(400).json({ success: false, error: { message: 'File too large. Maximum 5MB' } });
                 }
-                // Build public URL
-                const relativePath = path_1.default.relative(config_1.env.CLOUD_STORAGE_DIR, req.file.path);
-                const url = `${config_1.env.API_ENDPOINT}/uploads/${relativePath.replace(/\\/g, '/')}`;
-                // Update user's profile_img_url
+                // Build public URL (static route /images -> public/images/)
+                const url = `/images/${path_1.default.basename(req.file.path)}`;
+                // Delete old avatar file if it exists
                 const oldUrl = req.user.profile_img_url;
-                if (oldUrl && oldUrl.includes('/uploads/')) {
-                    const oldRelative = decodeURIComponent(new URL(oldUrl).pathname.replace('/uploads/', ''));
-                    try {
-                        req.file.webStorage.deleteFile(oldRelative);
-                    }
-                    catch {
-                        // ignore deletion errors for old avatar
-                    }
+                if (oldUrl && oldUrl.includes('/uploads/images/')) {
+                    const oldFilename = path_1.default.basename(decodeURIComponent(oldUrl));
+                    const oldPath = path_1.default.join(__dirname, '..', '..', 'public', 'images', oldFilename);
+                    fs_1.default.unlink(oldPath, () => { });
                 }
                 const updated = await authService.updateUserProfile(req.user.id, { profile_img_url: url });
                 HELPERS(req).log({ userId: req.user.id, username: req.user.email, userRole: req.user.role, action: 'PROFILE_IMAGE_UPLOAD', entity: 'User', entityId: req.user.id, description: 'Profile image uploaded', status: 'Success', level: 'info' });
