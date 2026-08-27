@@ -18,8 +18,9 @@ router.put('/settings/bulk', adminOnly, ctrl.bulkUpdateSettings);
 router.post('/settings', adminOnly, ctrl.addSetting);
 router.post('/settings/logo', adminOnly, upload.single('logo'), ctrl.uploadLogo);
 
-// Audit logs - admin only
-router.get('/audit-logs', adminOnly, ctrl.getAuditLogs);
+// Audit logs — see routes_audit.ts, mounted separately in app.ts
+// (it has full filter support: level/action/search/sort; this module's
+// getAuditLogs only filtered by entity and was superseded by that one).
 
 // Notifications - any authenticated user
 router.get('/notifications', ctrl.getNotifications);

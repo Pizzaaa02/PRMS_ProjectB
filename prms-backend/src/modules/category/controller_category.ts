@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { AuthRequest } from '../../middleware/auth';
 import * as categoryService from './service_category';
 import { successResponse, paginatedResponse } from '../../utils/response';
+import { clearCache } from '../../middleware/responseCache';
 
 export class CategoryController {
   list = async (req: Request, res: Response) => {
@@ -47,6 +48,7 @@ export class CategoryController {
         { name, description, isShared },
         req.user.id,
       );
+      clearCache('^/categories');
       res.status(201).json(successResponse(category, 'Category created'));
     } catch (error: any) {
       res.status(400).json({ success: false, error: { message: error.message } });
@@ -62,6 +64,7 @@ export class CategoryController {
         isShared,
         isDisabled,
       });
+      clearCache('^/categories');
       res.json(successResponse(category, 'Category updated'));
     } catch (error: any) {
       res.status(400).json({ success: false, error: { message: error.message } });
@@ -71,6 +74,7 @@ export class CategoryController {
   remove = async (req: AuthRequest, res: Response) => {
     try {
       await categoryService.deleteCategory(String(req.params.id));
+      clearCache('^/categories');
       res.json(successResponse(null, 'Category deleted'));
     } catch (error: any) {
       res.status(400).json({ success: false, error: { message: error.message } });
@@ -80,6 +84,7 @@ export class CategoryController {
   toggle = async (req: AuthRequest, res: Response) => {
     try {
       const category = await categoryService.toggleCategoryDisabled(String(req.params.id));
+      clearCache('^/categories');
       res.json(successResponse(category, 'Category toggled'));
     } catch (error: any) {
       res.status(400).json({ success: false, error: { message: error.message } });
@@ -90,6 +95,7 @@ export class CategoryController {
     try {
       if (!req.user) return res.status(401).json({ success: false, error: { message: 'Unauthorized' } });
       const created = await categoryService.seedDefaultCategories(req.user.id);
+      clearCache('^/categories');
       res.json(successResponse({ count: created.length }, 'Default categories seeded'));
     } catch (error: any) {
       res.status(500).json({ success: false, error: { message: error.message } });

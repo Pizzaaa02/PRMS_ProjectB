@@ -217,7 +217,7 @@ function AdminCategories() {
         </div>
       )}
 
-      {showForm && !loading && categories.length === 0 && editingId === null && (
+      {showForm && !loading && editingId === null && (
         <motion.div
           className="admin-categories-inline-form"
           initial={{ opacity: 0, y: 8 }}
