@@ -29,23 +29,23 @@
   margin: 0;
 }
 
-.profile-avatar {
-  width: 96px;
-  height: 96px;
+.profile-page-avatar {
+  width: 140px;
+  height: 140px;
   border-radius: var(--radius-full);
   overflow: hidden;
   flex-shrink: 0;
   background: var(--surface-container-low);
 }
 
-.profile-avatar img {
+.profile-page-avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
 }
 
-.profile-avatar .avatar-fallback {
+.profile-page-avatar .avatar-fallback {
   width: 100%;
   height: 100%;
   display: flex;
@@ -302,14 +302,14 @@
 
 /* == Avatar Section == */
 
-.profile-avatar-section {
+.profile-page-avatar-section {
   display: flex;
   flex-direction: column;
   align-items: center;
   margin-bottom: 1.5rem;
 }
 
-.profile-avatar-upload-zone {
+.profile-page-avatar-upload-zone {
   position: relative;
   cursor: pointer;
   outline: 2px dashed transparent;
@@ -319,7 +319,7 @@
   padding: 1rem;
 }
 
-.profile-avatar-upload-zone[data-dragging='true'] {
+.profile-page-avatar-upload-zone[data-dragging='true'] {
   outline: 2px dashed var(--primary);
   background: var(--primary-light);
 }
@@ -380,8 +380,8 @@
   font-size: 0.75rem;
 }
 
-.profile-avatar-upload-zone:hover .avatar-overlay,
-.profile-avatar-upload-zone:focus-within .avatar-overlay {
+.profile-page-avatar-upload-zone:hover .avatar-overlay,
+.profile-page-avatar-upload-zone:focus-within .avatar-overlay {
   opacity: 1;
 }
 
