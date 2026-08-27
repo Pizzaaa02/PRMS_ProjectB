@@ -76,27 +76,26 @@ export const adminApi = {
     return apiClient.get(`/admin/themes/${themeId}`);
   },
 
-  /* Website Customizer (Flask API) */
-  // These use the standalone Flask customizer server at /api/customizer
+  /* Website Customizer */
 
   getCustomizerConfig() {
-    return apiClient.get('/admin/customizer');
+    return apiClient.get('/customizer');
   },
 
   updateCustomizerConfig(data) {
-    return apiClient.put('/admin/customizer', data);
+    return apiClient.put('/customizer', data);
   },
 
   patchCustomizerField(field, value) {
-    return apiClient.patch(`/admin/customizer/${field}`, { [field]: value });
+    return apiClient.patch(`/customizer/${field}`, { value });
   },
 
   generateCustomizerHtml() {
-    return apiClient.get('/admin/customizer/generate-html');
+    return apiClient.get('/customizer/generate-html', { responseType: 'blob' });
   },
 
   resetCustomizerConfig() {
-    return apiClient.post('/admin/customizer/reset', {});
+    return apiClient.post('/customizer/reset', {});
   },
 
 };

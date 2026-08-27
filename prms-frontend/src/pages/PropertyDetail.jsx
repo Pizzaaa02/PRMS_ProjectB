@@ -315,11 +315,6 @@ function PropertyDetail() {
   const description = property?.description || '';
   const shortDesc = description.length > 350 ? description.slice(0, 350) + '...' : description;
 
-  /* Capacity line: X guests · Y bedrooms · Z baths */
-  const capacity = property?.capacity || 0;
-  const bedrooms = property?.bedrooms || 0;
-  const bathrooms = property?.bathrooms || 0;
-
   /* Star rating placeholder */
   const rating = property?.rating || '4.9';
 
@@ -448,7 +443,10 @@ function PropertyDetail() {
                     Hosted by {owner?.full_name || 'Property Owner'}
                   </h2>
                   <p className="pd-capacity-line">
-                    {capacity || 10} guests · {bedrooms || 5} bedrooms · {bathrooms || 4.5} baths
+                    {(() => {
+                      const t = property?.property_type || property?.propertyType || 'Property';
+                      return t.charAt(0).toUpperCase() + t.slice(1);
+                    })()}
                     {property?.floorArea && ` · ${property.floorArea} sq ft`}
                   </p>
                 </div>

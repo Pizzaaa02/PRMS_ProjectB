@@ -10,6 +10,7 @@
  */
 
 import { Request, Response, Router } from 'express';
+import { authenticate } from '../../middleware/auth';
 
 // ---------- In-memory store ----------
 
@@ -69,14 +70,15 @@ function validateField(field: string, value: unknown): string | null {
 // ---------- Router setup ----------
 
 const router = Router();
+router.use(authenticate);
 
 /** GET the current customization config */
-router.get('/customizer', (_req: Request, res: Response) => {
+router.get('/', (_req: Request, res: Response) => {
   res.json(config);
 });
 
 /** PUT update all customization elements */
-router.put('/customizer', (req: Request, res: Response) => {
+router.put('/', (req: Request, res: Response) => {
   const { title, description, background_color, logo_url, company_name } = req.body;
 
   // Validate each field before applying
@@ -119,7 +121,7 @@ router.put('/customizer', (req: Request, res: Response) => {
 });
 
 /** PATCH a single customization element */
-router.patch('/customizer/:field', (req: Request, res: Response) => {
+router.patch('/:field', (req: Request, res: Response) => {
   const { field } = req.params;
   const { value } = req.body;
 
@@ -138,7 +140,7 @@ router.patch('/customizer/:field', (req: Request, res: Response) => {
 });
 
 /** GET a rendered HTML preview */
-router.get('/customizer/generate-html', (_req: Request, res: Response) => {
+router.get('/generate-html', (_req: Request, res: Response) => {
   const { title, description, background_color, logo_url, company_name } = config;
   const logoHtml = logo_url ? `<img src="${logo_url}" alt="${company_name} logo" class="wc-preview-logo" />` : '';
 
@@ -235,7 +237,7 @@ router.get('/customizer/generate-html', (_req: Request, res: Response) => {
 });
 
 /** POST reset all elements to defaults */
-router.post('/customizer/reset', (_req: Request, res: Response) => {
+router.post('/reset', (_req: Request, res: Response) => {
   config = { ...DEFAULTS };
   res.json(config);
 });

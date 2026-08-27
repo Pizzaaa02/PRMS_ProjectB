@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCustomization } from '../contexts/CustomizationContext';
+import { categoryApi } from '../api/categories';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   MapPin,
@@ -30,15 +31,6 @@ const PROPERTY_STATUS = [
   'INACTIVE',
 ];
 
-const CATEGORIES = [
-  'Residential',
-  'Commercial',
-  'Luxury',
-  'Student Housing',
-  'Pet Friendly',
-  'Short-term',
-];
-
 const defaultImagePlaceholders = [];
 
 function AddProperty() {
@@ -66,6 +58,14 @@ function AddProperty() {
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [activeSection, setActiveSection] = useState('basic');
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    categoryApi
+      .list()
+      .then(({ data }) => setCategories(data?.data ?? []))
+      .catch(() => setCategories([]));
+  }, []);
 
   const accentColor = themeColors?.accentColor || '#D4A574';
   const successColor = themeColors?.successColor || '#27AE60';
@@ -126,9 +126,7 @@ function AddProperty() {
 
   const handleSubmit = async (e) => {
     e?.preventDefault?.();
-    if (id) {
-      if (!validateForm()) return;
-    }
+    if (!validateForm()) return;
     setSubmitting(true);
     try {
       const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || window.location.origin || 'http://localhost:3500';
@@ -136,7 +134,6 @@ function AddProperty() {
       const endpoint = id ? `/properties/${id}` : '/properties';
 
       // Build JSON body — align frontend fields to backend DTO (schema source of truth)
-      // Backend service_property.ts handles categoryId internally; do not forward it.
       const body = {
         title: formData.title,
         address: formData.address,
@@ -148,6 +145,7 @@ function AddProperty() {
         availableFrom: formData.availableFrom || undefined,
         availableTo: formData.availableTo || undefined,
         amenities: formData.amenities?.map?.(a => ({ name: a })) || [],
+        categoryId: formData.categoryId || undefined,
       };
 
       const res = await fetch(`${apiBaseUrl}${endpoint}`, {
@@ -176,7 +174,7 @@ function AddProperty() {
           }
         }
         setTimeout(() => {
-          navigate('/dashboard/properties');
+          navigate('/admin/properties');
         }, 800);
       } else {
         setErrors({
@@ -269,7 +267,7 @@ function AddProperty() {
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
               <button
-                onClick={() => navigate('/dashboard/properties')}
+                onClick={() => navigate('/admin/properties')}
                 style={{
                   background: `${textColor}10`,
                   border: 'none',
@@ -560,9 +558,9 @@ function AddProperty() {
                       style={{ ...inputStyle, width: '100%', padding: '10px 14px', outline: 'none' }}
                     >
                       <option value="">Select category</option>
-                      {CATEGORIES.map((c) => (
-                        <option key={c} value={c}>
-                          {c}
+                      {categories.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
                         </option>
                       ))}
                     </select>
@@ -655,7 +653,7 @@ function AddProperty() {
               <div className="section-body" style={{ padding: '24px' }}>
                 {/* Rent — only price field in Property model */}
                 <div className="form-group" style={{ marginBottom: '16px' }}>
-                  <label style={labelStyle}>Monthly Rent ($) <span style={{ color: '#e53e3e' }}>*</span></label>
+                  <label style={labelStyle}>Monthly Rent (RM) <span style={{ color: '#e53e3e' }}>*</span></label>
                   <div style={{ position: 'relative' }}>
                     <span
                       style={{
@@ -668,7 +666,7 @@ function AddProperty() {
                         fontSize: '15px',
                       }}
                     >
-                      $
+                      RM
                     </span>
                     <input
                       type="number"
@@ -682,7 +680,7 @@ function AddProperty() {
                       style={{
                         ...inputStyle,
                         width: '100%',
-                        padding: '10px 14px 10px 32px',
+                        padding: '10px 14px 10px 40px',
                         outline: 'none',
                         fontVariantNumeric: 'tabular-nums',
                       }}
