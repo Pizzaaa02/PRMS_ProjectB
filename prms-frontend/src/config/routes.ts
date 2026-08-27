@@ -19,6 +19,7 @@ export const ROUTES = {
   admin: {
     root: '/admin',
     dashboard: '/admin/dashboard',
+    notifications: '/admin/notifications',
     users: '/admin/users',
     properties: '/admin/properties',
     propertyAdd: '/admin/properties/add',

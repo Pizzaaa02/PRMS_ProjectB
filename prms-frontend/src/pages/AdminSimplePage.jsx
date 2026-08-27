@@ -92,8 +92,8 @@ const subPages = {
       m.id ? 'TCK-' + m.id.slice(-4) : '—',
       m.propertyTitle || m.propertyId ? m.propertyTitle || 'Property' : '—',
       m.issue || m.description || '—',
-      m.priority || 'Medium',
-      m.status === 'Open' ? 'Assign' : 'View',
+      m.priority || 'MEDIUM',
+      m.status === 'OPEN' ? 'Assign' : 'View',
     ],
   },
   messages: {
@@ -213,10 +213,10 @@ export default function AdminSimplePage({ type = 'users' }) {
           const items = data?.data || data || []
           setRows(items)
           setCards([
-            { label: 'Open Tickets', value: items.filter((m) => m.status === 'Open').length },
-            { label: 'High Priority', value: items.filter((m) => m.priority === 'High').length },
-            { label: 'In Progress', value: items.filter((m) => m.status === 'In Progress' || m.status === 'InProgress').length },
-            { label: 'Completed', value: items.filter((m) => m.status === 'Completed').length },
+            { label: 'Open Tickets', value: items.filter((m) => m.status === 'OPEN').length },
+            { label: 'High Priority', value: items.filter((m) => m.priority === 'HIGH' || m.priority === 'URGENT').length },
+            { label: 'In Progress', value: items.filter((m) => m.status === 'IN_PROGRESS').length },
+            { label: 'Completed', value: items.filter((m) => m.status === 'RESOLVED' || m.status === 'CLOSED').length },
           ])
         } else if (type === 'messages') {
           const { data } = await adminApi.getNotifications()
@@ -305,9 +305,11 @@ export default function AdminSimplePage({ type = 'users' }) {
           <h1>{cfg.title}</h1>
           <p>{cfg.subtitle}</p>
         </div>
-        <button type="button" className="admin-simple-primary-btn" onClick={handlePrimaryBtn}>
-          {cfg.primaryBtn}
-        </button>
+        {type === 'settings' && (
+          <button type="button" className="admin-simple-primary-btn" onClick={handlePrimaryBtn}>
+            {cfg.primaryBtn}
+          </button>
+        )}
       </section>
 
       <section className="admin-simple-cards">
@@ -368,7 +370,7 @@ export default function AdminSimplePage({ type = 'users' }) {
                   {cells.map((cell, ci) => (
                     <div key={`${ci}-${row.id || i}`}>
                       {ci === cells.length - 1 ? (
-                        <button type="button">{cell}</button>
+                        <button type="button" disabled title="Not yet available">{cell}</button>
                       ) : (
                         <span>{cell}</span>
                       )}

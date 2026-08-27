@@ -193,6 +193,12 @@
   cursor: pointer;
 }
 
+.admin-simple-table-row button:disabled {
+  background: var(--surface-container-low);
+  color: var(--text-secondary);
+  cursor: not-allowed;
+}
+
 @media (max-width: 1250px) {
   .admin-simple-cards {
     grid-template-columns: repeat(2, 1fr);
