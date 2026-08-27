@@ -29,6 +29,7 @@ export default function AdminBookings() {
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -91,6 +92,17 @@ export default function AdminBookings() {
     { label: 'Cancelled', value: summary?.cancelled ?? '...' },
   ];
 
+  const filteredBookings = bookings.filter((b) => {
+    const q = search.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      b.id?.toLowerCase().includes(q) ||
+      b.user?.full_name?.toLowerCase().includes(q) ||
+      b.user?.email?.toLowerCase().includes(q) ||
+      b.property?.title?.toLowerCase().includes(q)
+    );
+  });
+
   return (
     <>
       <section className="admin-simple-hero">
@@ -140,7 +152,12 @@ export default function AdminBookings() {
           <h2>{TABS.find((t) => t.key === tab)?.label} Bookings</h2>
           <div className="admin-simple-search">
             <Search size={17} />
-            <input type="text" placeholder="Search records..." />
+            <input
+              type="text"
+              placeholder="Search records..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
           </div>
         </div>
 
@@ -159,15 +176,15 @@ export default function AdminBookings() {
               ))}
             </div>
 
-            {bookings.length === 0 && (
+            {filteredBookings.length === 0 && (
               <div className="admin-simple-table-row">
                 <div style={{ gridColumn: `1 / ${COLUMNS.length + 1}`, textAlign: 'center', padding: 20 }}>
-                  No bookings found
+                  {search ? `No bookings match "${search}"` : 'No bookings found'}
                 </div>
               </div>
             )}
 
-            {bookings.map((b) => (
+            {filteredBookings.map((b) => (
               <div
                 className="admin-simple-table-row admin-bookings-table-row"
                 style={{ gridTemplateColumns: `repeat(${COLUMNS.length}, 1fr)` }}

@@ -42,6 +42,7 @@ export default function AdminSimplePage({ type = 'maintenance' }) {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
     let cancelled = false
@@ -82,6 +83,14 @@ export default function AdminSimplePage({ type = 'maintenance' }) {
     return () => { cancelled = true }
   }, [type, user])
 
+  const filteredRows = rows.filter((row) => {
+    const q = search.trim().toLowerCase()
+    if (!q) return true
+    const cells = cfg.renderRow ? cfg.renderRow(row) : row
+    if (!cells) return false
+    return cells.some((c) => String(c).toLowerCase().includes(q))
+  })
+
   return (
     <>
       <section className="admin-simple-hero">
@@ -108,7 +117,12 @@ export default function AdminSimplePage({ type = 'maintenance' }) {
           <h2>{cfg.title}</h2>
           <div className="admin-simple-search">
             <Search size={17} />
-            <input type="text" placeholder="Search records..." />
+            <input
+              type="text"
+              placeholder="Search records..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
           </div>
         </div>
 
@@ -129,15 +143,15 @@ export default function AdminSimplePage({ type = 'maintenance' }) {
               ))}
             </div>
 
-            {rows.length === 0 && (
+            {filteredRows.length === 0 && (
               <div className="admin-simple-table-row">
                 <div style={{ gridColumn: `1 / ${cfg.columns.length + 1}`, textAlign: 'center', padding: 20 }}>
-                  No records found
+                  {search ? `No records match "${search}"` : 'No records found'}
                 </div>
               </div>
             )}
 
-            {rows.map((row, i) => {
+            {filteredRows.map((row, i) => {
               const cells = cfg.renderRow ? cfg.renderRow(row, i) : row
               if (!cells) return null
               return (
