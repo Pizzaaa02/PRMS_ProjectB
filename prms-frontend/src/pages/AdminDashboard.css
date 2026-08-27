@@ -19,6 +19,10 @@
 }
 
 /* ---- User Directory ---- */
+.admin-dashboard-page .dashboard-main-grid {
+  margin-top: var(--spacing-xl);
+}
+
 .admin-directory {
   min-height: 390px;
 }
