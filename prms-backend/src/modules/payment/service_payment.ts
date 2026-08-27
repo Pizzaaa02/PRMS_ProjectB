@@ -1,19 +1,43 @@
 import { prisma } from '../../db';
 
-// Platform-wide finance summary (currently only consumed by Admin Reports).
+// Platform-wide finance summary. Consumed by both Admin Reports (which reads
+// total/pending/collected/overdue as *counts*) and FinanceDashboard (which
+// reads totalRevenue/pendingAmount/collectedAmount/totalBookings/byProperty
+// as *amounts*) — both fields are provided so neither caller's semantics
+// change.
 export async function getFinanceSummary(userId: string) {
   const now = new Date();
-  const [collectedAgg, pendingCount, collectedCount, overdueCount] = await Promise.all([
+  const [collectedAgg, pendingAgg, pendingCount, collectedCount, overdueCount, totalBookings, paidPayments] = await Promise.all([
     prisma.payment.aggregate({ where: { status: 'PAID' }, _sum: { amount: true } }),
+    prisma.payment.aggregate({ where: { status: 'PENDING' }, _sum: { amount: true } }),
     prisma.payment.count({ where: { status: 'PENDING' } }),
     prisma.payment.count({ where: { status: 'PAID' } }),
     prisma.payment.count({ where: { status: { in: ['PENDING', 'UNPAID'] }, due_date: { lt: now } } }),
+    prisma.booking.count(),
+    prisma.payment.findMany({
+      where: { status: 'PAID' },
+      include: { booking: { include: { property: { select: { title: true } } } } },
+    }),
   ]);
+
+  const byPropertyMap = new Map<string, number>();
+  for (const p of paidPayments) {
+    const title = p.booking?.property?.title || 'Unknown';
+    byPropertyMap.set(title, (byPropertyMap.get(title) || 0) + p.amount);
+  }
+  const byProperty = [...byPropertyMap.entries()].map(([property, amount]) => ({ property, amount }));
+
+  const total = collectedAgg._sum.amount || 0;
   return {
-    total: collectedAgg._sum.amount || 0,
+    total,
+    totalRevenue: total,
     pending: pendingCount,
+    pendingAmount: pendingAgg._sum.amount || 0,
     collected: collectedCount,
+    collectedAmount: total,
     overdue: overdueCount,
+    totalBookings,
+    byProperty,
   };
 }
 

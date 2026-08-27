@@ -118,6 +118,20 @@ input {
   --error-state: var(--status-error);
   --error-state-background: rgba(239, 68, 68, 0.12);
 
+  /* A third naming convention for the same palette (badges paired with a
+     "-fixed" background and a "-label" text color, or a "-border" color) —
+     also never defined anywhere. */
+  --success-fixed: rgba(16, 185, 129, 0.12);
+  --success-label: #047857;
+  --success-border: rgba(16, 185, 129, 0.35);
+  --warning-label: #78350f;
+  --error-label: #ffffff;
+  --error-state-border: rgba(239, 68, 68, 0.35);
+
+  /* Misc tokens referenced but never defined, found via the same sweep. */
+  --primary-accent: var(--primary-color);
+  --border-color-hover: var(--border-color-strong);
+
   --error: #ba1a1a;
   --error-container: #ffdad6;
   --on-error: #ffffff;
@@ -143,6 +157,7 @@ input {
   --body-font: 'Inter', sans-serif;
 
   /* Border radii */
+  --radius-xs: 0.1875rem;
   --radius-sm: 0.25rem;
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;

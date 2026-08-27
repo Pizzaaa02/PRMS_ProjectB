@@ -83,7 +83,7 @@ function FinanceDashboard() {
           </div>
           <div className="finance-card-info">
             <span className="finance-card-label">Pending</span>
-            <span className="finance-card-value">RM {(summary?.pending ?? 0).toFixed(2)}</span>
+            <span className="finance-card-value">RM {(summary?.pendingAmount ?? 0).toFixed(2)}</span>
           </div>
         </motion.div>
 
@@ -98,7 +98,7 @@ function FinanceDashboard() {
           </div>
           <div className="finance-card-info">
             <span className="finance-card-label">Collected</span>
-            <span className="finance-card-value">RM {(summary?.collected ?? 0).toFixed(2)}</span>
+            <span className="finance-card-value">RM {(summary?.collectedAmount ?? 0).toFixed(2)}</span>
           </div>
         </motion.div>
 
@@ -170,7 +170,7 @@ function FinanceDashboard() {
                   <td>{p.reference || '—'}</td>
                   <td>RM {Number(p.amount).toFixed(2)}</td>
                   <td>
-                    <span className={`status-badge ${p.status.toLowerCase()}`}>
+                    <span className={`payment-status-badge ${p.status.toLowerCase()}`}>
                       {p.status}
                     </span>
                   </td>
