@@ -12,7 +12,6 @@ import {
   Search,
   Server,
   ShieldCheck,
-  SlidersHorizontal,
   Users,
   WalletCards,
 } from 'lucide-react'
@@ -230,6 +229,29 @@ function AdminDashboard() {
     return 'user-role--tenant'
   }
 
+  function exportUsersCsv() {
+    const header = 'Name,Email,Role,Status,Last Seen'
+    const rows = users.map((u) =>
+      [
+        u.full_name || '',
+        u.email || '',
+        getRoleName(u),
+        u.is_active !== false ? 'Active' : 'Suspended',
+        u.updated_at || '',
+      ]
+        .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+        .join(',')
+    )
+    const csv = [header, ...rows].join('\n')
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'users.csv'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   /* ---- Audit log mapping ---- */
   const mappedLogs = auditLogs.map((log) => {
     const level = (log.level || '').toLowerCase()
@@ -263,11 +285,7 @@ function AdminDashboard() {
         </div>
 
         <div className="landlord-page-actions">
-          <button type="button" className="btn-outline">
-            <SlidersHorizontal size={18} />
-            Filter
-          </button>
-          <button type="button" className="btn-primary-solid">
+          <button type="button" className="btn-primary-solid" onClick={exportUsersCsv}>
             <Download size={18} />
             Export
           </button>
