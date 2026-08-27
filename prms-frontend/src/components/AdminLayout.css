@@ -8,7 +8,9 @@
 
 .admin-layout-sidebar {
   width: 96px;
-  min-height: 100vh;
+  height: 100vh;
+  position: sticky;
+  top: 0;
   padding: 34px 18px;
   background: var(--header-background-color);
   display: flex;
