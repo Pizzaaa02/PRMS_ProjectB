@@ -707,7 +707,15 @@ form label {
   min-height: 100vh;
   display: grid;
   grid-template-columns: 96px 1fr;
-  background: #f3f6fb;
+  background: var(--page-bg, #f3f6fb);
+}
+
+.admin-shell.center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-primary, #0f172a);
+  font-size: 15px;
 }
 
 .admin-sidebar {
