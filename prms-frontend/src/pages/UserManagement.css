@@ -234,7 +234,7 @@
 /* Badges */
 .role-badge,
 .kyc-badge,
-.status-badge {
+.user-status-badge {
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -245,7 +245,7 @@
 }
 
 .kyc-badge.verified,
-.status-badge.active {
+.user-status-badge.active {
   background: var(--success-state-background);
   color: var(--success-state);
 }
@@ -255,7 +255,7 @@
   color: var(--warning-state, #92400e);
 }
 
-.status-badge.suspended {
+.user-status-badge.suspended {
   background: var(--error-state-background);
   color: var(--error-state);
 }

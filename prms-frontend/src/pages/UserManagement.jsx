@@ -367,9 +367,9 @@ export default function UserManagement() {
                 {/* Status */}
                 <div>
                   {u.is_active ? (
-                    <span className="status-badge active"><UserCheck size={11} /> Active</span>
+                    <span className="user-status-badge active"><UserCheck size={11} /> Active</span>
                   ) : (
-                    <span className="status-badge suspended"><UserX size={11} /> Suspended</span>
+                    <span className="user-status-badge suspended"><UserX size={11} /> Suspended</span>
                   )}
                 </div>
 
@@ -637,9 +637,9 @@ function ViewUserView({ user, onEdit }) {
             <label>Account</label>
             <span>
               {user.is_active ? (
-                <span className="status-badge active"><UserCheck size={11} /> Active</span>
+                <span className="user-status-badge active"><UserCheck size={11} /> Active</span>
               ) : (
-                <span className="status-badge suspended"><UserX size={11} /> Suspended</span>
+                <span className="user-status-badge suspended"><UserX size={11} /> Suspended</span>
               )}
             </span>
           </div>
