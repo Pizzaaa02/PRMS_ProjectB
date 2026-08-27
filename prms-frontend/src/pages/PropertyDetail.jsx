@@ -268,6 +268,19 @@ function PropertyDetail() {
   const [liked, setLiked] = useState(false);
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [showFullDescription, setShowFullDescription] = useState(false);
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [newsletterStatus, setNewsletterStatus] = useState(null); // null | 'success' | 'error'
+
+  function handleNewsletterSubmit(e) {
+    e.preventDefault();
+    const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newsletterEmail.trim());
+    if (!isValidEmail) {
+      setNewsletterStatus('error');
+      return;
+    }
+    setNewsletterStatus('success');
+    setNewsletterEmail('');
+  }
 
   /* Detect if rendered inside a role-protected PRMS layout.
      When true, hide the EstateSync topbar/footer so the PRMS
@@ -698,10 +711,28 @@ function PropertyDetail() {
             <div className="pd-footer-col">
               <h4>Newsletter</h4>
               <p>Get the latest travel news and property deals.</p>
-              <div className="pd-footer-newsletter">
-                <input type="email" placeholder="Email address" />
-                <button type="button">Join</button>
-              </div>
+              <form className="pd-footer-newsletter" onSubmit={handleNewsletterSubmit}>
+                <input
+                  type="email"
+                  placeholder="Email address"
+                  value={newsletterEmail}
+                  onChange={(e) => {
+                    setNewsletterEmail(e.target.value);
+                    setNewsletterStatus(null);
+                  }}
+                />
+                <button type="submit">Join</button>
+              </form>
+              {newsletterStatus === 'success' && (
+                <p className="pd-footer-newsletter-msg pd-footer-newsletter-msg--success">
+                  Thanks for subscribing!
+                </p>
+              )}
+              {newsletterStatus === 'error' && (
+                <p className="pd-footer-newsletter-msg pd-footer-newsletter-msg--error">
+                  Please enter a valid email address.
+                </p>
+              )}
             </div>
           </div>
           <div className="pd-footer-bottom">

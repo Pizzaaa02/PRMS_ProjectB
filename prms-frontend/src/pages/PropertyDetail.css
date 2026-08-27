@@ -859,6 +859,19 @@
   cursor: pointer;
 }
 
+.pd-footer-newsletter-msg {
+  margin: 8px 0 0;
+  font-size: 12px;
+}
+
+.pd-footer-newsletter-msg--success {
+  color: var(--success-state, #16a34a);
+}
+
+.pd-footer-newsletter-msg--error {
+  color: var(--error-state, #ef4444);
+}
+
 .pd-footer-bottom {
   max-width: 1120px;
   margin: 32px auto 0;
