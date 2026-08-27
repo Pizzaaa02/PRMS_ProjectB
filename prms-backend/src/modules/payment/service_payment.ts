@@ -1,7 +1,20 @@
 import { prisma } from '../../db';
 
+// Platform-wide finance summary (currently only consumed by Admin Reports).
 export async function getFinanceSummary(userId: string) {
-  return { total: 0, pending: 0, collected: 0, overdue: 0 };
+  const now = new Date();
+  const [collectedAgg, pendingCount, collectedCount, overdueCount] = await Promise.all([
+    prisma.payment.aggregate({ where: { status: 'PAID' }, _sum: { amount: true } }),
+    prisma.payment.count({ where: { status: 'PENDING' } }),
+    prisma.payment.count({ where: { status: 'PAID' } }),
+    prisma.payment.count({ where: { status: { in: ['PENDING', 'UNPAID'] }, due_date: { lt: now } } }),
+  ]);
+  return {
+    total: collectedAgg._sum.amount || 0,
+    pending: pendingCount,
+    collected: collectedCount,
+    overdue: overdueCount,
+  };
 }
 
 export async function getPayments(page = 1, limit = 10) {

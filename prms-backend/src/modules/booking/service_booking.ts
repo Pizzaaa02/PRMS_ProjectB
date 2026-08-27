@@ -3,7 +3,8 @@ import { prisma } from '../../db';
 export async function getBookings(page = 1, limit = 10, userId?: string, status?: string) {
   const where: any = {};
   if (userId) where.userId = userId;
-  if (status) where.status = status;
+  // BookingStatus enum values are uppercase; accept either case from callers.
+  if (status) where.status = status.toUpperCase();
   const [bookings, total] = await Promise.all([
     prisma.booking.findMany({ where, skip: (page - 1) * limit, take: limit, orderBy: { id: 'desc' }, include: { user: { select: { id: true, full_name: true, email: true } }, property: true } }),
     prisma.booking.count({ where }),

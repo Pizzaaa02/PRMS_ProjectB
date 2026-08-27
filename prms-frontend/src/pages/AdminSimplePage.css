@@ -1,3 +1,26 @@
+.admin-error-banner {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  color: var(--status-error);
+  font-size: 14px;
+}
+
+.admin-error-banner button {
+  border: none;
+  background: transparent;
+  color: var(--status-error);
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 .admin-simple-hero {
   display: flex;
   align-items: flex-start;
