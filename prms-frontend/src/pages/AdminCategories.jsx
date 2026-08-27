@@ -97,7 +97,8 @@ function AdminCategories() {
     }
   }
 
-  async function remove(id) {
+  async function remove(id, name) {
+    if (!confirm(`Delete category "${name}"? This cannot be undone.`)) return
     try {
       await categoryApi.remove(id)
       showToast('Category deleted')
@@ -206,7 +207,7 @@ function AdminCategories() {
                     <button className="action-btn toggle" onClick={() => toggleDisabled(cat.id)} title="Toggle">
                       <CheckCircle2 size={15} />
                     </button>
-                    <button className="action-btn danger" onClick={() => remove(cat.id)} title="Delete">
+                    <button className="action-btn danger" onClick={() => remove(cat.id, cat.name)} title="Delete">
                       <Trash2 size={15} />
                     </button>
                   </>
