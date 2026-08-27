@@ -846,15 +846,15 @@ form label {
 
 .admin-title-row h1 {
   margin: 0;
-  font-size: 48px;
-  font-weight: 500;
+  font-size: 28px;
+  font-weight: 700;
   color: var(--text-primary, #0f172a);
-  letter-spacing: -1.2px;
+  letter-spacing: -0.5px;
 }
 
 .admin-title-row p {
-  margin: 8px 0 0;
-  font-size: 24px;
+  margin: 6px 0 0;
+  font-size: 15px;
   color: var(--text-secondary, #4b5563);
 }
 

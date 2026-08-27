@@ -21,6 +21,12 @@
   margin: 0;
 }
 
+/* Match the standard 28px Admin page-title size (this page is shared with Landlord,
+   so the base rule above is left alone and only overridden inside the Admin layout). */
+.admin-layout-content .finance-header h1 {
+  font-size: 28px;
+}
+
 .finance-export-btn {
   display: inline-flex;
   align-items: center;

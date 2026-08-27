@@ -12,10 +12,10 @@
 }
 
 .user-mgmt-hero h1 {
-  font-size: 46px;
-  font-weight: 500;
-  letter-spacing: -1.5px;
-  line-height: 1.05;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  line-height: 1.2;
   margin: 0;
   color: var(--on-surface);
 }
@@ -671,10 +671,6 @@
   .user-mgmt-hero {
     flex-direction: column;
     align-items: stretch;
-  }
-
-  .user-mgmt-hero h1 {
-    font-size: 32px;
   }
 
   .user-mgmt-cards {

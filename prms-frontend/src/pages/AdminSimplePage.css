@@ -31,16 +31,16 @@
 
 .admin-simple-hero h1 {
   margin: 0;
-  font-size: 46px;
-  line-height: 1.05;
-  letter-spacing: -1.5px;
-  font-weight: 500;
+  font-size: 28px;
+  line-height: 1.2;
+  letter-spacing: -0.5px;
+  font-weight: 700;
 }
 
 .admin-simple-hero p {
-  margin: var(--spacing-sm) 0 0;
+  margin: 6px 0 0;
   color: var(--text-secondary);
-  font-size: 22px;
+  font-size: 15px;
   max-width: 900px;
 }
 
@@ -208,10 +208,6 @@
 @media (max-width: 850px) {
   .admin-simple-hero {
     flex-direction: column;
-  }
-
-  .admin-simple-hero h1 {
-    font-size: 36px;
   }
 
   .admin-simple-cards {
