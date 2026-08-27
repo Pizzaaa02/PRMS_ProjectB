@@ -76,6 +76,16 @@
   color: var(--primary-container);
 }
 
+[data-theme="dark"] .settings-card button {
+  background: var(--primary-accent, #8a2be2);
+  color: #ffffff;
+}
+
+[data-theme="dark"] .settings-card button:hover {
+  background: #ffffff;
+  color: var(--primary-accent, #8a2be2);
+}
+
 @media (max-width: 900px) {
   .settings-grid {
     grid-template-columns: 1fr;
