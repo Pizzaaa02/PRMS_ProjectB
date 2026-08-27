@@ -85,6 +85,7 @@ function AdminDashboard() {
   const [stats, setStats] = useState(null)
   const [occupancy, setOccupancy] = useState(null)
   const [users, setUsers] = useState([])
+  const [userSearch, setUserSearch] = useState('')
   const [auditLogs, setAuditLogs] = useState([])
   const [properties, setProperties] = useState([])
 
@@ -171,6 +172,16 @@ function AdminDashboard() {
     }
     return Object.values(byStatus).slice(0, 4)
   }, [properties])
+
+  const filteredUsers = useMemo(() => {
+    const q = userSearch.trim().toLowerCase()
+    if (!q) return users
+    return users.filter((user) =>
+      (user.full_name || '').toLowerCase().includes(q) ||
+      (user.email || '').toLowerCase().includes(q) ||
+      getRoleName(user).toLowerCase().includes(q)
+    )
+  }, [users, userSearch])
 
   /* ---- KPI Card helper ---- */
   function KpiCard({ icon: Icon, iconBg, label, value, sublabel, trend, trendDir }) {
@@ -351,7 +362,12 @@ function AdminDashboard() {
             </div>
             <div className="admin-search">
               <Search size={16} />
-              <input type="text" placeholder="Search users..." />
+              <input
+                type="text"
+                placeholder="Search users..."
+                value={userSearch}
+                onChange={(e) => setUserSearch(e.target.value)}
+              />
             </div>
           </div>
 
@@ -372,13 +388,13 @@ function AdminDashboard() {
                   </div>
                 </div>
               ))
-            ) : !users.length ? (
+            ) : !filteredUsers.length ? (
               <div style={{ padding: 'var(--spacing-lg) var(--spacing-sm)', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '14px' }}>
-                No users found
+                {userSearch ? `No users match "${userSearch}"` : 'No users found'}
               </div>
             ) : (
               /* Real user rows */
-              users.map((user) => {
+              filteredUsers.map((user) => {
                 const roleName = getRoleName(user)
                 const isActive = user.is_active !== false
                 return (

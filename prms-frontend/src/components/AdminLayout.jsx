@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate, Outlet } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
@@ -11,6 +12,8 @@ import { buildNavItems, resolveActivePage } from './NavigationConfig'
 import NotificationDropdown from './NotificationDropdown'
 import ProfileDropdown from './ProfileDropdown'
 import ThemeSwitcher from './ThemeSwitcher'
+import { userApi } from '../api/user'
+import { propertyApi } from '../api/property'
 import './AdminLayout.css'
 
 function getTopbarTitle(activePage) {
@@ -42,6 +45,62 @@ function AdminLayout() {
 
   function safeNavigate(path) {
     if (location.pathname !== path) navigate(path)
+  }
+
+  const [globalSearch, setGlobalSearch] = useState('')
+  const [searchResults, setSearchResults] = useState({ users: [], properties: [] })
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [searchLoading, setSearchLoading] = useState(false)
+  const searchBoxRef = useRef(null)
+
+  useEffect(() => {
+    const q = globalSearch.trim()
+    if (!q) {
+      setSearchResults({ users: [], properties: [] })
+      setSearchOpen(false)
+      return
+    }
+    setSearchLoading(true)
+    const timer = setTimeout(async () => {
+      try {
+        const [usersRes, propsRes] = await Promise.all([
+          userApi.list({ search: q, limit: 4 }),
+          propertyApi.list({ search: q, limit: 4 }),
+        ])
+        setSearchResults({
+          users: usersRes?.data?.data ?? [],
+          properties: propsRes?.data?.data ?? [],
+        })
+        setSearchOpen(true)
+      } catch {
+        setSearchResults({ users: [], properties: [] })
+      } finally {
+        setSearchLoading(false)
+      }
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [globalSearch])
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (searchBoxRef.current && !searchBoxRef.current.contains(e.target)) {
+        setSearchOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  function goToUser(user) {
+    setSearchOpen(false)
+    setGlobalSearch('')
+    navigate(`/admin/users?search=${encodeURIComponent(user.email || user.full_name || '')}`)
+  }
+
+  function goToProperty(property) {
+    setSearchOpen(false)
+    setGlobalSearch('')
+    navigate(`/admin/properties/edit/${property.id}`)
   }
 
   function handleLogout() {
@@ -102,9 +161,49 @@ function AdminLayout() {
             <p data-customize-id="global.brand.subtitle">{getTopbarTitle(activePage)}</p>
           </div>
 
-          <div className="admin-layout-search" data-customize-id="global.search">
+          <div className="admin-layout-search" data-customize-id="global.search" ref={searchBoxRef}>
             <Search size={22} />
-            <input type="text" placeholder="Search users, properties..." />
+            <input
+              type="text"
+              placeholder="Search users, properties..."
+              value={globalSearch}
+              onChange={(e) => setGlobalSearch(e.target.value)}
+              onFocus={() => { if (globalSearch.trim()) setSearchOpen(true) }}
+            />
+            {searchOpen && (
+              <div className="admin-layout-search-dropdown">
+                {searchLoading ? (
+                  <div className="admin-layout-search-empty">Searching...</div>
+                ) : !searchResults.users.length && !searchResults.properties.length ? (
+                  <div className="admin-layout-search-empty">No results for "{globalSearch}"</div>
+                ) : (
+                  <>
+                    {searchResults.users.length > 0 && (
+                      <div className="admin-layout-search-group">
+                        <span className="admin-layout-search-label">Users</span>
+                        {searchResults.users.map((u) => (
+                          <button key={u.id} type="button" onClick={() => goToUser(u)}>
+                            <span className="admin-layout-search-title">{u.full_name || 'Unnamed'}</span>
+                            <span className="admin-layout-search-sub">{u.email}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {searchResults.properties.length > 0 && (
+                      <div className="admin-layout-search-group">
+                        <span className="admin-layout-search-label">Properties</span>
+                        {searchResults.properties.map((p) => (
+                          <button key={p.id} type="button" onClick={() => goToProperty(p)}>
+                            <span className="admin-layout-search-title">{p.title}</span>
+                            <span className="admin-layout-search-sub">{p.address}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="admin-layout-top-actions" data-customize-id="global.top-actions">
