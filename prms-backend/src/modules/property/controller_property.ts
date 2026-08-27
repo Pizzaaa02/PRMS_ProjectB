@@ -24,7 +24,9 @@ export class PropertyController {
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
-      const { properties, total } = await propertyService.getAllProperties(page, limit);
+      const type = typeof req.query.type === 'string' ? req.query.type : undefined;
+      const search = typeof req.query.search === 'string' ? req.query.search : undefined;
+      const { properties, total } = await propertyService.getAllProperties(page, limit, { type, search });
       HELPERS(req).log({ action: 'VIEW_PROPERTIES', entity: 'Property', description: `Listed properties (page ${page})` });
       res.json(paginatedResponse(properties, page, limit, total));
     } catch (error: any) { HELPERS(req).log({ action: 'VIEW_PROPERTIES', entity: 'Property', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(500).json({ success: false, error: { message: error.message } }); }

@@ -24,6 +24,7 @@ import {
 import { propertyApi } from '../api';
 import { useAuth } from '../contexts/AuthContext';
 import ImageGallery from '../components/ImageGallery';
+import { PROPERTY_TYPES } from '../config/propertyTypes';
 import './PropertyEdit.css';
 
 /* ================= VALIDATION HELPERS ================= */
@@ -141,7 +142,6 @@ function StatusPicker({ value, onChange }) {
 /* ================= PROPERTY TYPE SELECT ================= */
 
 function PropertyTypeSelect({ value, onChange }) {
-  const types = ['apartment', 'house', 'condominium', 'land', 'commercial', 'townhouse'];
   return (
     <div className="pe-group">
       <label htmlFor="propertyType" className="pe-field-label">
@@ -156,9 +156,9 @@ function PropertyTypeSelect({ value, onChange }) {
         aria-describedby="propertyTypeHelp"
       >
         <option value="">Select type</option>
-        {types.map((t) => (
-          <option key={t} value={t}>
-            {t.charAt(0).toUpperCase() + t.slice(1)}
+        {PROPERTY_TYPES.map((t) => (
+          <option key={t.value} value={t.value}>
+            {t.label}
           </option>
         ))}
       </select>

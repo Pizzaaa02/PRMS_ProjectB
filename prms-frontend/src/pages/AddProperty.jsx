@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCustomization } from '../contexts/CustomizationContext';
 import { categoryApi } from '../api/categories';
+import { PROPERTY_TYPES } from '../config/propertyTypes';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   MapPin,
@@ -14,15 +15,6 @@ import {
   Image as ImageIcon,
 } from 'lucide-react';
 import './AddProperty.css';
-
-const PROPERTY_TYPES = [
-  'Apartment',
-  'House',
-  'Condo',
-  'Townhouse',
-  'Studio',
-  'Duplex',
-];
 
 const PROPERTY_STATUS = [
   'AVAILABLE',
@@ -41,7 +33,7 @@ function AddProperty() {
 
   const [formData, setFormData] = useState({
     title: '',
-    propertyType: 'Apartment',
+    propertyType: 'apartment',
     status: 'AVAILABLE',
     monthlyRent: '',
     availableFrom: '',
@@ -192,7 +184,7 @@ function AddProperty() {
     await handleSubmit();
     setFormData({
       title: '',
-      propertyType: 'Apartment',
+      propertyType: 'apartment',
       status: 'AVAILABLE',
       monthlyRent: '',
       availableFrom: '',
@@ -514,8 +506,8 @@ function AddProperty() {
                       style={{ ...inputStyle, width: '100%', padding: '10px 14px', outline: 'none', appearance: 'none', paddingRight: '32px', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='${encodeURIComponent(textColor)}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center' }}
                     >
                       {PROPERTY_TYPES.map((t) => (
-                        <option key={t} value={t}>
-                          {t}
+                        <option key={t.value} value={t.value}>
+                          {t.label}
                         </option>
                       ))}
                     </select>
