@@ -57,19 +57,19 @@ export const adminApi = {
 
   /* Theme / Customization */
   getTheme() {
-    return apiClient.get('/admin/themes');
+    return apiClient.get('/themes');
   },
   saveDraft(themeId, lightConfig, darkConfig) {
-    return apiClient.put(`/admin/themes/${themeId}/draft`, { themeId, lightConfig, darkConfig });
+    return apiClient.put(`/themes/${themeId}/draft`, { themeId, lightConfig, darkConfig });
   },
   publishTheme(themeId) {
-    return apiClient.post(`/admin/themes/${themeId}/publish`);
+    return apiClient.post(`/themes/${themeId}/publish`);
   },
   getVersions(themeId) {
-    return apiClient.get(`/admin/themes/${themeId}/versions`);
+    return apiClient.get(`/themes/${themeId}/versions`);
   },
   restoreVersion(themeId, version) {
-    return apiClient.post(`/admin/themes/${themeId}/versions/${version}/restore`, { version });
+    return apiClient.post(`/themes/${themeId}/versions/${version}/restore`, { version });
   },
   /* Theme / Published theme */
   getThemeById(themeId) {
