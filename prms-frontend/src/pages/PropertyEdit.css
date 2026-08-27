@@ -1032,11 +1032,11 @@
 .pe-documents-empty {
   text-align: center;
   padding: 2rem 1rem;
-  color: var(--color-muted);
+  color: var(--text-secondary);
 }
 
 .pe-documents-empty svg {
-  color: var(--color-muted);
+  color: var(--text-secondary);
   opacity: 0.5;
   margin-bottom: 0.5rem;
 }
@@ -1052,15 +1052,15 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem 1rem;
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
+  background: var(--surface-container-low);
+  border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
   transition: background 0.2s, border-color 0.2s;
 }
 
 .pe-document-item:hover {
-  background: var(--color-secondary-bg);
-  border-color: var(--color-primary);
+  background: var(--surface-hover);
+  border-color: var(--primary-color);
 }
 
 .pe-document-info {
@@ -1073,13 +1073,13 @@
 
 .pe-document-icon {
   flex-shrink: 0;
-  color: var(--color-primary);
+  color: var(--primary-color);
 }
 
 .pe-document-name {
   font-size: 0.95rem;
   font-weight: 500;
-  color: var(--color-text);
+  color: var(--text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1088,7 +1088,7 @@
 
 .pe-document-size {
   font-size: 0.75rem;
-  color: var(--color-muted);
+  color: var(--text-secondary);
   margin-left: auto;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1108,15 +1108,15 @@
   justify-content: center;
   padding: 0.4rem;
   border-radius: var(--radius-md);
-  color: var(--color-primary);
+  color: var(--primary-color);
   background: transparent;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--border-color);
   cursor: pointer;
 }
 
 .pe-document-download:hover {
-  background: var(--color-primary-light);
-  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--primary-color) 15%, transparent);
+  border-color: var(--primary-color);
 }
 
 .pe-document-remove {
@@ -1125,14 +1125,14 @@
   justify-content: center;
   padding: 0.4rem;
   border-radius: var(--radius-md);
-  color: var(--color-text);
+  color: var(--text-primary);
   background: transparent;
   border: 1px solid transparent;
   cursor: pointer;
 }
 
 .pe-document-remove:hover {
-  color: var(--color-red);
-  background: var(--color-red-light);
-  border-color: var(--color-red);
+  color: var(--status-error);
+  background: color-mix(in srgb, var(--status-error) 15%, transparent);
+  border-color: var(--status-error);
 }

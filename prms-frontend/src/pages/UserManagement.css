@@ -179,7 +179,7 @@
   grid-template-columns: 2fr 1fr 1fr 1fr 1.5fr;
   min-height: 68px;
   padding: 0 var(--spacing-lg);
-  border-bottom: 1px solid var(--border-color-subtle);
+  border-bottom: 1px solid var(--border-color);
   align-items: center;
 }
 
@@ -363,7 +363,7 @@
 .user-mgmt-backdrop {
   position: fixed;
   inset: 0;
-  background: var(--overlay);
+  background: rgba(0, 0, 0, 0.4);
   z-index: 90;
   backdrop-filter: blur(2px);
 }
@@ -376,7 +376,7 @@
   width: 440px;
   max-width: 92vw;
   background: var(--surface-container-lowest);
-  box-shadow: var(--shadow-overlay);
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
   z-index: 91;
   display: flex;
   flex-direction: column;
@@ -587,7 +587,7 @@
   justify-content: space-between;
   align-items: center;
   padding-bottom: var(--spacing-sm);
-  border-bottom: 1px solid var(--border-color-subtle);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .view-row label {
