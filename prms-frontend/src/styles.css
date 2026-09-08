@@ -299,12 +299,20 @@ input {
 }
 
 .login-right {
+  position: relative;
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 48px;
   background: var(--page-bg);
+}
+
+.login-theme-toggle {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  color: var(--text-primary);
 }
 
 .login-form-box {
@@ -354,6 +362,7 @@ form label {
   flex: 1;
   border: none;
   outline: none;
+  background: transparent;
   font-size: 22px;
   color: var(--text-primary);
 }
