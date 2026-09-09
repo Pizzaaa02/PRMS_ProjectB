@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useSettings } from '../contexts/SettingsContext'
+import useBranding from '../hooks/useBranding'
 import ThemeSwitcher from '../components/ThemeSwitcher'
 import {
   ArrowRight,
@@ -19,6 +20,13 @@ import './GuestHome.css';
 function GuestHome() {
   const navigate = useNavigate()
   const { settings, loadSettings } = useSettings()
+  // Website Customizer branding (2026-09-09, ported feature) - takes
+  // priority when set, falls back to the existing settings-driven values
+  // below untouched otherwise. Additive only: nothing here changes if the
+  // customizer has never been configured.
+  const branding = useBranding()
+  const brandName = branding.name || settings?.branding_site_name || 'PRMS'
+  const brandLogo = branding.logoUrl || settings?.branding_logo_url
 
   /* Fallback hero content from settings */
   const heroTitle = settings?.homepage_hero_title || 'Find Your Perfect Space in Malaysia\'s Most Trusted Ecosystem.'
@@ -45,8 +53,8 @@ function GuestHome() {
   const heroAlignment = settings?.homepage_hero_text_alignment || 'left'
 
   /* Header / Footer background colors */
-  const headerBg = settings?.header_background_color || '#ffffff'
-  const footerBg = settings?.footer_background_color || '#0f172a'
+  const headerBg = branding.colors?.light_header_bg || settings?.header_background_color || '#ffffff'
+  const footerBg = branding.colors?.light_footer_bg || settings?.footer_background_color || '#0f172a'
 
   /* Footer copyright */
   const footerCopyright = settings?.footer_copyright_text || '© 2024 PRMS Malaysia. All rights reserved.'
@@ -118,10 +126,10 @@ function GuestHome() {
     <main className="guest-page">
       <header className="guest-navbar" data-customize-id="global.header" style={{ backgroundColor: headerBg }}>
         <Link to="/" className="guest-logo">
-          {settings?.branding_logo_url ? (
-            <img src={getImageUrl(settings.branding_logo_url)} alt="Logo" className="guest-logo-img" />
+          {brandLogo ? (
+            <img src={branding.logoUrl ? brandLogo : getImageUrl(brandLogo)} alt="Logo" className="guest-logo-img" />
           ) : null}
-          <span>{settings?.branding_site_name || 'PRMS'}</span>
+          <span>{brandName}</span>
         </Link>
 
         <nav>

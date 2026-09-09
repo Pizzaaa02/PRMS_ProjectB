@@ -95,6 +95,23 @@ export async function deleteCategory(id: string) {
   return prisma.propertyCategory.delete({ where: { id } });
 }
 
+// Soft delete for a landlord's own personal category - unlike the admin
+// deleteCategory() above, this never hard-deletes: a landlord's own
+// category can still be referenced by their own properties, and this
+// endpoint has no reason to block on that the way the admin hard-delete
+// path does. Kept separate from deleteCategory() rather than adding an
+// optional param to it, so the existing admin delete behavior (always
+// hard delete, blocked while properties are assigned) is untouched.
+export async function disablePersonalCategory(id: string) {
+  const category = await prisma.propertyCategory.findUnique({ where: { id } });
+  if (!category) throw new Error('Category not found');
+
+  return prisma.propertyCategory.update({
+    where: { id },
+    data: { isDisabled: true },
+  });
+}
+
 export async function toggleCategoryDisabled(id: string) {
   const category = await prisma.propertyCategory.findUnique({ where: { id } });
   if (!category) throw new Error('Category not found');

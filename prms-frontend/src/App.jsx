@@ -15,6 +15,8 @@ import PublicPageTransition from './components/PublicPageTransition';
 import GuestHome from './pages/GuestHome';
 import GuestProperties from './pages/GuestProperties';
 import Login from './pages/Login';
+import ForgotPassword from './pages/ForgotPassword';
+import LandlordCategories from './pages/LandlordCategories';
 import Register from './pages/Register';
 import RoleSelection from './pages/RoleSelection';
 import NotFound from './pages/NotFound';
@@ -142,6 +144,18 @@ function AppRoutes() {
             <LoginGuard>
               <PublicPageTransition>
                 <Login />
+              </PublicPageTransition>
+            </LoginGuard>
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/forgot-password"
+        element={
+          <PublicRoute>
+            <LoginGuard>
+              <PublicPageTransition>
+                <ForgotPassword />
               </PublicPageTransition>
             </LoginGuard>
           </PublicRoute>
@@ -281,6 +295,7 @@ function AppRoutes() {
           }
         />
         <Route path="heatmap" element={<LandlordHeatmap />} />
+        <Route path="categories" element={<LandlordCategories />} />
         <Route path="maintenance" element={<LandlordSimplePage label="Maintenance Requests" />} />
         <Route path="messages" element={<CommunicationHub />} />
         <Route path="settings" element={<Settings />} />

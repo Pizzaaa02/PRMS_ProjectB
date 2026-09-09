@@ -137,3 +137,40 @@ export async function changePassword(
     data: { passwordHash: newHash },
   });
 }
+
+// In-memory OTP store (5 min expiry) - no real email/SMS service behind
+// this project, so the OTP is generated here and handed back in the API
+// response for the frontend to display directly, rather than actually
+// delivered out-of-band. Known, deliberate limitation (flagged in the
+// deployment report), not a real password-reset security model - don't
+// extend this pattern to anything that needs to be actually secure.
+const otpStore = new Map<string, { code: string; expiresAt: number }>();
+
+export async function generateOtpCode(email: string) {
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) throw new Error('Email not found');
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  otpStore.set(email, { code, expiresAt: Date.now() + 5 * 60 * 1000 });
+  return code;
+}
+
+export async function verifyOtpCode(email: string, code: string) {
+  const entry = otpStore.get(email);
+  if (!entry) throw new Error('OTP not found. Request a new one first.');
+  if (Date.now() > entry.expiresAt) {
+    otpStore.delete(email);
+    throw new Error('OTP expired. Request a new one.');
+  }
+  if (entry.code !== code) throw new Error('Invalid OTP code.');
+  otpStore.delete(email);
+}
+
+export async function resetPassword(email: string, newPassword: string) {
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) throw new Error('User not found');
+  const passwordHash = await bcrypt.hash(newPassword, 10);
+  return prisma.user.update({
+    where: { id: user.id },
+    data: { passwordHash },
+  });
+}
