@@ -3,7 +3,7 @@
   display: grid;
   grid-template-columns: 96px minmax(0, 1fr);
   background: var(--page-bg);
-  color: var(--text-color);
+  color: var(--text-primary);
 }
 
 .tenant-layout-sidebar {
