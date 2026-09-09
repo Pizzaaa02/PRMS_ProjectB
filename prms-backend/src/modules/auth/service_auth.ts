@@ -4,6 +4,18 @@ import { v4 as uuidv4 } from 'uuid';
 import { prisma } from '../../db';
 import { env } from '../../config';
 
+// Agent-role users are looked up through a separate Agent record (see
+// modules/agent), not the User row directly, so anywhere a user ends up
+// with the Agent role must also ensure that record exists — otherwise
+// their assigned-properties/bookings/tickets queries stay empty forever.
+async function ensureAgentRecord(userId: string) {
+  await prisma.agent.upsert({
+    where: { userId },
+    update: {},
+    create: { userId },
+  });
+}
+
 export async function registerUser(email: string, password: string, full_name?: string, phone?: string, role?: string) {
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) throw new Error('Email already registered');
@@ -30,6 +42,10 @@ export async function registerUser(email: string, password: string, full_name?: 
     },
     include: { UserRole: { include: { role: true } } },
   });
+
+  if ((role || 'Tenant') === 'Agent') {
+    await ensureAgentRecord(user.id);
+  }
 
   return user;
 }
@@ -101,6 +117,9 @@ export async function updateUserProfile(
       update: {},
       create: { userId, roleId: role.id },
     });
+    if (data.role === 'Agent') {
+      await ensureAgentRecord(userId);
+    }
   }
 
   const { role, ...userFields } = data;

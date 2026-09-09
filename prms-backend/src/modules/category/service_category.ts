@@ -106,9 +106,16 @@ export async function disablePersonalCategory(id: string) {
   const category = await prisma.propertyCategory.findUnique({ where: { id } });
   if (!category) throw new Error('Category not found');
 
+  // The frontend has no restore UI for a disabled personal category (the
+  // list view filters isDisabled rows out entirely), so this is a one-way
+  // "delete" from the user's perspective. The row itself is kept (categories
+  // can still be referenced by existing properties), but its name is freed
+  // up here so the owner can immediately reuse it — otherwise the
+  // (ownerId, name) unique constraint would block them forever with no way
+  // to see or rename the row that's holding the name.
   return prisma.propertyCategory.update({
     where: { id },
-    data: { isDisabled: true },
+    data: { isDisabled: true, name: `${category.name} (deleted-${Date.now()})` },
   });
 }
 
@@ -136,7 +143,7 @@ export async function seedDefaultCategories(userId: string) {
   const created: any[] = [];
   for (const cat of defaults) {
     const existing = await prisma.propertyCategory.findUnique({
-      where: { name: cat.name },
+      where: { ownerId_name: { ownerId: userId, name: cat.name } },
     });
     if (!existing) {
       const c = await prisma.propertyCategory.create({

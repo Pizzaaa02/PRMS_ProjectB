@@ -118,6 +118,9 @@ export class BookingController {
   checkOverlap = async (req: Request, res: Response) => {
     try {
       const { propertyId, startDate, endDate, excludeBookingId } = req.query;
+      if (!propertyId || !startDate || !endDate || isNaN(Date.parse(String(startDate))) || isNaN(Date.parse(String(endDate)))) {
+        return res.status(400).json({ success: false, error: { message: 'propertyId, startDate and endDate are required' } });
+      }
       const result = await bookingService.checkOverlap(
         String(propertyId),
         String(startDate),

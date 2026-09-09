@@ -52,12 +52,23 @@ export async function getBookingById(id: string) {
 }
 
 export async function createBooking(data: { propertyId: string; start_date: string; end_date: string; totalAmount?: number; }, userId: string) {
+  // totalAmount is computed server-side (nights × the property's nightly
+  // rent) rather than trusted from the client — the booking UI never sends
+  // it at all (every booking was silently landing at 0), and even where a
+  // client does send one, price must not be client-controlled.
+  const property = await prisma.property.findUnique({ where: { id: data.propertyId }, select: { rent: true } });
+  if (!property) throw new Error('Property not found');
+  const start = new Date(data.start_date);
+  const end = new Date(data.end_date);
+  const nights = Math.max(1, Math.round((end.getTime() - start.getTime()) / 86400000));
+  const totalAmount = nights * property.rent;
+
   return prisma.booking.create({
     data: {
       property: { connect: { id: data.propertyId } },
-      start_date: new Date(data.start_date),
-      end_date: new Date(data.end_date),
-      totalAmount: data.totalAmount,
+      start_date: start,
+      end_date: end,
+      totalAmount,
       user: { connect: { id: userId } },
     },
     include: { user: true, property: true },
