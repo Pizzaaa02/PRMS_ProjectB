@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Building2, Eye, EyeOff, LockKeyhole, LogIn, Mail } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { signInWithGoogle } from '../firebase';
+import ThemeSwitcher from '../components/ThemeSwitcher';
 
 function Login() {
   const navigate = useNavigate();
@@ -121,6 +122,10 @@ function Login() {
         animate={{ x: 0, opacity: 1 }}
         transition={{ duration: 0.65, ease: 'easeOut' }}
       >
+        <div className="login-theme-toggle">
+          <ThemeSwitcher />
+        </div>
+
         <motion.div
           className="login-form-box"
           initial={{ y: 34, opacity: 0, scale: 0.97 }}
