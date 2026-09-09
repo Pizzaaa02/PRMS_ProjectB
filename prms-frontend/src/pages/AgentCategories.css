@@ -164,7 +164,7 @@
   margin-top: var(--spacing-xs);
 }
 
-.btn-primary {
+.form-actions .btn-primary {
   flex: 1;
   padding: var(--spacing-sm);
   background: linear-gradient(135deg, var(--primary-accent), var(--secondary-accent));
@@ -175,7 +175,7 @@
   cursor: pointer;
 }
 
-.btn-secondary {
+.form-actions .btn-secondary {
   flex: 1;
   padding: var(--spacing-sm);
   background: var(--page-bg);

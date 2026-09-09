@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Modal from '../components/Modal';
 import MaintenanceForm from '../components/MaintenanceForm';
 import { maintenanceApi } from '../api/maintenance';
+import './SharedPageShell.css';
 
 // Matches the real MaintenanceStatus enum (OPEN/IN_PROGRESS/RESOLVED/CLOSED)
 // - the previous tabs (submitted/assigned) didn't correspond to any status
@@ -59,8 +60,8 @@ export default function TenantMaintenance() {
                 <tr key={t._id || t.id}>
                   <td>{t.title}</td>
                   <td>{t.property?.title || t.property?.name || 'N/A'}</td>
-                  <td><span className={`status-badge status-${(t.priority || 'medium').toLowerCase()}`}>{t.priority || 'Medium'}</span></td>
-                  <td><span className={`status-badge status-${(t.status || '').toLowerCase()}`}>{t.status}</span></td>
+                  <td><span className={`shell-status-badge status-${(t.priority || 'medium').toLowerCase()}`}>{t.priority || 'Medium'}</span></td>
+                  <td><span className={`shell-status-badge status-${(t.status || '').toLowerCase()}`}>{t.status}</span></td>
                   <td>{new Date(t.createdAt || t.created_at).toLocaleDateString()}</td>
                   <td><button className="btn btn-sm btn-outline" onClick={() => setSelected(t)}>View</button></td>
                 </tr>

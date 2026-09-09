@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import Modal from '../components/Modal';
 import { maintenanceApi } from '../api/maintenance';
+import './SharedPageShell.css';
 
-const STATUS_TABS = ['submitted', 'assigned', 'in_progress', 'resolved', 'closed'];
+const STATUS_TABS = ['open', 'in_progress', 'resolved', 'closed'];
 
 export default function AgentMaintenance() {
-  const [tab, setTab] = useState('submitted');
+  const [tab, setTab] = useState('open');
   const [tickets, setTickets] = useState([]);
   const [selected, setSelected] = useState(null);
   const [note, setNote] = useState('');
@@ -14,7 +15,7 @@ export default function AgentMaintenance() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await maintenanceApi.list({ status: tab });
+      const res = await maintenanceApi.list({ status: tab.toUpperCase() });
       setTickets(res.data?.data || []);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
@@ -57,12 +58,12 @@ export default function AgentMaintenance() {
                   <td>{t.title}</td>
                   <td>{t.property?.title || 'N/A'}</td>
                   <td>{t.createdBy?.full_name ?? t.createdBy?.email}</td>
-                  <td><span className={`status-badge status-${t.priority}`}>{t.priority}</span></td>
-                  <td><span className={`status-badge status-${(t.status||'').toLowerCase()}`}>{t.status}</span></td>
+                  <td><span className={`shell-status-badge status-${t.priority}`}>{t.priority}</span></td>
+                  <td><span className={`shell-status-badge status-${(t.status||'').toLowerCase()}`}>{t.status}</span></td>
                   <td>
                     <button className="btn btn-sm btn-outline" onClick={() => setSelected(t)}>Detail</button>
-                    {t.status === 'submitted' && <button className="btn btn-sm btn-primary ml-1" onClick={() => updateStatus(t._id || t.id, 'assigned')}>Assign</button>}
-                    {t.status !== 'closed' && <button className="btn btn-sm btn-success ml-1" onClick={() => updateStatus(t._id || t.id, 'completed')}>Mark Resolved</button>}
+                    {t.status === 'OPEN' && <button className="btn btn-sm btn-primary ml-1" onClick={() => updateStatus(t._id || t.id, 'IN_PROGRESS')}>Start Progress</button>}
+                    {t.status !== 'CLOSED' && t.status !== 'RESOLVED' && <button className="btn btn-sm btn-success ml-1" onClick={() => updateStatus(t._id || t.id, 'RESOLVED')}>Mark Resolved</button>}
                   </td>
                 </tr>
               ))}

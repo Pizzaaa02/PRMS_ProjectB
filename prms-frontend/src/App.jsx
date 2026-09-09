@@ -264,6 +264,7 @@ function AppRoutes() {
         }
       >
         <Route index element={<LandlordDashboard />} />
+        <Route path="dashboard" element={<LandlordDashboard />} />
         <Route
           path="notifications"
           element={
@@ -296,7 +297,14 @@ function AppRoutes() {
         />
         <Route path="heatmap" element={<LandlordHeatmap />} />
         <Route path="categories" element={<LandlordCategories />} />
-        <Route path="maintenance" element={<LandlordSimplePage label="Maintenance Requests" />} />
+        <Route
+          path="maintenance"
+          element={
+            <SuspenseWrapper>
+              <LandlordMaintenance />
+            </SuspenseWrapper>
+          }
+        />
         <Route path="messages" element={<CommunicationHub />} />
         <Route path="settings" element={<Settings />} />
         <Route
@@ -322,6 +330,7 @@ function AppRoutes() {
         }
       >
         <Route index element={<TenantDashboard />} />
+        <Route path="dashboard" element={<TenantDashboard />} />
         <Route
           path="notifications"
           element={
@@ -369,6 +378,7 @@ function AppRoutes() {
         }
       >
         <Route index element={<AgentDashboard />} />
+        <Route path="dashboard" element={<AgentDashboard />} />
         <Route
           path="notifications"
           element={

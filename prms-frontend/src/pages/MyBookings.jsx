@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { getImageUrl } from '../config/imageHelper';
 import { bookingApi } from '../api/booking';
 import Modal from '../components/Modal';
+import './SharedPageShell.css';
 
 const ALL_TABS = ['active', 'upcoming', 'past', 'cancelled'];
 
@@ -88,12 +89,12 @@ export default function MyBookings() {
 
         {error && <div className="alert alert-danger mt-2">{error} <button className="btn btn-sm" onClick={load}>Retry</button></div>}
         {loading ? <p>Loading...</p> : bookings.length > 0 ? (
-          <div className="property-grid">
+          <div className="booking-property-grid">
             {bookings.map(b => (
-              <div key={b._id || b.id} className="property-card" onClick={() => setSelected(b)} style={{ cursor: 'pointer' }}>
-                <div className="property-card-header">
-                  <img className="property-card-img" src={getImageUrl(b.property?.images?.[0]?.url) || '/placeholder.png'} alt={b.property?.title || 'Booked property'} />
-                  <span className={`status-badge status-${(b.status || 'unknown').toLowerCase()}`}>{formatStatus(b.status)}</span>
+              <div key={b._id || b.id} className="booking-property-card" onClick={() => setSelected(b)} style={{ cursor: 'pointer' }}>
+                <div className="booking-property-card-header">
+                  <img className="booking-property-card-img" src={getImageUrl(b.property?.images?.[0]?.url) || '/placeholder.png'} alt={b.property?.title || 'Booked property'} />
+                  <span className={`shell-status-badge status-${(b.status || 'unknown').toLowerCase()}`}>{formatStatus(b.status)}</span>
                 </div>
                 <h3>{b.property?.title || b.property?.name || 'Property'}</h3>
                 <p>{formatDate(b.start_date)} → {formatDate(b.end_date)}</p>
