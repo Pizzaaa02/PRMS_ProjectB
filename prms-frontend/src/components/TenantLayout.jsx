@@ -14,6 +14,22 @@ import ProfileDropdown from './ProfileDropdown'
 import ThemeSwitcher from './ThemeSwitcher'
 import './TenantLayout.css'
 
+function getTopbarTitle(activePage) {
+  const titles = {
+    dashboard: 'My Tenancy Hub',
+    notifications: 'Notification Center',
+    properties: 'Browse Properties',
+    bookings: 'My Bookings',
+    payments: 'Payments',
+    maintenance: 'Maintenance',
+    messages: 'Messages',
+    profile: 'Profile',
+    settings: 'Settings',
+    help: 'Help Center',
+  }
+  return titles[activePage] || 'Tenant Portal'
+}
+
 function TenantLayout() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -90,7 +106,7 @@ function TenantLayout() {
           <div className="tenant-layout-brand" onClick={() => safeNavigate('/tenant')} data-customize-id="global.brand">
             <h2 data-customize-id="global.brand.title">PRMS</h2>
             <span></span>
-            <p data-customize-id="global.brand.subtitle">{role} Portal</p>
+            <p data-customize-id="global.brand.subtitle">{getTopbarTitle(activePage)}</p>
           </div>
 
           <form className="tenant-layout-search" data-customize-id="global.search" onSubmit={handleSearch}>

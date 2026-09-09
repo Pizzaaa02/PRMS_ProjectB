@@ -107,10 +107,14 @@
 
 .agent-layout-topbar {
   height: 88px;
+  position: sticky;
+  top: 0;
   padding: 0 36px;
-  display: flex;
+  display: grid;
+  grid-template-columns: 310px 430px 1fr;
   align-items: center;
-  justify-content: space-between;
+  gap: 30px;
+  z-index: 9;
   background: var(--card-bg);
   border-bottom: 2px solid var(--border-color);
 }
@@ -142,31 +146,31 @@
   color: var(--text-secondary);
 }
 
+.agent-layout-search {
+  height: 56px;
+  padding: 0 22px;
+  border: 2px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.agent-layout-search input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text-color);
+  font-size: 16px;
+}
+
 .agent-layout-top-actions {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 20px;
-}
-
-.agent-layout-avatar {
-  width: 48px;
-  height: 48px;
-  border: 4px solid var(--primary-color);
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  background: var(--primary-color);
-  color: white;
-  font-size: 15px;
-  font-weight: 900;
-  overflow: hidden;
-}
-
-.agent-layout-avatar-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 50%;
 }
 
 .agent-layout-content {
@@ -192,9 +196,15 @@
   .agent-layout-topbar {
     height: auto;
     padding: 22px;
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 18px;
+    grid-template-columns: 1fr;
+  }
+
+  .agent-layout-search {
+    width: 100%;
+  }
+
+  .agent-layout-top-actions {
+    justify-content: flex-start;
   }
 
   .agent-layout-brand {

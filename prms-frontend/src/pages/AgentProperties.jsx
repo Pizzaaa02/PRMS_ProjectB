@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { agentApi } from '../api/agents';
 import { getImageUrl } from '../config/imageHelper';
 import './SharedPageShell.css';
@@ -12,6 +12,8 @@ function formatAmount(amount) {
 
 export default function AgentProperties() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const searchTerm = (searchParams.get('search') || '').trim().toLowerCase();
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -31,6 +33,12 @@ export default function AgentProperties() {
 
   useEffect(() => { load(); }, [load]);
 
+  const visibleProperties = searchTerm
+    ? properties.filter((p) =>
+        (p.title || '').toLowerCase().includes(searchTerm) ||
+        (p.address || '').toLowerCase().includes(searchTerm))
+    : properties;
+
   return (
     <div className="page-shell">
       <div className="page-header">
@@ -43,9 +51,9 @@ export default function AgentProperties() {
 
         {loading ? (
           <p>Loading...</p>
-        ) : properties.length ? (
+        ) : visibleProperties.length ? (
           <div className="booking-property-grid">
-            {properties.map((p) => (
+            {visibleProperties.map((p) => (
               <div key={p.id} className="booking-property-card" onClick={() => navigate(`/agent/properties/${p.id}`)} style={{ cursor: 'pointer' }}>
                 <div className="booking-property-card-header">
                   <img className="booking-property-card-img" src={getImageUrl(p.images?.[0]?.url) || '/placeholder.png'} alt={p.title} />
@@ -59,7 +67,7 @@ export default function AgentProperties() {
           </div>
         ) : (
           <div className="bookings-empty-state">
-            <p>No properties assigned to you yet.</p>
+            <p>{searchTerm ? `No properties match "${searchParams.get('search')}".` : 'No properties assigned to you yet.'}</p>
           </div>
         )}
       </div>
