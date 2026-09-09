@@ -3,6 +3,12 @@ import { bookingApi } from '../api/booking';
 
 const ALL_TABS = ['pending', 'confirmed', 'active', 'completed', 'cancelled'];
 
+function formatAmount(amount) {
+  const value = Number(amount);
+  if (Number.isNaN(value)) return amount ? `RM ${amount}` : 'N/A';
+  return new Intl.NumberFormat('en-MY', { style: 'currency', currency: 'MYR', minimumFractionDigits: 2 }).format(value);
+}
+
 export default function LandlordBookings() {
   const [tab, setTab] = useState('pending');
   const [bookings, setBookings] = useState([]);
@@ -71,7 +77,7 @@ export default function LandlordBookings() {
                   <td>
                     <span className={`status-badge status-${(b.status||'').toLowerCase()}`}>{b.status}</span>
                   </td>
-                  <td>$ {b.totalAmount ?? b.monthlyRate}</td>
+                  <td>{formatAmount(b.totalAmount ?? b.monthlyRate)}</td>
                   <td>
                     {b.status === 'pending' && (
                       <>
