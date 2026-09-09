@@ -23,9 +23,31 @@ function formatStatus(status) {
   return String(status).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
+// The real BookingStatus enum is PENDING/CONFIRMED/CHECKED_IN/CHECKED_OUT/
+// CANCELLED - there's no single status that means "active" or "upcoming"
+// on its own, so those two tabs combine status with the booking's real
+// dates. Also: bookingApi.list() is the admin/landlord-only endpoint (a
+// Tenant gets a 403 from it) - myBookings() is the one scoped to the
+// caller's own bookings, and it doesn't take a status filter server-side,
+// so filtering happens here after fetching everything.
+function matchesTab(booking, tab) {
+  const status = (booking.status || '').toUpperCase();
+  if (tab === 'cancelled') return status === 'CANCELLED';
+  if (status === 'CANCELLED') return false;
+
+  const now = new Date();
+  const start = new Date(booking.start_date);
+  const end = new Date(booking.end_date);
+
+  if (tab === 'past') return status === 'CHECKED_OUT' || (!Number.isNaN(end.getTime()) && end < now);
+  if (tab === 'upcoming') return status === 'PENDING' || (status === 'CONFIRMED' && !Number.isNaN(start.getTime()) && start > now);
+  // 'active'
+  return status === 'CHECKED_IN' || (status === 'CONFIRMED' && !Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime()) && start <= now && now <= end);
+}
+
 export default function MyBookings() {
   const [tab, setTab] = useState('active');
-  const [bookings, setBookings] = useState([]);
+  const [allBookings, setAllBookings] = useState([]);
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -34,17 +56,19 @@ export default function MyBookings() {
     setLoading(true);
     setError('');
     try {
-      const res = await bookingApi.list({ status: tab === 'past' ? 'completed' : tab });
-      setBookings(res.data?.data || []);
+      const res = await bookingApi.myBookings();
+      setAllBookings(res.data?.data || []);
     } catch (e) {
       setError(e.response?.data?.message || e.response?.data?.error?.message || e.message || 'Failed to load bookings');
       console.error(e);
-      setBookings([]);
+      setAllBookings([]);
     }
     finally { setLoading(false); }
-  }, [tab]);
+  }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  const bookings = allBookings.filter(b => matchesTab(b, tab));
 
   return (
     <div className="page-shell">
@@ -72,7 +96,7 @@ export default function MyBookings() {
                   <span className={`status-badge status-${(b.status || 'unknown').toLowerCase()}`}>{formatStatus(b.status)}</span>
                 </div>
                 <h3>{b.property?.title || b.property?.name || 'Property'}</h3>
-                <p>{formatDate(b.checkIn || b.check_in)} → {formatDate(b.checkOut || b.check_out)}</p>
+                <p>{formatDate(b.start_date)} → {formatDate(b.end_date)}</p>
                 <p className="price">{formatAmount(b.totalAmount ?? b.monthlyRate)}</p>
                 <div className="card-footer">
                   <button type="button" className="btn-text" onClick={e => { e.stopPropagation(); setSelected(b); }}>View Details</button>
@@ -97,8 +121,8 @@ export default function MyBookings() {
         >
           <p><strong>Property:</strong> {selected.property?.title || selected.property?.name || 'N/A'}</p>
           <p><strong>Status:</strong> {formatStatus(selected.status)}</p>
-          <p><strong>Check In:</strong> {formatDate(selected.checkIn || selected.check_in)}</p>
-          <p><strong>Check Out:</strong> {formatDate(selected.checkOut || selected.check_out)}</p>
+          <p><strong>Check In:</strong> {formatDate(selected.start_date)}</p>
+          <p><strong>Check Out:</strong> {formatDate(selected.end_date)}</p>
           <p><strong>Amount:</strong> {formatAmount(selected.totalAmount ?? selected.monthlyRate)}</p>
         </Modal>
       )}

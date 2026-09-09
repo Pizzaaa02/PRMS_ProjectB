@@ -5,7 +5,14 @@ export async function getTickets(page = 1, limit = 10, userId?: string, status?:
   if (userId) where.userId = userId;
   if (status) where.status = status;
   const [tickets, total] = await Promise.all([
-    prisma.maintenanceTicket.findMany({ where, skip: (page - 1) * limit, take: limit, orderBy: { id: 'desc' }, include: { user: { select: { id: true, full_name: true, email: true } } } }),
+    prisma.maintenanceTicket.findMany({
+      // NOTE: no Prisma relation exists for propertyId -> Property on this
+      // model (just a bare string column, unlike Booking's real relation) -
+      // can't include it without a schema change, so ticket.property stays
+      // unavailable from this endpoint for now.
+      where, skip: (page - 1) * limit, take: limit, orderBy: { id: 'desc' },
+      include: { user: { select: { id: true, full_name: true, email: true } } },
+    }),
     prisma.maintenanceTicket.count({ where }),
   ]);
   return { tickets, total };

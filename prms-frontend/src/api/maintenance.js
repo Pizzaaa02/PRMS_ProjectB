@@ -4,6 +4,9 @@ export const maintenanceApi = {
   list(params) {
     return apiClient.get('/maintenance', { params });
   },
+  myTickets(params) {
+    return apiClient.get('/maintenance/my-tickets', { params });
+  },
   getById(id) {
     return apiClient.get(`/maintenance/${id}`);
   },

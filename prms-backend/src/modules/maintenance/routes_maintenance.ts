@@ -8,6 +8,7 @@ const ctrl = new MaintenanceController();
 
 router.use(authenticate);
 router.get('/', adminOrLandlord, ctrl.list);
+router.get('/my-tickets', ctrl.myTickets);
 router.get('/:id', ctrl.getById);
 router.post('/', ctrl.create);
 router.put('/:id', adminOrLandlord, ctrl.update);
