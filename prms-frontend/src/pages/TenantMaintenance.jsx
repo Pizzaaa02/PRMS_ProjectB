@@ -19,7 +19,11 @@ export default function TenantMaintenance() {
     try {
       const res = await maintenanceApi.list({ status: tab === 'all' ? undefined : tab });
       setTickets(res.data?.data || []);
-    } catch (e) { setError(e.message || 'Failed to load tickets'); console.error(e); }
+    } catch (e) {
+      setError(e.response?.data?.message || e.response?.data?.error?.message || e.message || 'Failed to load tickets');
+      console.error(e);
+      setTickets([]);
+    }
     finally { setLoading(false); }
   }, [tab]);
 
@@ -51,7 +55,7 @@ export default function TenantMaintenance() {
               {tickets.map(t => (
                 <tr key={t._id || t.id}>
                   <td>{t.title}</td>
-                  <td>{t.property?.title || 'N/A'}</td>
+                  <td>{t.property?.title || t.property?.name || 'N/A'}</td>
                   <td><span className={`status-badge status-${t.priority ?? 'medium'}`}>{t.priority ?? 'medium'}</span></td>
                   <td><span className={`status-badge status-${(t.status || '').toLowerCase()}`}>{t.status}</span></td>
                   <td>{new Date(t.createdAt || t.created_at).toLocaleDateString()}</td>
@@ -71,15 +75,19 @@ export default function TenantMaintenance() {
           <p><strong>Priority:</strong> {selected.priority} | <strong>Status:</strong> {selected.status}</p>
           <div className="notes mt-2">
             <h4>Notes</h4>
-            {(selected.notes || []).map((n, i) => (
-              <div key={i} className="note-item">{n.note || n.message}</div>
-            ))}
+            {selected.notes?.length ? (
+              selected.notes.map((n, i) => (
+                <div key={n.id || n._id || i} className="note-item">{n.note || n.message || 'No note content'}</div>
+              ))
+            ) : (
+              <p>No notes available.</p>
+            )}
           </div>
         </Modal>
       )}
 
       {/* Create Form */}
-      {formOpen && <MaintenanceForm onSuccess={() => setFormOpen(false)} />}
+      {formOpen && <MaintenanceForm onSuccess={() => { setFormOpen(false); load(); }} />}
     </div>
   );
 }
