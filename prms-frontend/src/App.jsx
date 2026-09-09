@@ -76,6 +76,8 @@ const TenantPayments = lazy(() => import('./pages/TenantPayments'));
 const TenantMaintenance = lazy(() => import('./pages/TenantMaintenance'));
 const LandlordMaintenance = lazy(() => import('./pages/LandlordMaintenance'));
 const AgentMaintenance = lazy(() => import('./pages/AgentMaintenance'));
+const AgentProperties = lazy(() => import('./pages/AgentProperties'));
+const AgentBookings = lazy(() => import('./pages/AgentBookings'));
 const AdminReports = lazy(() => import('./pages/AdminReports'));
 const AdminAuditLogs = lazy(() => import('./pages/AdminAuditLogs'));
 const NotificationCenter = lazy(() => import('./pages/NotificationCenter'));
@@ -388,9 +390,23 @@ function AppRoutes() {
           }
         />
         <Route path="profile" element={<Profile />} />
-        <Route path="properties" element={<AgentSimplePage label="Assigned Properties" />} />
+        <Route
+          path="properties"
+          element={
+            <SuspenseWrapper>
+              <AgentProperties />
+            </SuspenseWrapper>
+          }
+        />
         <Route path="properties/:id" element={<PropertyDetail />} />
-        <Route path="bookings" element={<AgentSimplePage label="My Bookings" />} />
+        <Route
+          path="bookings"
+          element={
+            <SuspenseWrapper>
+              <AgentBookings />
+            </SuspenseWrapper>
+          }
+        />
         <Route path="maintenance" element={<AgentMaintenance />} />
         <Route path="categories" element={<AgentCategories />} />
         <Route path="settings" element={<Settings />} />

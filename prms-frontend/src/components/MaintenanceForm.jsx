@@ -69,12 +69,11 @@ export default function MaintenanceForm({ onSuccess, initialData }) {
       // including it made every single ticket submission fail. Kept as a
       // form field/step for the UX flow, just not sent to the API.
       const data = { title: form.title, description: form.description, priority: form.priority.toUpperCase(), propertyId: form.propertyId || undefined };
+      // Photo attachments aren't sent - MaintenanceTicket has no photo
+      // storage on the backend (no field/relation for it), so there's
+      // nowhere for an upload to go yet. The picker stays for local
+      // preview only rather than silently failing ticket creation.
       const res = await maintenanceApi.createTicket(data);
-      if (form.files.length > 0) {
-        const fd = new FormData();
-        form.files.forEach(f => fd.append('photos', f));
-        await maintenanceApi.addPhoto(res.data.data._id || res.data.data.id, fd);
-      }
       onSuccess?.(res.data.data);
       setOpen(false);
     } catch (e) { alert(e.response?.data?.message || 'Failed to create ticket'); }

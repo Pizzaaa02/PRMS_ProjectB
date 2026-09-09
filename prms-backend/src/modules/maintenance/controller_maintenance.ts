@@ -42,6 +42,17 @@ export class MaintenanceController {
     } catch (error: any) { HELPERS(req).log({ action: 'VIEW_MY_TICKETS', entity: 'MaintenanceTicket', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(500).json({ success: false, error: { message: error.message } }); }
   };
 
+  assignedTickets = async (req: AuthRequest, res: Response) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 50;
+      const status = req.query.status as string | undefined;
+      const { tickets, total } = await maintenanceService.getAgentTickets(req.user!.id, page, limit, status);
+      HELPERS(req).log({ action: 'VIEW_ASSIGNED_TICKETS', entity: 'MaintenanceTicket', description: 'Viewed tickets for assigned properties' });
+      res.json(paginatedResponse(tickets, page, limit, total));
+    } catch (error: any) { HELPERS(req).log({ action: 'VIEW_ASSIGNED_TICKETS', entity: 'MaintenanceTicket', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(500).json({ success: false, error: { message: error.message } }); }
+  };
+
   create = async (req: AuthRequest, res: Response) => {
     try {
       const ticket = await maintenanceService.createTicket(req.body, req.user!.id);

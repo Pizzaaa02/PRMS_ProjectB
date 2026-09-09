@@ -12,6 +12,27 @@ export async function getBookings(page = 1, limit = 10, userId?: string, status?
   return { bookings, total };
 }
 
+export async function getAgentBookings(userId: string, page = 1, limit = 10, status?: string) {
+  const agent = await prisma.agent.findUnique({ where: { userId } });
+  if (!agent) return { bookings: [], total: 0 };
+
+  const assigned = await prisma.agentProperty.findMany({ where: { agentId: agent.id }, select: { propertyId: true } });
+  const propertyIds = assigned.map((a) => a.propertyId);
+  if (!propertyIds.length) return { bookings: [], total: 0 };
+
+  const where: any = { propertyId: { in: propertyIds } };
+  if (status) where.status = status.toUpperCase();
+
+  const [bookings, total] = await Promise.all([
+    prisma.booking.findMany({
+      where, skip: (page - 1) * limit, take: limit, orderBy: { id: 'desc' },
+      include: { user: { select: { id: true, full_name: true, email: true } }, property: true },
+    }),
+    prisma.booking.count({ where }),
+  ]);
+  return { bookings, total };
+}
+
 export async function getBookingById(id: string) {
   return prisma.booking.findUnique({ where: { id }, include: { user: true, property: true } });
 }

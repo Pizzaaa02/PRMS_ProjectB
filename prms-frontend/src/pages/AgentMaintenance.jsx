@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Modal from '../components/Modal';
 import { maintenanceApi } from '../api/maintenance';
+import { agentApi } from '../api/agents';
 import './SharedPageShell.css';
 
 const STATUS_TABS = ['open', 'in_progress', 'resolved', 'closed'];
@@ -8,14 +9,21 @@ const STATUS_TABS = ['open', 'in_progress', 'resolved', 'closed'];
 export default function AgentMaintenance() {
   const [tab, setTab] = useState('open');
   const [tickets, setTickets] = useState([]);
+  const [propertyNames, setPropertyNames] = useState({});
   const [selected, setSelected] = useState(null);
-  const [note, setNote] = useState('');
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    agentApi.myProperties({ limit: 100 }).then((res) => {
+      const items = res.data?.data || [];
+      setPropertyNames(Object.fromEntries(items.map((p) => [p.id, p.title])));
+    }).catch(() => {});
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await maintenanceApi.list({ status: tab.toUpperCase() });
+      const res = await maintenanceApi.assigned({ status: tab.toUpperCase() });
       setTickets(res.data?.data || []);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
@@ -25,11 +33,6 @@ export default function AgentMaintenance() {
 
   const updateStatus = async (id, status) => {
     try { await maintenanceApi.updateStatus(id, status); load(); } catch (e) { alert('Failed'); }
-  };
-
-  const addNote = async (id) => {
-    if (!note.trim()) return;
-    try { await maintenanceApi.addNote(id, { message: note }); setNote(''); load(); } catch (e) { alert('Failed'); }
   };
 
   return (
@@ -56,8 +59,8 @@ export default function AgentMaintenance() {
               {tickets.map(t => (
                 <tr key={t._id || t.id}>
                   <td>{t.title}</td>
-                  <td>{t.property?.title || 'N/A'}</td>
-                  <td>{t.createdBy?.full_name ?? t.createdBy?.email}</td>
+                  <td>{propertyNames[t.propertyId] || t.propertyId || 'N/A'}</td>
+                  <td>{t.user?.full_name ?? t.user?.email}</td>
                   <td><span className={`shell-status-badge status-${t.priority}`}>{t.priority}</span></td>
                   <td><span className={`shell-status-badge status-${(t.status||'').toLowerCase()}`}>{t.status}</span></td>
                   <td>
@@ -74,16 +77,11 @@ export default function AgentMaintenance() {
       </div>
 
       {selected && (
-        <Modal isOpen={!!selected} onOpenChange={v => setSelected(v ? null : selected)} title="Ticket Detail">
+        <Modal isOpen={!!selected} onOpenChange={() => setSelected(null)} title="Ticket Detail">
           <h3>{selected.title}</h3>
           <p>{selected.description}</p>
+          <p><strong>Property:</strong> {propertyNames[selected.propertyId] || selected.propertyId || 'N/A'}</p>
           <p><strong>Priority:</strong> {selected.priority} | <strong>Status:</strong> {selected.status}</p>
-          <h4 className="mt-2">Notes</h4>
-          {(selected.notes || []).map((n, i) => <div key={i} className="note-item">{n.note || n.message}</div>)}
-          <div className="flex mt-2" style={{ gap: 8 }}>
-            <input className="input" value={note} onChange={e => setNote(e.target.value)} placeholder="Add note…" />
-            <button className="btn btn-sm btn-primary" onClick={() => addNote(selected._id || selected.id)}>Add</button>
-          </div>
         </Modal>
       )}
     </div>

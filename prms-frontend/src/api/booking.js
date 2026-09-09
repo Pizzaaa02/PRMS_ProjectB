@@ -7,6 +7,9 @@ export const bookingApi = {
   myBookings(params) {
     return apiClient.get('/bookings/my-bookings', { params });
   },
+  assigned(params) {
+    return apiClient.get('/bookings/assigned', { params });
+  },
   getById(id) {
     return apiClient.get(`/bookings/${id}`);
   },
@@ -14,7 +17,7 @@ export const bookingApi = {
     return apiClient.post('/bookings', data);
   },
   update(id, data) {
-    return apiClient.patch(`/bookings/${id}`, data);
+    return apiClient.put(`/bookings/${id}`, data);
   },
   confirm(id) {
     return apiClient.patch(`/bookings/${id}/confirm`);
@@ -37,6 +40,6 @@ export const bookingApi = {
    * Returns { hasOverlap: boolean, conflictingBookings: Booking[] }
    */
   checkOverlap(params) {
-    return apiClient.get('/booking/check-overlap', { params });
+    return apiClient.get('/bookings/check-overlap', { params });
   },
 };

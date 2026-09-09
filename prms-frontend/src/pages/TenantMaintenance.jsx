@@ -74,7 +74,7 @@ export default function TenantMaintenance() {
 
       {/* Detail Modal */}
       {selected && (
-        <Modal isOpen={!!selected} onOpenChange={v => setSelected(v ? null : selected)} title="Ticket Detail">
+        <Modal isOpen={!!selected} onOpenChange={() => setSelected(null)} title="Ticket Detail">
           <p>{selected.description}</p>
           <p><strong>Priority:</strong> {selected.priority} | <strong>Status:</strong> {selected.status}</p>
           <div className="notes mt-2">
