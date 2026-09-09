@@ -10,6 +10,9 @@ export const bookingApi = {
   assigned(params) {
     return apiClient.get('/bookings/assigned', { params });
   },
+  landlordBookings(params) {
+    return apiClient.get('/bookings/landlord', { params });
+  },
   getById(id) {
     return apiClient.get(`/bookings/${id}`);
   },

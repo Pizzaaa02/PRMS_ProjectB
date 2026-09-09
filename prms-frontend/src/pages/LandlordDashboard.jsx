@@ -51,7 +51,7 @@ function LandlordDashboard() {
     try {
       /* ---- Booking stats (pending / confirmed / cancelled counts) ---- */
       try {
-        const res = await bookingApi.list({ limit: 100 })
+        const res = await bookingApi.landlordBookings({ limit: 100 })
         const bookings = res?.data?.data ?? []
         const pending = bookings.filter((b) => b.status === 'PENDING').length
         const confirmed = bookings.filter((b) => b.status === 'CONFIRMED').length
@@ -133,7 +133,11 @@ function LandlordDashboard() {
       prev.map((a) => (a.id === bookingId ? { ...a, approving: true, approvalMsg: '' } : a))
     )
     try {
-      await bookingApi.updateStatus(bookingId, status)
+      if (status === 'CONFIRMED') {
+        await bookingApi.confirm(bookingId)
+      } else {
+        await bookingApi.reject(bookingId)
+      }
       setApprovals((prev) =>
         prev.map((a) =>
           a.id === bookingId

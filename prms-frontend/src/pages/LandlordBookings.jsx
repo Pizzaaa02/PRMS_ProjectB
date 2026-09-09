@@ -27,7 +27,7 @@ export default function LandlordBookings() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await bookingApi.myBookings();
+      const res = await bookingApi.landlordBookings();
       setBookings(res.data?.data || []);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }

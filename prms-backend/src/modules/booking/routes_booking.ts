@@ -12,6 +12,7 @@ router.get('/my-bookings', authenticate, ctrl.myBookings);
 // '/summary', '/check-overlap', and '/assigned' as an :id value and they
 // become unreachable.
 router.get('/assigned', authenticate, ctrl.agentBookings);
+router.get('/landlord', authenticate, ctrl.landlordBookings);
 router.get('/summary', authenticate, ctrl.getSummary);
 router.get('/check-overlap', authenticate, ctrl.checkOverlap);
 router.get('/:id', authenticate, ctrl.getById);
