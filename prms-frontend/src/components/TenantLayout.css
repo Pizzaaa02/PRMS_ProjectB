@@ -217,7 +217,7 @@
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: var(--text-primary);
+  background: var(--primary-color);
   color: white;
   font-size: 15px;
   font-weight: 900;
