@@ -419,6 +419,14 @@ function AppRoutes() {
           }
         />
         <Route
+          path="customizer"
+          element={
+            <SuspenseWrapper>
+              <WebsiteCustomizer />
+            </SuspenseWrapper>
+          }
+        />
+        <Route
           path="finance"
           element={
             <SuspenseWrapper>
