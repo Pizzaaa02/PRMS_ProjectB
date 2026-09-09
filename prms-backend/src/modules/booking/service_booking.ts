@@ -38,7 +38,11 @@ export async function cancelBooking(id: string) {
 }
 
 export async function getMyBookings(userId: string) {
-  return prisma.booking.findMany({ where: { userId }, include: { property: true } });
+  // Nested include so property.images actually comes through - a bare
+  // `property: true` leaves that nested relation empty, so MyBookings.jsx
+  // would always fall back to the placeholder image even when the
+  // property has real photos.
+  return prisma.booking.findMany({ where: { userId }, include: { property: { include: { images: true } } } });
 }
 
 export async function checkOverlap(
