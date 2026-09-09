@@ -130,11 +130,11 @@ function TenantDashboard() {
         </div>
 
         <div className="landlord-page-actions">
-          <button type="button" className="btn-outline">
+          <button type="button" className="btn-outline" onClick={() => navigate(ROUTES.tenant.maintenance)}>
             <Wrench size={18} />
             Requests
           </button>
-          <button type="button" className="btn-primary-solid">
+          <button type="button" className="btn-primary-solid" onClick={() => navigate(ROUTES.tenant.payments)}>
             <WalletCards size={18} />
             Pay Now
           </button>
@@ -201,7 +201,7 @@ function TenantDashboard() {
           <button
             type="button"
             className="btn-outline-sm"
-            onClick={() => navigate(ROUTES.tenant.properties)}
+            onClick={() => navigate(ROUTES.tenant.bookings)}
           >
             View All
           </button>
