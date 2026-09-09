@@ -411,22 +411,6 @@ function AppRoutes() {
         <Route path="categories" element={<AgentCategories />} />
         <Route path="settings" element={<Settings />} />
         <Route
-          path="settings/customizer"
-          element={
-            <SuspenseWrapper>
-              <WebsiteCustomizer />
-            </SuspenseWrapper>
-          }
-        />
-        <Route
-          path="customizer"
-          element={
-            <SuspenseWrapper>
-              <WebsiteCustomizer />
-            </SuspenseWrapper>
-          }
-        />
-        <Route
           path="finance"
           element={
             <SuspenseWrapper>

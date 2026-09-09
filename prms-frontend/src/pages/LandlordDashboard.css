@@ -176,7 +176,7 @@
 
 /* ---- Revenue Panel ---- */
 .revenue-panel {
-  min-height: 360px;
+  min-height: 260px;
 }
 
 .panel-title {
@@ -202,7 +202,7 @@
 
 /* ---- Bar chart ---- */
 .bar-chart {
-  height: 220px;
+  height: 160px;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;

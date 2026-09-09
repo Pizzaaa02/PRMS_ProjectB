@@ -8,16 +8,24 @@
 
 .landlord-layout-sidebar {
   width: 96px;
-  min-height: 100vh;
+  height: 100vh;
+  position: sticky;
+  top: 0;
   padding: 34px 18px;
   background: var(--header-background-color);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 22px;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none;
   transition: width 0.28s ease, padding 0.28s ease;
   z-index: 10;
+}
+
+.landlord-layout-sidebar::-webkit-scrollbar {
+  display: none;
 }
 
 .landlord-layout-sidebar:hover {

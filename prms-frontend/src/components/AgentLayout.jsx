@@ -21,7 +21,6 @@ function getTopbarTitle(activePage) {
     categories: 'Property Categories',
     profile: 'Profile',
     settings: 'Settings',
-    customizer: 'Website Customizer',
     finance: 'Finance',
     reports: 'Reports',
     help: 'Help Center',
