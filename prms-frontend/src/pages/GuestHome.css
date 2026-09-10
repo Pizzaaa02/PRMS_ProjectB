@@ -28,7 +28,13 @@
   font-family: Georgia, serif;
   font-size: 19px;
   font-weight: 800;
-  color: var(--on-primary);
+  /* Was var(--on-primary), a light-only color meant for a dark/colored
+     navbar. The navbar's real default is the theme-aware translucent
+     glass background (--navbar-bg-glass), so this needs to be
+     theme-aware too, matching .guest-signin right next to it - light
+     text on that white-ish glass background in light mode was
+     invisible. */
+  color: var(--text-primary);
   text-decoration: none;
   display: flex;
   align-items: center;

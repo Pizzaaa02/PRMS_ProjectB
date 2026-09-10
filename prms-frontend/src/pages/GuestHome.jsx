@@ -66,18 +66,28 @@ function GuestHome() {
   const heroAlignment = settings?.homepage_hero_text_alignment || 'left'
 
   /* Header / Footer background colors.
-     Picked per active theme (light_* / dark_* customizer fields) so a
-     light-only override doesn't stay pinned on in dark mode. The legacy
-     `settings?.header_background_color` field predates dark mode and only
-     ever meant "light", so it's excluded once dark mode is active — no
-     hardcoded fallback either, so with nothing configured the navbar keeps
-     its own theme-aware CSS background (var(--navbar-bg-glass)). */
-  const headerBg = theme === 'dark'
-    ? (branding.colors?.dark_header_bg || null)
-    : (branding.colors?.light_header_bg || settings?.header_background_color || null)
-  const footerBg = theme === 'dark'
-    ? (branding.colors?.dark_footer_bg || '#0f172a')
-    : (branding.colors?.light_footer_bg || settings?.footer_background_color || '#0f172a')
+     The Website Customizer is per-account now - a real config row (with a
+     real `id`) only exists once someone is logged in and has viewed/saved
+     it. An anonymous visitor gets back the plain guest defaults (id:
+     null) from BrandingContext, which always has *some* color in every
+     field - so checking those fields for truthiness can never actually
+     detect "unconfigured" anymore. Gate on `colors?.id` instead: only a
+     genuinely-customized account's colors get applied here; a guest
+     always falls through to the navbar's own default CSS background
+     (var(--navbar-bg-glass)), which is designed to read correctly in
+     both light and dark mode regardless of what any account's own
+     customizer happens to be set to. */
+  const hasRealCustomization = !!branding.colors?.id
+  const headerBg = !hasRealCustomization
+    ? null
+    : theme === 'dark'
+      ? (branding.colors?.dark_header_bg || null)
+      : (branding.colors?.light_header_bg || settings?.header_background_color || null)
+  const footerBg = !hasRealCustomization
+    ? '#0f172a'
+    : theme === 'dark'
+      ? (branding.colors?.dark_footer_bg || '#0f172a')
+      : (branding.colors?.light_footer_bg || settings?.footer_background_color || '#0f172a')
 
   /* Footer copyright */
   const footerCopyright = settings?.footer_copyright_text || '© 2024 PRMS Malaysia. All rights reserved.'
