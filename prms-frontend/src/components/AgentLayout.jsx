@@ -27,7 +27,7 @@ function getTopbarTitle(activePage) {
     settings: 'Settings',
     finance: 'Finance',
     reports: 'Reports',
-    customizer: 'Website Customizer',
+    customizer: 'System Preferences',
     help: 'Help Center',
   }
   return titles[activePage] || 'Agent Dashboard'

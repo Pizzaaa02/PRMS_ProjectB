@@ -321,7 +321,7 @@ export default function WebsiteCustomizer() {
     <div className="customizer-page">
       {/* Header */}
       <div className="customizer-header">
-        <h1>Website Customizer</h1>
+        <h1>System Preferences</h1>
         <div className="customizer-actions">
           <button type="button" onClick={handleReset} disabled={saving}>Reset</button>
           <button type="button" className="btn-primary" onClick={handleSave} disabled={saving || !dirty}>

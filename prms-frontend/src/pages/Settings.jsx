@@ -99,7 +99,7 @@ function Settings() {
             <Building2 size={28} />
           </div>
 
-          <h2>Website Customizer</h2>
+          <h2>System Preferences</h2>
           <p>Personalize your own colors, logo, and company name.</p>
 
           <button type="button" onClick={() => navigate(customizerPath)}>Manage Preferences</button>
