@@ -6,15 +6,19 @@ import path from 'path';
 const LOGOS_DIR = path.join(__dirname, '..', '..', '..', 'public', 'images');
 fs.mkdirSync(LOGOS_DIR, { recursive: true });
 
+// Matches the app's actual built-in navy/purple branding (styles.css's
+// :root tokens: --header-background-color/--footer-background-color
+// #0f172a, --primary-color #8a2be2), not an arbitrary theme - an account
+// that never opens the customizer should look exactly like it always did.
 const DEFAULT_CONFIG = {
   company_name: 'PRMS',
   logo_url: null as string | null,
   logo_thumb_url: null as string | null,
-  light_header_bg: '#ffffff',
-  light_sidebar_bg: '#ffffff',
-  light_body_bg: '#f9fafb',
-  light_footer_bg: '#111827',
-  light_accent_color: '#2563eb',
+  light_header_bg: '#0f172a',
+  light_sidebar_bg: '#0f172a',
+  light_body_bg: '#f3f6fb',
+  light_footer_bg: '#0f172a',
+  light_accent_color: '#8a2be2',
   light_card_bg: '#ffffff',
   dark_header_bg: '#1f2937',
   dark_sidebar_bg: '#1f2937',

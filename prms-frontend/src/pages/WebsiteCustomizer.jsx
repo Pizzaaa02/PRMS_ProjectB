@@ -5,15 +5,20 @@ import './WebsiteCustomizer.css';
 
 /* ── defaults ──
    Only Light Mode is customizable - Dark Mode always keeps the app's own
-   built-in dark styling, so there are no dark_* fields here. */
+   built-in dark styling, so there are no dark_* fields here.
+
+   These match the app's actual built-in navy/purple branding (styles.css's
+   :root tokens), not an arbitrary placeholder theme - an account that
+   never touches the customizer, or hits Reset, should look exactly like
+   the app always did rather than switching to some other default look. */
 const DEFAULTS = {
   company_name: 'PRMS',
   logo_url: '',
-  light_header_bg: '#ffffff',
-  light_sidebar_bg: '#ffffff',
-  light_body_bg: '#f9fafb',
-  light_footer_bg: '#111827',
-  light_accent_color: '#2563eb',
+  light_header_bg: '#0f172a',
+  light_sidebar_bg: '#0f172a',
+  light_body_bg: '#f3f6fb',
+  light_footer_bg: '#0f172a',
+  light_accent_color: '#8a2be2',
   light_card_bg: '#ffffff',
 };
 

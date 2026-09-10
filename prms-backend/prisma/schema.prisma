@@ -417,11 +417,13 @@ model WebsiteCustomizer {
   company_name   String  @default("PRMS")
   logo_url       String?
   logo_thumb_url String?
-  // Light mode colors
-  light_header_bg    String @default("#FFFFFF")
-  light_sidebar_bg   String @default("#FFFFFF")
-  light_body_bg      String @default("#F8FAFC")
-  light_footer_bg    String @default("#F1F5F9")
+  // Light mode colors - default to the app's actual built-in navy/purple
+  // branding (matching styles.css's :root tokens), not an arbitrary theme,
+  // so an account that never touches the customizer looks unchanged.
+  light_header_bg    String @default("#0F172A")
+  light_sidebar_bg   String @default("#0F172A")
+  light_body_bg      String @default("#F3F6FB")
+  light_footer_bg    String @default("#0F172A")
   light_accent_color String @default("#8A2BE2")
   light_card_bg    String @default("#FFFFFF")
   // Dark mode colors
