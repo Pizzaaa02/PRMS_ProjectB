@@ -119,14 +119,16 @@
 .landlord-layout-brand {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 14px;
   cursor: pointer;
+  min-width: 0;
 }
 
 .landlord-layout-brand-logo {
   height: 32px;
-  max-width: 120px;
+  max-width: 40px;
   object-fit: contain;
+  flex-shrink: 0;
 }
 
 .landlord-layout-brand h2 {
@@ -134,12 +136,18 @@
   font-size: 28px;
   color: var(--text-color);
   letter-spacing: -0.6px;
+  min-width: 0;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .landlord-layout-brand span {
   width: 1px;
   height: 34px;
   background: var(--border-color);
+  flex-shrink: 0;
 }
 
 .landlord-layout-brand p {
@@ -147,6 +155,10 @@
   color: var(--text-secondary);
   font-size: 17px;
   font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .landlord-layout-search {
