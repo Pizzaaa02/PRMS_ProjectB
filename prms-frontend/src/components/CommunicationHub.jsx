@@ -11,8 +11,14 @@ import {
   MessagesSquare,
   ChevronLeft,
   SquarePen,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 import './CommunicationHub.css';
+
+// Matches the backend's EDIT_WINDOW_MS - messages can only be edited or
+// unsent within 2 minutes of being sent.
+const EDIT_WINDOW_MS = 2 * 60 * 1000;
 
 function CommunicationHub() {
   const { user } = useAuth();
@@ -24,13 +30,36 @@ function CommunicationHub() {
   const [composing, setComposing] = useState(false);
   const [contacts, setContacts] = useState([]);
   const [contactsLoading, setContactsLoading] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [editText, setEditText] = useState('');
+  const [confirmUnsendId, setConfirmUnsendId] = useState(null);
+  const [actionError, setActionError] = useState('');
+  // Ticks once a second while a thread is open so the edit/unsend actions
+  // disappear live once a message crosses the 2-minute window, instead of
+  // only updating on the next 5s poll.
+  const [nowTick, setNowTick] = useState(() => Date.now());
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
     loadConversations();
   }, []);
 
+  // Silent refresh of the conversation list itself - without this, a new
+  // incoming message (or a brand-new conversation) only ever showed up
+  // after a manual page reload, since loadConversations() above only ran
+  // once on mount. loadConversations() doesn't touch `loading`, so this
+  // never flashes the full-page loading state on later polls. Sorting by
+  // lastAt already existed in loadConversations, so re-running it on a
+  // timer is also what makes the most recent message float to the top.
   useEffect(() => {
+    const interval = setInterval(loadConversations, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    setEditingId(null);
+    setConfirmUnsendId(null);
+    setActionError('');
     if (selectedConv?.id) {
       loadMessages();
     } else if (selectedConv) {
@@ -44,6 +73,14 @@ function CommunicationHub() {
   useEffect(() => {
     if (!selectedConv?.id) return;
     const interval = setInterval(loadMessages, 5000);
+    return () => clearInterval(interval);
+  }, [selectedConv?.id]);
+
+  // Drives the 2-minute edit/unsend cutoff live instead of only on the
+  // next 5s message poll.
+  useEffect(() => {
+    if (!selectedConv?.id) return;
+    const interval = setInterval(() => setNowTick(Date.now()), 1000);
     return () => clearInterval(interval);
   }, [selectedConv?.id]);
 
@@ -126,7 +163,7 @@ function CommunicationHub() {
           convMap[cid] = {
             id: cid,
             partner: other || { full_name: 'User' },
-            lastMessage: m.content,
+            lastMessage: m.deleted ? 'This message was unsent' : m.content,
             lastAt: m.created_at,
             unread: isUnreadForMe ? 1 : 0,
           };
@@ -195,6 +232,45 @@ function CommunicationHub() {
     }
   };
 
+  function canModify(msg) {
+    return msg.senderId === user?.id && !msg.deleted && (nowTick - new Date(msg.created_at).getTime()) < EDIT_WINDOW_MS;
+  }
+
+  function startEdit(msg) {
+    setConfirmUnsendId(null);
+    setActionError('');
+    setEditingId(msg.id);
+    setEditText(msg.content);
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditText('');
+  }
+
+  async function saveEdit(msg) {
+    if (!editText.trim()) return;
+    try {
+      await communicationApi.editMessage(msg.id, editText.trim());
+      setEditingId(null);
+      setEditText('');
+      loadMessages();
+    } catch (e) {
+      setActionError(e.response?.data?.error?.message || 'Failed to edit message.');
+    }
+  }
+
+  async function confirmUnsend(msg) {
+    try {
+      await communicationApi.unsendMessage(msg.id);
+      setConfirmUnsendId(null);
+      loadMessages();
+    } catch (e) {
+      setActionError(e.response?.data?.error?.message || 'Failed to unsend message.');
+      setConfirmUnsendId(null);
+    }
+  }
+
   if (loading) return <div className="comm-loading">Loading messages...</div>;
 
   return (
@@ -254,9 +330,17 @@ function CommunicationHub() {
             </div>
 
             <div className="comm-messages">
+              {actionError && (
+                <div className="comm-action-error">
+                  {actionError}
+                  <button type="button" onClick={() => setActionError('')}>✕</button>
+                </div>
+              )}
               <AnimatePresence>
                 {messages.map((msg) => {
                   const isMe = msg.senderId === user?.id;
+                  const isEditing = editingId === msg.id;
+                  const modifiable = isMe && canModify(msg);
                   return (
                     <motion.div
                       key={msg.id}
@@ -264,15 +348,56 @@ function CommunicationHub() {
                       initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
                     >
-                      <div className="comm-msg-text">{msg.content}</div>
+                      {isEditing ? (
+                        <div className="comm-msg-edit">
+                          <input
+                            type="text"
+                            className="comm-msg-edit-input"
+                            value={editText}
+                            autoFocus
+                            onChange={(e) => setEditText(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') saveEdit(msg);
+                              if (e.key === 'Escape') cancelEdit();
+                            }}
+                          />
+                          <div className="comm-msg-edit-actions">
+                            <button type="button" onClick={() => saveEdit(msg)}>Save</button>
+                            <button type="button" onClick={cancelEdit}>Cancel</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="comm-msg-text">
+                          {msg.deleted ? <em>This message was unsent</em> : msg.content}
+                        </div>
+                      )}
+
                       <div className="comm-msg-time">
                         {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {msg.edited && !msg.deleted && ' · Edited'}
                         {isMe && (
                           <span className={`comm-msg-status ${msg.isRead ? 'seen' : ''}`}>
                             {msg.isRead ? ' · Seen' : ' · Sent'}
                           </span>
                         )}
                       </div>
+
+                      {modifiable && !isEditing && (
+                        <div className="comm-msg-actions">
+                          {confirmUnsendId === msg.id ? (
+                            <>
+                              <span>Unsend this message?</span>
+                              <button type="button" onClick={() => confirmUnsend(msg)}>Yes</button>
+                              <button type="button" onClick={() => setConfirmUnsendId(null)}>No</button>
+                            </>
+                          ) : (
+                            <>
+                              <button type="button" onClick={() => startEdit(msg)} title="Edit"><Pencil size={12} /> Edit</button>
+                              <button type="button" onClick={() => setConfirmUnsendId(msg.id)} title="Unsend"><Trash2 size={12} /> Unsend</button>
+                            </>
+                          )}
+                        </div>
+                      )}
                     </motion.div>
                   );
                 })}

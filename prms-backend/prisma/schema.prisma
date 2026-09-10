@@ -270,6 +270,8 @@ model Message {
   content        String
   conversationId String
   isRead         Boolean  @default(false)
+  edited         Boolean  @default(false)
+  deleted        Boolean  @default(false)
   created_at     DateTime @default(now())
 
   @@index([conversationId])

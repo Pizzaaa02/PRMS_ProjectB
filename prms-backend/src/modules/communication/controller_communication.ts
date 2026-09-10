@@ -31,4 +31,18 @@ export class CommunicationController {
       res.json(successResponse(null, 'Message marked as read'));
     } catch (error: any) { res.status(400).json({ success: false, error: { message: error.message } }); }
   };
+
+  editMessage = async (req: AuthRequest, res: Response) => {
+    try {
+      const message = await communicationService.editMessage(String(req.params.id), req.user!.id, String(req.body.content || ''));
+      res.json(successResponse(message, 'Message updated'));
+    } catch (error: any) { res.status(400).json({ success: false, error: { message: error.message } }); }
+  };
+
+  unsendMessage = async (req: AuthRequest, res: Response) => {
+    try {
+      await communicationService.unsendMessage(String(req.params.id), req.user!.id);
+      res.json(successResponse(null, 'Message unsent'));
+    } catch (error: any) { res.status(400).json({ success: false, error: { message: error.message } }); }
+  };
 }

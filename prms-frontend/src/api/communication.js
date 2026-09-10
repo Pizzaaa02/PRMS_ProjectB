@@ -15,6 +15,12 @@ export const communicationApi = {
   markMessageRead(id) {
     return apiClient.patch(`/communication/${id}/mark-read`);
   },
+  editMessage(id, content) {
+    return apiClient.patch(`/communication/${id}`, { content });
+  },
+  unsendMessage(id) {
+    return apiClient.delete(`/communication/${id}`);
+  },
 
   /* Notifications -- routes live under /admin */
   getNotifications(params) {
