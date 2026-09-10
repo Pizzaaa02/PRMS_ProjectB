@@ -17,11 +17,19 @@ const HELPERS = (req: Request) => {
 };
 
 export class MaintenanceController {
-  list = async (req: Request, res: Response) => {
+  // Landlord (adminOrLandlord-gated, alongside Admin) must only see tickets
+  // on properties they actually own - getTickets() has no such filter, so
+  // a Landlord hitting this unfiltered was seeing every tenant's tickets
+  // system-wide. Admin still gets the unfiltered view; status/scope query
+  // params (previously accepted but silently ignored) now actually apply.
+  list = async (req: AuthRequest, res: Response) => {
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
-      const { tickets, total } = await maintenanceService.getTickets(page, limit);
+      const status = req.query.status as string | undefined;
+      const { tickets, total } = req.user?.role === 'Landlord'
+        ? await maintenanceService.getLandlordTickets(req.user.id, page, limit, status)
+        : await maintenanceService.getTickets(page, limit, undefined, status);
       HELPERS(req).log({ action: 'VIEW_TICKETS', entity: 'MaintenanceTicket', description: `Listed tickets (page ${page})` });
       res.json(paginatedResponse(tickets, page, limit, total));
     } catch (error: any) { HELPERS(req).log({ action: 'VIEW_TICKETS', entity: 'MaintenanceTicket', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(500).json({ success: false, error: { message: error.message } }); }

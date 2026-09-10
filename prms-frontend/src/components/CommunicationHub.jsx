@@ -39,6 +39,14 @@ function CommunicationHub() {
     }
   }, [selectedConv]);
 
+  // Poll while a thread is open so "Sent" flips to "Seen" once the other
+  // side actually reads it, without needing a websocket.
+  useEffect(() => {
+    if (!selectedConv?.id) return;
+    const interval = setInterval(loadMessages, 5000);
+    return () => clearInterval(interval);
+  }, [selectedConv?.id]);
+
   async function openCompose() {
     setComposing(true);
     setContactsLoading(true);
@@ -140,8 +148,10 @@ function CommunicationHub() {
     try {
       const res = await communicationApi.getMessages(selectedConv.id);
       setMessages(res.data?.data ?? []);
-      // Mark all as read
-      const unread = (res.data?.data ?? []).filter((m) => !m.isRead);
+      // Mark as read only the messages sent TO me - marking messages I sent
+      // myself would flip them to "read" the instant I load my own thread,
+      // before the other side has actually seen them.
+      const unread = (res.data?.data ?? []).filter((m) => !m.isRead && m.receiverId === user?.id);
       await Promise.all(
         unread.map((m) => communicationApi.markMessageRead(m.id))
       );
@@ -257,6 +267,11 @@ function CommunicationHub() {
                       <div className="comm-msg-text">{msg.content}</div>
                       <div className="comm-msg-time">
                         {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {isMe && (
+                          <span className={`comm-msg-status ${msg.isRead ? 'seen' : ''}`}>
+                            {msg.isRead ? ' · Seen' : ' · Sent'}
+                          </span>
+                        )}
                       </div>
                     </motion.div>
                   );

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Modal from '../components/Modal';
 import MaintenanceForm from '../components/MaintenanceForm';
 import { maintenanceApi } from '../api/maintenance';
+import { propertyApi } from '../api/property';
 import './SharedPageShell.css';
 
 // Matches the real MaintenanceStatus enum (OPEN/IN_PROGRESS/RESOLVED/CLOSED)
@@ -12,10 +13,21 @@ const STATUS_TABS = ['all', 'open', 'in_progress', 'resolved', 'closed'];
 export default function TenantMaintenance() {
   const [tab, setTab] = useState('all');
   const [tickets, setTickets] = useState([]);
+  const [propertyNames, setPropertyNames] = useState({});
   const [selected, setSelected] = useState(null);
   const [formOpen, setFormOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    // Tickets only store a bare propertyId (no real relation) - resolve
+    // names client-side the same way Agent/Landlord's maintenance pages do.
+    propertyApi.list({ limit: 100 }).then((res) => {
+      const data = res.data?.data;
+      const items = Array.isArray(data) ? data : data?.properties || [];
+      setPropertyNames(Object.fromEntries(items.map((p) => [p.id, p.title])));
+    }).catch(() => {});
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -59,7 +71,7 @@ export default function TenantMaintenance() {
               {tickets.map(t => (
                 <tr key={t._id || t.id}>
                   <td>{t.title}</td>
-                  <td>{t.property?.title || t.property?.name || 'N/A'}</td>
+                  <td>{propertyNames[t.propertyId] || t.propertyId || 'N/A'}</td>
                   <td><span className={`shell-status-badge status-${(t.priority || 'medium').toLowerCase()}`}>{t.priority || 'Medium'}</span></td>
                   <td><span className={`shell-status-badge status-${(t.status || '').toLowerCase()}`}>{t.status}</span></td>
                   <td>{new Date(t.createdAt || t.created_at).toLocaleDateString()}</td>
@@ -76,6 +88,7 @@ export default function TenantMaintenance() {
       {selected && (
         <Modal isOpen={!!selected} onOpenChange={() => setSelected(null)} title="Ticket Detail">
           <p>{selected.description}</p>
+          <p><strong>Property:</strong> {propertyNames[selected.propertyId] || selected.propertyId || 'N/A'}</p>
           <p><strong>Priority:</strong> {selected.priority} | <strong>Status:</strong> {selected.status}</p>
           <div className="notes mt-2">
             <h4>Notes</h4>

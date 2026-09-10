@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { maintenanceApi } from '../api/maintenance'
+import { propertyApi } from '../api/property'
 import './AdminSimplePage.css'
 
 const subPages = {
@@ -15,9 +16,9 @@ const subPages = {
     icon: Wrench,
     cardLabels: ['Open Tickets', 'High Priority', 'In Progress', 'Completed'],
     columns: ['Ticket', 'Property', 'Issue', 'Priority', 'Action'],
-    renderRow: (m) => [
+    renderRow: (m, i, ctx) => [
       m.id ? 'TCK-' + m.id.slice(-4) : '—',
-      m.propertyTitle || m.propertyId ? m.propertyTitle || 'Property' : '—',
+      ctx?.propertyNames?.[m.propertyId] || m.propertyId || '—',
       m.issue || m.description || '—',
       m.priority || 'MEDIUM',
       m.status === 'OPEN' ? 'Assign' : 'View',
@@ -40,9 +41,21 @@ export default function AdminSimplePage({ type = 'maintenance' }) {
 
   const [cards, setCards] = useState(cfg.cardLabels.map((l) => ({ label: l, value: '...' })))
   const [rows, setRows] = useState([])
+  const [propertyNames, setPropertyNames] = useState({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
+
+  useEffect(() => {
+    if (type !== 'maintenance') return
+    // Maintenance tickets only store a bare propertyId (no real relation) -
+    // resolve names client-side the same way the Agent/Landlord pages do.
+    propertyApi.list({ limit: 100 }).then((res) => {
+      const data = res.data?.data
+      const items = Array.isArray(data) ? data : data?.properties || []
+      setPropertyNames(Object.fromEntries(items.map((p) => [p.id, p.title])))
+    }).catch(() => {})
+  }, [type])
 
   useEffect(() => {
     let cancelled = false
@@ -86,7 +99,7 @@ export default function AdminSimplePage({ type = 'maintenance' }) {
   const filteredRows = rows.filter((row) => {
     const q = search.trim().toLowerCase()
     if (!q) return true
-    const cells = cfg.renderRow ? cfg.renderRow(row) : row
+    const cells = cfg.renderRow ? cfg.renderRow(row, 0, { propertyNames }) : row
     if (!cells) return false
     return cells.some((c) => String(c).toLowerCase().includes(q))
   })
@@ -152,7 +165,7 @@ export default function AdminSimplePage({ type = 'maintenance' }) {
             )}
 
             {filteredRows.map((row, i) => {
-              const cells = cfg.renderRow ? cfg.renderRow(row, i) : row
+              const cells = cfg.renderRow ? cfg.renderRow(row, i, { propertyNames }) : row
               if (!cells) return null
               return (
                 <div

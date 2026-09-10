@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Modal from '../components/Modal';
 import { maintenanceApi } from '../api/maintenance';
+import { propertyApi } from '../api/property';
 import './SharedPageShell.css';
 
 const STATUS_TABS = ['all', 'in_progress', 'resolved', 'closed'];
@@ -8,8 +9,16 @@ const STATUS_TABS = ['all', 'in_progress', 'resolved', 'closed'];
 export default function LandlordMaintenance() {
   const [tab, setTab] = useState('all');
   const [tickets, setTickets] = useState([]);
+  const [propertyNames, setPropertyNames] = useState({});
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    propertyApi.myProperties().then((res) => {
+      const items = res.data?.data || [];
+      setPropertyNames(Object.fromEntries(items.map((p) => [p.id, p.title])));
+    }).catch(() => {});
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -33,7 +42,7 @@ export default function LandlordMaintenance() {
     const csv = [
       'ID,Title,Property,Tenant,Priority,Status,Created',
       ...tickets.map(t =>
-        `"${t._id || ''}","${t.title || ''}","${t.property?.title || ''}","${t.createdBy?.full_name || ''}","${t.priority || ''}","${t.status || ''}","${t.createdAt || ''}"`
+        `"${t._id || t.id || ''}","${t.title || ''}","${propertyNames[t.propertyId] || ''}","${t.user?.full_name || ''}","${t.priority || ''}","${t.status || ''}","${t.created_at || ''}"`
       ),
     ].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -66,7 +75,7 @@ export default function LandlordMaintenance() {
               {tickets.map(t => (
                 <tr key={t._id || t.id}>
                   <td>{t.title}</td>
-                  <td>{t.property?.title || 'N/A'}</td>
+                  <td>{propertyNames[t.propertyId] || t.propertyId || 'N/A'}</td>
                   <td><span className={`shell-status-badge status-${t.priority}`}>{t.priority}</span></td>
                   <td><span className={`shell-status-badge status-${(t.status||'').toLowerCase()}`}>{t.status}</span></td>
                   <td>{t.assignedTo?.full_name ?? t.assignedTo?.name ?? '—'}</td>

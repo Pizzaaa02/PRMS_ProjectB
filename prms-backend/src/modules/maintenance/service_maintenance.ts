@@ -18,6 +18,24 @@ export async function getTickets(page = 1, limit = 10, userId?: string, status?:
   return { tickets, total };
 }
 
+export async function getLandlordTickets(userId: string, page = 1, limit = 10, status?: string) {
+  const owned = await prisma.property.findMany({ where: { ownerId: userId }, select: { id: true } });
+  const propertyIds = owned.map((p) => p.id);
+  if (!propertyIds.length) return { tickets: [], total: 0 };
+
+  const where: any = { propertyId: { in: propertyIds } };
+  if (status) where.status = status;
+
+  const [tickets, total] = await Promise.all([
+    prisma.maintenanceTicket.findMany({
+      where, skip: (page - 1) * limit, take: limit, orderBy: { id: 'desc' },
+      include: { user: { select: { id: true, full_name: true, email: true } } },
+    }),
+    prisma.maintenanceTicket.count({ where }),
+  ]);
+  return { tickets, total };
+}
+
 export async function getAgentTickets(userId: string, page = 1, limit = 10, status?: string) {
   const agent = await prisma.agent.findUnique({ where: { userId } });
   if (!agent) return { tickets: [], total: 0 };

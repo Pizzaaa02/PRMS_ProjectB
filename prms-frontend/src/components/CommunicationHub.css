@@ -274,6 +274,11 @@
   text-align: right;
 }
 
+.comm-msg-status.seen {
+  opacity: 1;
+  font-weight: 600;
+}
+
 /* Input row */
 .comm-input-row {
   display: flex;
