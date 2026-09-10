@@ -143,6 +143,17 @@ export function getPropertyDetailPath(
   return ROUTES.public.propertyDetails(id);
 }
 
+/** Get the correct messages page for the current role */
+export function getMessagesRoute(role: string | null | undefined): string {
+  if (!role) return ROUTES.public.login;
+  const lower = role.toLowerCase();
+  if (lower.includes('admin')) return ROUTES.admin.messages;
+  if (lower.includes('landlord')) return ROUTES.landlord.messages;
+  if (lower.includes('tenant')) return ROUTES.tenant.messages;
+  if (lower.includes('agent')) return ROUTES.agent.messages;
+  return ROUTES.public.login;
+}
+
 /** Get the correct add-property route for the role that has it (Landlord / Admin) */
 export function getAddPropertyRoute(
   role: string | null | undefined,

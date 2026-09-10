@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { communicationApi } from '../api';
 import { bookingApi } from '../api/booking';
@@ -22,6 +23,8 @@ const EDIT_WINDOW_MS = 2 * 60 * 1000;
 
 function CommunicationHub() {
   const { user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [conversations, setConversations] = useState([]);
   const [selectedConv, setSelectedConv] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -143,6 +146,19 @@ function CommunicationHub() {
     setComposing(false);
     setSelectedConv({ id: null, partner: { id: contact.id, full_name: contact.name } });
   }
+
+  // Arrives from "Message Owner" on a property page (or any other caller
+  // that wants to deep-link straight into a thread) via navigate(..., {
+  // state: { startConversationWith } }). Consumed once, then cleared from
+  // history so it doesn't re-fire on a later back/forward navigation.
+  useEffect(() => {
+    const target = location.state?.startConversationWith;
+    if (target?.id) {
+      startConversation(target);
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

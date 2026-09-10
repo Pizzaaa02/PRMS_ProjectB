@@ -300,7 +300,8 @@ export default function WebsiteCustomizer() {
       setConfig((p) => ({ ...p, ...DEFAULTS }));
       origRef.current = { ...origRef.current, ...DEFAULTS };
       setDirty(false);
-      setStatus({ type: 'success', msg: 'Reset to defaults.' });
+      setStatus({ type: 'success', msg: 'Reset to defaults. Refreshing...' });
+      setTimeout(() => window.location.reload(), 400);
     } catch (err) {
       setStatus({ type: 'error', msg: err.message });
     } finally {

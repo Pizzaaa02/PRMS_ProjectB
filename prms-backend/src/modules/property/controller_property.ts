@@ -121,14 +121,15 @@ export class PropertyController {
         thumbnailUrl = await generateThumbnail(sourcePath);
       } catch (e) { console.warn('Video thumbnail generation skipped:', e); }
       const image = await propertyService.addImage(String(req.params.id), url, thumbnailUrl || undefined);
-      // Override type to 'video' since addImage defaults to 'image'
-      await prisma.propertyImage.update({
+      // Override type to 'video' since addImage defaults to 'image' — use the
+      // updated row in the response, not the stale pre-update `image` object.
+      const video = await prisma.propertyImage.update({
         where: { id: image.id },
         data: { type: 'video' },
       });
       clearCache('^/properties');
       HELPERS(req).log({ action: 'ADD_PROPERTY_VIDEO', entity: 'Property', entityId: String(req.params.id), description: `Added video to property` });
-      res.status(201).json(successResponse(image));
+      res.status(201).json(successResponse(video));
     } catch (error: any) { HELPERS(req).log({ action: 'ADD_PROPERTY_VIDEO', entity: 'Property', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(400).json({ success: false, error: { message: error.message } }); }
   };
 

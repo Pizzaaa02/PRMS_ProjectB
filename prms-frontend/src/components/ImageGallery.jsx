@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   ImagePlus,
   AlertCircle,
+  PlayCircle,
 } from 'lucide-react';
 import { propertyApi } from '../api';
 import { getFullUrl } from '../config/apiBaseUrl';
@@ -35,6 +36,17 @@ function getImageId(img) {
     return img.id || img._id;
   }
   return null;
+}
+
+function isVideo(img) {
+  return typeof img === 'object' && img != null && img.type === 'video';
+}
+
+function getThumbUrl(img) {
+  if (isVideo(img)) {
+    return img.thumbnailUrl ? getFullUrl(img.thumbnailUrl) : '';
+  }
+  return getImageUrl(img);
 }
 
 export default function ImageGallery({
@@ -186,7 +198,18 @@ export default function ImageGallery({
       {/* ── Main image ── */}
       <div className="gallery-main">
         <AnimatePresence mode="wait">
-          {mainImage ? (
+          {mainImage && isVideo(displayImages[mainIndex]) ? (
+            <motion.video
+              key={mainImage || mainIndex}
+              src={mainImage}
+              controls
+              className="gallery-main-img"
+              initial={{ opacity: 0.7 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0.7 }}
+              transition={{ duration: 0.35 }}
+            />
+          ) : mainImage ? (
             <motion.img
               key={mainImage || mainIndex}
               src={mainImage}
@@ -281,7 +304,8 @@ export default function ImageGallery({
       {thumbnails.length > 0 && (
         <div className="gallery-thumbnails">
           {thumbnails.map((img, idx) => {
-            const thumbUrl = getImageUrl(img);
+            const thumbUrl = getThumbUrl(img);
+            const video = isVideo(img);
             const isActive = idx === mainIndex - 1;
             const realId = getImageId(img);
             return (
@@ -290,13 +314,20 @@ export default function ImageGallery({
                 className={`gallery-thumb${isActive ? ' gallery-thumb-active' : ''}`}
                 onClick={() => setMainIndex(idx + 1)}
               >
-                <motion.img
-                  src={thumbUrl}
-                  alt={`View ${idx + 2}`}
-                  className="gallery-thumb-img"
-                  whileHover={{ scale: 1.04 }}
-                  transition={{ duration: 0.2 }}
-                />
+                {thumbUrl ? (
+                  <motion.img
+                    src={thumbUrl}
+                    alt={`View ${idx + 2}`}
+                    className="gallery-thumb-img"
+                    whileHover={{ scale: 1.04 }}
+                    transition={{ duration: 0.2 }}
+                  />
+                ) : (
+                  <div className="gallery-thumb-video-fallback">
+                    <PlayCircle size={22} />
+                  </div>
+                )}
+                {video && <PlayCircle size={16} className="gallery-thumb-video-badge" />}
                 {/* Delete button on thumbnail */}
                 {canEdit && realId && (
                   <button

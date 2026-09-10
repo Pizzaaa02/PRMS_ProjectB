@@ -491,6 +491,21 @@
   padding: 40px;
 }
 
+.pd-map-open-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary-color, #8a2be2);
+  text-decoration: none;
+}
+
+.pd-map-open-link:hover {
+  text-decoration: underline;
+}
+
 /* ── Reviews ── */
 .pd-reviews {
   display: flex;

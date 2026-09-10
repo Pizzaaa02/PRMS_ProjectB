@@ -1,6 +1,6 @@
 import express from 'express';
 import { authenticate } from '../../middleware/auth';
-import { adminOrLandlord, adminOrLandlordOrAgent } from '../../middleware/rbac';
+import { adminOrLandlord, adminOrLandlordOrAgent, adminOnly } from '../../middleware/rbac';
 import { BookingController } from './controller_booking';
 
 const router = express.Router();
@@ -21,5 +21,6 @@ router.put('/:id', authenticate, adminOrLandlord, ctrl.update);
 router.patch('/:id/confirm', authenticate, adminOrLandlordOrAgent, ctrl.confirm);
 router.patch('/:id/reject', authenticate, adminOrLandlordOrAgent, ctrl.reject);
 router.patch('/:id/cancel', authenticate, ctrl.cancel);
+router.delete('/:id', authenticate, adminOnly, ctrl.remove);
 
 export default router;

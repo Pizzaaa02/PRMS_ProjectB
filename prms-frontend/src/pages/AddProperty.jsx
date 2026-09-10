@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { categoryApi } from '../api/categories';
 import { PROPERTY_TYPES } from '../config/propertyTypes';
+import { getPropertyRoute } from '../config/routes';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   MapPin,
@@ -12,6 +13,7 @@ import {
   Save,
   LayoutGrid,
   Image as ImageIcon,
+  Video as VideoIcon,
 } from 'lucide-react';
 import './AddProperty.css';
 
@@ -34,8 +36,6 @@ function AddProperty() {
     propertyType: 'apartment',
     status: 'AVAILABLE',
     monthlyRent: '',
-    availableFrom: '',
-    availableTo: '',
     address: '',
     city: '',
     state: '',
@@ -45,6 +45,8 @@ function AddProperty() {
 
   const [images, setImages] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
+  const [video, setVideo] = useState(null);
+  const [videoPreview, setVideoPreview] = useState('');
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [activeSection, setActiveSection] = useState('basic');
@@ -52,7 +54,7 @@ function AddProperty() {
 
   useEffect(() => {
     categoryApi
-      .list()
+      .shared()
       .then(({ data }) => setCategories(data?.data ?? []))
       .catch(() => setCategories([]));
   }, []);
@@ -110,6 +112,18 @@ function AddProperty() {
     setImagePreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const handleVideoUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setVideo(file);
+    setVideoPreview(URL.createObjectURL(file));
+  };
+
+  const handleRemoveVideo = () => {
+    setVideo(null);
+    setVideoPreview('');
+  };
+
   const validateForm = () => {
     const newErrors = {};
     if (!formData.title.trim()) newErrors.title = 'Property title is required';
@@ -139,8 +153,6 @@ function AddProperty() {
         city: formData.city,
         state: formData.state,
         status: formData.status,
-        availableFrom: formData.availableFrom || undefined,
-        availableTo: formData.availableTo || undefined,
         amenities: formData.amenities?.map?.(a => ({ name: a })) || [],
         categoryId: formData.categoryId || undefined,
       };
@@ -170,8 +182,18 @@ function AddProperty() {
             });
           }
         }
+        // Upload video separately via the video endpoint
+        if (createdId && video) {
+          const vidFD = new FormData();
+          vidFD.append('video', video);
+          await fetch(`${apiBaseUrl}/properties/${createdId}/videos`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` },
+            body: vidFD,
+          });
+        }
         setTimeout(() => {
-          navigate('/admin/properties');
+          navigate(getPropertyRoute(user?.role));
         }, 800);
       } else {
         setErrors({
@@ -192,8 +214,6 @@ function AddProperty() {
       propertyType: 'apartment',
       status: 'AVAILABLE',
       monthlyRent: '',
-      availableFrom: '',
-      availableTo: '',
       address: '',
       city: '',
       state: '',
@@ -202,6 +222,8 @@ function AddProperty() {
     });
     setImages([]);
     setImagePreviews([]);
+    setVideo(null);
+    setVideoPreview('');
   };
 
   const sectionNav = [
@@ -264,7 +286,7 @@ function AddProperty() {
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
               <button
-                onClick={() => navigate('/admin/properties')}
+                onClick={() => navigate(getPropertyRoute(user?.role))}
                 style={{
                   background: `${textColor}10`,
                   border: 'none',
@@ -521,31 +543,15 @@ function AddProperty() {
 
                 {/* Description — removed: not in Property model */}
 
-                {/* Status, Category, Amenities Row */}
+                {/* Category, Amenities Row */}
                 <div
                   className="form-grid"
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: '1fr 1fr 1fr',
+                    gridTemplateColumns: '1fr 1fr',
                     gap: '16px',
                   }}
                 >
-                  <div className="form-group">
-                    <label style={labelStyle}>Status</label>
-                    <select
-                      name="status"
-                      value={formData.status}
-                      onChange={handleInputChange}
-                      style={{ ...inputStyle, width: '100%', padding: '10px 14px', outline: 'none' }}
-                    >
-                      {PROPERTY_STATUS.map((s) => (
-                        <option key={s} value={s}>
-                          {s.charAt(0) + s.slice(1).toLowerCase()}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
                   <div className="form-group">
                     <label style={labelStyle}>Category</label>
                     <select
@@ -690,36 +696,21 @@ function AddProperty() {
                   )}
                 </div>
 
-                {/* Available From / To Row — both in Property model */}
-                <div
-                  className="form-grid"
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
-                    gap: '16px',
-                  }}
-                >
-                  <div className="form-group">
-                    <label style={labelStyle}>Available From</label>
-                    <input
-                      type="date"
-                      name="availableFrom"
-                      value={formData.availableFrom}
-                      onChange={handleInputChange}
-                      style={{ ...inputStyle, width: '100%', padding: '10px 14px', outline: 'none' }}
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label style={labelStyle}>Available To</label>
-                    <input
-                      type="date"
-                      name="availableTo"
-                      value={formData.availableTo}
-                      onChange={handleInputChange}
-                      style={{ ...inputStyle, width: '100%', padding: '10px 14px', outline: 'none' }}
-                    />
-                  </div>
+                {/* Status of the property */}
+                <div className="form-group">
+                  <label style={labelStyle}>Status</label>
+                  <select
+                    name="status"
+                    value={formData.status}
+                    onChange={handleInputChange}
+                    style={{ ...inputStyle, width: '100%', padding: '10px 14px', outline: 'none' }}
+                  >
+                    {PROPERTY_STATUS.map((s) => (
+                      <option key={s} value={s}>
+                        {s.charAt(0) + s.slice(1).toLowerCase()}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>
@@ -1000,6 +991,107 @@ function AddProperty() {
                     ))}
                   </div>
                 )}
+
+                {/* Video Upload */}
+                <div style={{ marginTop: '24px', borderTop: `1px solid ${borderColor}`, paddingTop: '20px' }}>
+                  <p style={{ fontSize: '13px', fontWeight: 600, color: headingColor, margin: '0 0 4px' }}>
+                    Property Video (optional)
+                  </p>
+                  <p style={{ fontSize: '12px', color: textColor, margin: '0 0 12px', opacity: 0.6 }}>
+                    Upload a short walkthrough video of the property
+                  </p>
+
+                  {!videoPreview ? (
+                    <label
+                      className="video-upload-zone"
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        border: `2px dashed ${borderColor}`,
+                        borderRadius: '12px',
+                        padding: '32px 24px',
+                        cursor: 'pointer',
+                        background: `${textColor}04`,
+                        transition: 'border-color 0.2s, background 0.2s',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = primaryColor + '60';
+                        e.currentTarget.style.background = `${primaryColor}08`;
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = borderColor;
+                        e.currentTarget.style.background = `${textColor}04`;
+                      }}
+                    >
+                      <input
+                        type="file"
+                        accept="video/*"
+                        onChange={handleVideoUpload}
+                        style={{ display: 'none' }}
+                      />
+                      <div
+                        style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: '50%',
+                          background: `${primaryColor}12`,
+                          color: primaryColor,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          marginBottom: '12px',
+                        }}
+                      >
+                        <VideoIcon size={20} />
+                      </div>
+                      <p style={{ fontSize: '14px', fontWeight: 500, color: headingColor, margin: '0 0 4px' }}>
+                        Click to upload a video
+                      </p>
+                      <p style={{ fontSize: '12px', color: textColor, margin: 0, opacity: 0.5 }}>
+                        MP4, WebM or MOV up to 50MB
+                      </p>
+                    </label>
+                  ) : (
+                    <div
+                      style={{
+                        position: 'relative',
+                        borderRadius: '12px',
+                        overflow: 'hidden',
+                        border: `1px solid ${borderColor}`,
+                        maxWidth: '360px',
+                      }}
+                    >
+                      <video
+                        src={videoPreview}
+                        controls
+                        style={{ width: '100%', display: 'block', background: '#000' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleRemoveVideo}
+                        style={{
+                          position: 'absolute',
+                          top: '8px',
+                          right: '8px',
+                          width: '26px',
+                          height: '26px',
+                          borderRadius: '50%',
+                          background: 'rgba(0,0,0,0.6)',
+                          color: '#fff',
+                          border: 'none',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>

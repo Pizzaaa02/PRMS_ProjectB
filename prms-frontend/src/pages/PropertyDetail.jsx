@@ -28,7 +28,7 @@ import { useAuth } from '../contexts/AuthContext';
 import TenantBookingModal from '../components/TenantBookingModal';
 import ImageGallery from '../components/ImageGallery';
 import { VideoUploader, DocumentUploader } from '../components/MediaUploader';
-import { getPropertyRoute } from '../config/routes';
+import { getPropertyRoute, getMessagesRoute } from '../config/routes';
 import './PropertyDetail.css';
 
 /* ================= AMENITY ICON MAP ================= */
@@ -48,10 +48,22 @@ function amenityIcon(name) {
 
 /* ================= BOOKING CARD (RIGHT SIDEBAR) ================= */
 function BookingCard({ property, onBookClick }) {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [checkIn, setCheckIn] = useState('');
   const [checkOut, setCheckOut] = useState('');
   const [guests, setGuests] = useState(1);
   const [showCalendar, setShowCalendar] = useState(false);
+
+  const owner = property.owner;
+  const isOwnProperty = !!(user && owner && (owner.id === user.id || property.ownerId === user.id));
+
+  function handleMessageOwner() {
+    if (!owner?.id) return;
+    navigate(getMessagesRoute(user?.role), {
+      state: { startConversationWith: { id: owner.id, name: owner.full_name || 'Property Owner' } },
+    });
+  }
 
   const today = new Date().toISOString().slice(0, 10);
 
@@ -276,10 +288,17 @@ function BookingCard({ property, onBookClick }) {
         </div>
 
         {/* Message Owner */}
-        <button className="message-owner-btn">
-          <MessageSquare size={16} />
-          Message Owner
-        </button>
+        {!isOwnProperty && (
+          <button
+            type="button"
+            className="message-owner-btn"
+            onClick={handleMessageOwner}
+            disabled={!user || !owner?.id}
+          >
+            <MessageSquare size={16} />
+            Message Owner
+          </button>
+        )}
       </div>
 
       {/* Report this listing */}
@@ -351,6 +370,13 @@ function PropertyDetail() {
     if (property.ownerId === user.id) return true;
     return false;
   })();
+
+  /* Address string used to query Google Maps — no lat/lng column exists
+     on Property, so this drives both the embed and the "Open in Google
+     Maps" link directly off the free-text address fields. */
+  const mapQuery = property
+    ? [property.address, property.city, property.state, 'Malaysia'].filter(Boolean).join(', ')
+    : '';
 
   useEffect(() => {
     let cancelled = false;
@@ -684,16 +710,16 @@ function PropertyDetail() {
               <h3 className="pd-section-title">Where you'll be</h3>
               <p className="pd-map-location">{property.address || property.city || 'Kuala Lumpur'}</p>
               <div className="pd-map">
-                {/* Embedded map placeholder */}
-                {property.latitude && property.longitude ? (
+                {mapQuery ? (
                   <iframe
                     title="Property location"
                     className="pd-map-iframe"
-                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${property.longitude - 0.01},${property.latitude - 0.01},${property.longitude + 0.01},${property.latitude + 0.01}&layer=mapnik&marker=${property.latitude},${property.longitude}`}
+                    src={`https://www.google.com/maps?q=${encodeURIComponent(mapQuery)}&output=embed`}
                     width="100%"
                     height="300"
-                    frameBorder="0"
-                    allowFullScreen
+                    style={{ border: 0 }}
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
                   />
                 ) : (
                   <div className="pd-map-placeholder">
@@ -702,6 +728,17 @@ function PropertyDetail() {
                   </div>
                 )}
               </div>
+              {mapQuery && (
+                <a
+                  className="pd-map-open-link"
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <MapPin size={14} />
+                  Open in Google Maps
+                </a>
+              )}
             </div>
 
             <div className="pd-divider" />

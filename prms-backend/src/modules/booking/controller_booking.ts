@@ -69,12 +69,32 @@ export class BookingController {
     } catch (error: any) { HELPERS(req).log({ action: 'REJECT_BOOKING', entity: 'Booking', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(400).json({ success: false, error: { message: error.message } }); }
   };
 
-  cancel = async (req: Request, res: Response) => {
+  cancel = async (req: AuthRequest, res: Response) => {
     try {
+      const booking = await bookingService.getBookingById(String(req.params.id));
+      if (!booking) return res.status(404).json({ success: false, error: { message: 'Booking not found' } });
+
+      const role = (req.user!.role || '').toLowerCase();
+      const isOwnBooking = booking.userId === req.user!.id;
+      const isOwnProperty = (booking as any).property?.ownerId === req.user!.id;
+      const allowed = role === 'admin' || isOwnBooking || (role === 'landlord' && isOwnProperty);
+      if (!allowed) {
+        HELPERS(req).log({ action: 'CANCEL_BOOKING', entity: 'Booking', entityId: req.params.id, status: 'Failed', level: 'warn', description: `Blocked: user ${req.user!.id} tried to cancel a booking they don't own` });
+        return res.status(403).json({ success: false, error: { message: 'You do not have permission to cancel this booking' } });
+      }
+
       await bookingService.cancelBooking(String(req.params.id));
       HELPERS(req).log({ action: 'CANCEL_BOOKING', entity: 'Booking', entityId: req.params.id, description: `Cancelled booking ${req.params.id}` });
       res.json(successResponse(null, 'Booking cancelled'));
     } catch (error: any) { HELPERS(req).log({ action: 'CANCEL_BOOKING', entity: 'Booking', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(400).json({ success: false, error: { message: error.message } }); }
+  };
+
+  remove = async (req: Request, res: Response) => {
+    try {
+      await bookingService.deleteBooking(String(req.params.id));
+      HELPERS(req).log({ action: 'DELETE_BOOKING', entity: 'Booking', entityId: req.params.id, description: `Deleted booking ${req.params.id}` });
+      res.json(successResponse(null, 'Booking deleted'));
+    } catch (error: any) { HELPERS(req).log({ action: 'DELETE_BOOKING', entity: 'Booking', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(400).json({ success: false, error: { message: error.message } }); }
   };
 
   getSummary = async (req: Request, res: Response) => {

@@ -83,6 +83,17 @@ export async function cancelBooking(id: string) {
   return prisma.booking.update({ where: { id }, data: { status: 'CANCELLED' } });
 }
 
+export async function deleteBooking(id: string) {
+  const [paymentCount, invoiceCount] = await Promise.all([
+    prisma.payment.count({ where: { bookingId: id } }),
+    prisma.invoice.count({ where: { bookingId: id } }),
+  ]);
+  if (paymentCount > 0 || invoiceCount > 0) {
+    throw new Error('Cannot delete a booking with payment or invoice records. Cancel it instead to preserve the financial history.');
+  }
+  return prisma.booking.delete({ where: { id } });
+}
+
 export async function getMyBookings(userId: string) {
   // Nested include so property.images actually comes through - a bare
   // `property: true` leaves that nested relation empty, so MyBookings.jsx

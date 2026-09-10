@@ -31,6 +31,9 @@ export const bookingApi = {
   cancel(id) {
     return apiClient.patch(`/bookings/${id}/cancel`);
   },
+  remove(id) {
+    return apiClient.delete(`/bookings/${id}`);
+  },
   getBookingsByStatus(status) {
     return apiClient.get('/bookings', { params: { status } });
   },
