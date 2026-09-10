@@ -109,7 +109,7 @@
   height: 88px;
   padding: 0 36px;
   display: grid;
-  grid-template-columns: 310px 430px 1fr;
+  grid-template-columns: minmax(200px, max-content) 430px 1fr;
   align-items: center;
   gap: 30px;
   background: var(--card-bg);
@@ -136,11 +136,10 @@
   font-size: 28px;
   color: var(--text-color);
   letter-spacing: -0.6px;
-  min-width: 0;
-  max-width: 140px;
+  white-space: nowrap;
+  max-width: 380px;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .landlord-layout-brand span {
