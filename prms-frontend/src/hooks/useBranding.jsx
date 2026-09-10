@@ -62,10 +62,16 @@ function useBranding() {
 
   useEffect(() => {
     let observer = null
+    // GuestHome can unmount (user clicks Sign In) before this fetch
+    // resolves - without this guard, the .then() below still ran and
+    // painted the variables onto <html> *after* the cleanup below had
+    // already fired, so they were never actually removed.
+    let cancelled = false
 
     async function load() {
       try {
         const r = await customizerApi.getConfig()
+        if (cancelled) return
         const data = r?.data ?? r
         if (!data) return
 
@@ -95,9 +101,22 @@ function useBranding() {
 
     load()
 
-    /* ── useEffect cleanup: disconnect the observer ── */
+    /* ── useEffect cleanup: disconnect the observer AND un-paint the
+       variables. Without this, navigating away from the public site
+       (e.g. clicking Sign In and logging in) left the customizer's
+       public-facing colors sitting as inline styles on <html>, which -
+       being higher specificity than any stylesheet rule - silently
+       overrode the authenticated app's own colors (dashboards, sidebar,
+       buttons) for the rest of the session. ── */
     return () => {
+      cancelled = true
       if (observer) observer.disconnect()
+      const root = document.documentElement.style
+      const painted = new Set()
+      for (const [, cssVars] of PAINT_MAP) {
+        for (const cv of cssVars) painted.add(cv)
+      }
+      painted.forEach((cv) => root.removeProperty(cv))
     }
   }, [])
 
