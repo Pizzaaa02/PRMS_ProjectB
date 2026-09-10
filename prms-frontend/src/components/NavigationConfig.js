@@ -14,13 +14,14 @@ import {
   BarChart3,
   Bell,
   ShieldCheck,
+  Palette,
 } from 'lucide-react'
 
 const roleRoutes = {
   Tenant:    { prefix: '/tenant',   pages: ['dashboard', 'notifications', 'properties', 'bookings', 'payments', 'maintenance', 'messages', 'settings'] },
   Landlord:  { prefix: '/landlord', pages: ['dashboard', 'notifications', 'properties', 'bookings', 'finance', 'heatmap', 'categories', 'maintenance', 'messages', 'settings'] },
   Agent:     { prefix: '/agent',    pages: ['dashboard', 'notifications', 'properties', 'bookings', 'maintenance', 'messages', 'categories', 'reports', 'finance', 'settings'] },
-  Admin:     { prefix: '/admin',    pages: ['dashboard', 'notifications', 'users', 'properties', 'bookings', 'finance', 'maintenance', 'messages', 'reports', 'categories', 'audit-logs', 'settings'] },
+  Admin:     { prefix: '/admin',    pages: ['dashboard', 'notifications', 'users', 'properties', 'bookings', 'finance', 'maintenance', 'messages', 'reports', 'categories', 'audit-logs', 'settings', 'customizer'] },
 }
 
 const pageMeta = {
@@ -37,7 +38,7 @@ const pageMeta = {
   categories:   { label: 'Categories',      icon: Tag },
   users:        { label: 'Users',           icon: Users },
   reports:      { label: 'Reports',         icon: FileText },
-  customizer:   { label: 'Customizer',      icon: Settings },
+  customizer:   { label: 'Customizer',      icon: Palette },
   help:         { label: 'Help',            icon: CircleHelp },
   'audit-logs': { label: 'Audit Logs',      icon: ShieldCheck },
 }

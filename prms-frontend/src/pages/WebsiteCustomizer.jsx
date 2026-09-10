@@ -1,313 +1,311 @@
-/**
- * WebsiteCustomizer page component.
- *
- * Provides a split-panel UI:
- *   Left  – live preview of the website header, body, footer
- *   Right – property editor for the five elements:
- *     1. title
- *     2. description
- *     3. background_color
- *     4. logo_url
- *     5. company_name
- *
- * All changes are pushed to the backend via the /customizer REST
- * endpoints (adminApi) and reflected instantly in the preview.
- */
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { customizerApi } from '../api/customizer';
+import { getFullUrl } from '../config/apiBaseUrl';
+import './WebsiteCustomizer.css';
 
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { adminApi } from "../api";
-import "./WebsiteCustomizer.css";
-
-// ------ section management ------
-const STATIC_HEADER_BG = { backgroundColor: "#FFFFFF" };
-const STATIC_FOOTER_BG = { backgroundColor: "#F3F4F6" };
-
-const DEFAULT_SECTIONS = {
-  hero: { text: "Hero Section", visibility: true, lock: false },
-  search_bar: { text: "Search Bar", visibility: true, lock: false },
-  featured: { text: "Featured Properties", visibility: true, lock: false },
-  features: { text: "Our Features", visibility: true, lock: false },
-  testimonials: { text: "Testimonials", visibility: true, lock: false },
-  cta_section: { text: "Call to Action", visibility: true, lock: false },
-  footer: { text: "Footer", visibility: true, lock: false },
+/* ── defaults ── */
+const DEFAULTS = {
+  company_name: 'PRMS',
+  logo_url: '',
+  light_header_bg: '#ffffff',
+  light_sidebar_bg: '#ffffff',
+  light_body_bg: '#f9fafb',
+  light_footer_bg: '#111827',
+  light_accent_color: '#2563eb',
+  light_card_bg: '#ffffff',
+  dark_header_bg: '#1f2937',
+  dark_sidebar_bg: '#1f2937',
+  dark_body_bg: '#111827',
+  dark_footer_bg: '#030712',
+  dark_accent_color: '#60a5fa',
+  dark_card_bg: '#334155',
 };
 
-async function fetchConfig() {
-  const { data } = await adminApi.getCustomizerConfig();
-  return data;
-}
-
-async function patchField(field, value) {
-  const { data } = await adminApi.patchCustomizerField(field, value);
-  return data;
-}
-
-async function generateHtmlPreview() {
-  const { data } = await adminApi.generateCustomizerHtml();
-  return URL.createObjectURL(data);
-}
-
-async function resetConfig() {
-  const { data } = await adminApi.resetCustomizerConfig();
-  return data;
-}
-
-// ---------- Color picker input ----------
-
-const COLOR_INPUT_TEXT_WIDTH = { width: 90 };
-
-function ColorInput({ value, onChange, label }) {
-  const [open, setOpen] = useState(false);
+/* ── ColorInput ── */
+function ColorInput({ label, value, onChange, disabled }) {
   return (
-    <div className="wc-color-input">
+    <div className="editor-field">
       <label>{label}</label>
-      <div className="wc-color-row">
-        <input
-          type="color"
-          value={value || "#F3F6FB"}
-          onChange={(e) => onChange(e.target.value)}
-          onClick={() => setOpen(true)}
-          onFocus={() => setOpen(true)}
-          onBlur={() => {
-            if (!value) open && setOpen(false);
-          }}
-          className="wc-color-picker"
-        />
-        <span
-          className="wc-color-text"
-          data-color={value || "#F3F6FB"}
-          onClick={() => {
-            document.getElementById("wc-color-field")?.focus();
-          }}
-        >
-          {value || "#F3F6FB"}
-        </span>
-        <input
-          id="wc-color-field"
-          type="text"
-          value={value || ""}
-          onChange={(e) => onChange(e.target.value)}
-          className="wc-color-compact"
-          placeholder="#F3F6FB"
-          style={COLOR_INPUT_TEXT_WIDTH}
-        />
+      <div className="color-row">
+        <input type="color" value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled} />
+        <input type="text" value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled} />
       </div>
     </div>
   );
 }
 
-// ---------- Logo URL input ----------
-
-function LogoInput({ value, onChange }) {
-  const [previewUrl, setPreviewUrl] = useState(value);
-
-  useEffect(() => {
-    if (value) setPreviewUrl(value);
-  }, [value]);
-
-  function onFieldChange(newUrl) {
-    onChange(newUrl);
-    if (newUrl) {
-      const img = document.createElement("img");
-      img.src = newUrl;
-      img.onload = () => setPreviewUrl(newUrl);
-      img.onerror = () => setPreviewUrl("");
-    }
-  }
-
-  // Sample image sources for the preview
-  const SAMPLE_IMAGES = [
-    "https://images.unsplash.com/photo-1503387762-592deb58efb5",
-    "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9",
-    "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c",
-  ];
+/* ── Branding ── */
+function BrandingSection({ company_name, logo_url, onCompanyChange, onLogoUpload, onLogoRemove, disabled }) {
+  const fileRef = useRef(null);
 
   return (
-    <div className="wc-text-input">
-      <label>Logo Image</label>
-      <input
-        type="url"
-        value={value || ""}
-        onChange={(e) => onFieldChange(e.target.value)}
-        placeholder="https://example.com/logo.png"
-      />
-      <div className="wc-preview-bar">
-        {previewUrl ? (
-          <img src={previewUrl} alt="logo preview" className="wc-logo-preview" />
-        ) : (
-          <span className="wc-preview-placeholder">No logo</span>
-        )}
-        <div className="wc-sample-images">
-          {SAMPLE_IMAGES.map((src, i) => (
-            <button
-              key={i}
-              className="wc-sample"
-              type="button"
-              onClick={() => onFieldChange(src)}
-            >
-              <img src={src} alt={`sample ${i + 1}`} />
-            </button>
-          ))}
-        </div>
+    <div className="editor-section">
+      <div className="editor-section-title">Branding</div>
+      <div className="editor-field">
+        <label>Company Name</label>
+        <input type="text" value={company_name} onChange={(e) => onCompanyChange(e.target.value)} disabled={disabled} maxLength={128} placeholder="PRMS" />
       </div>
-    </div>
-  );
-}
-
-// ---------- Live preview ----------
-
-function LivePreview({ config, onElementClick }) {
-  const bg = config.background_color || "#F3F6FB";
-  const logoUrl = config.logo_url || "";
-
-  // Build a CSS class to highlight the clicked preview section
-  const [highlight, setHighlight] = useState("");
-
-  function sectionClick(section) {
-    setHighlight(section);
-    setTimeout(() => setHighlight(""), 1200);
-    onElementClick && onElementClick(section);
-  }
-
-  return (
-    <div className="wc-preview-area">
-      <div className={`wc-preview-section ${highlight === "header" ? "wc-highlight" : ""} wc-section-header`} onClick={() => sectionClick("header")}>
-        <div className="wc-header-bar" style={STATIC_HEADER_BG}>
-          {logoUrl && (
-            <img src={logoUrl} alt="Logo" className="wc-preview-logo" />
+      <div className="editor-field">
+        <label>Logo</label>
+        <div className="logo-area">
+          {logo_url ? (
+            <img className="logo-preview-img" src={getFullUrl(logo_url)} alt="Logo" />
+          ) : (
+            <div className="logo-placeholder">No logo</div>
           )}
-          <span className="wc-header-brand">{config.title || "PRMS"}</span>
-        </div>
-      </div>
-      <div className={`wc-preview-section ${highlight === "body" ? "wc-highlight" : ""} wc-section-body`} onClick={() => sectionClick("body")}>
-        <div className="wc-body-content" style={{ backgroundColor: bg }}>
-          <h1 className="wc-preview-title">{config.title || "PRMS"}</h1>
-          <p className="wc-preview-description">{config.description || "Property Rental Management System"}</p>
-        </div>
-      </div>
-      <div className={`wc-preview-section ${highlight === "footer" ? "wc-highlight" : ""} wc-section-footer`} onClick={() => sectionClick("footer")}>
-        <div className="wc-footer-bar" style={STATIC_FOOTER_BG}>
-          <span className="wc-footer-brand">{config.company_name || "Property Rental Management System"}</span>
-        </div>
-      </div>
-
-      {/* Inline property indicators */}
-      <div className="wc-props-indicator">
-        <div className={`wc-prop ${config.title ? "wc-prop-ok" : "wc-prop-muted"}`}>
-          <span className="wc-prop-dot wc-prop-dot-title"></span>
-          Title:{" "}
-          <strong data-testid="prop-title">{config.title || "PRMS"}</strong>
-        </div>
-        <div className={`wc-prop ${config.description ? "wc-prop-ok" : "wc-prop-muted"}`}>
-          <span className="wc-prop-dot wc-prop-dot-desc"></span>
-          Description:{" "}
-          <strong data-testid="prop-desc">
-            {config.description || "–"}
-          </strong>
-        </div>
-        <div className="wc-prop">
-          <span className="wc-prop-dot wc-prop-dot-bg"></span>
-          Background:{" "}
-          <strong data-testid="prop-bg">{config.background_color || "#F3F6FB"}</strong>
-        </div>
-        <div className="wc-prop">
-          <span className="wc-prop-dot wc-prop-dot-logo"></span>
-          Logo:{" "}
-          <strong data-testid="prop-logo">
-            {config.logo_url || "–"}
-          </strong>
-        </div>
-        <div className="wc-prop">
-          <span className="wc-prop-dot wc-prop-dot-name"></span>
-          Company:{" "}
-          <strong data-testid="prop-company">
-            {config.company_name || "Property Rental Management System"}
-          </strong>
+          <div className="logo-buttons">
+            <label>
+              Upload
+              <input ref={fileRef} type="file" accept="image/*" onChange={(e) => onLogoUpload(e.target.files[0])} disabled={disabled} />
+            </label>
+            <button className="remove-btn" type="button" onClick={() => onLogoRemove()} disabled={disabled || !logo_url}>
+              Remove
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-// ---------- Main component ----------
+/* ── Colors section ── */
+function ColorsSection({ prefix, colors, onChange, disabled }) {
+  const fields = [
+    ['header_bg', 'Header Background'],
+    ['sidebar_bg', 'Sidebar Background'],
+    ['body_bg', 'Body Background'],
+    ['card_bg', 'Card / Element Background'],
+    ['footer_bg', 'Footer Background'],
+    ['accent_color', 'Accent / Attention Color'],
+  ];
+  return (
+    <div className="editor-section">
+      {fields.map(([k, l]) => (
+        <ColorInput
+          key={k}
+          label={l}
+          value={colors[`${prefix}_${k}`]}
+          onChange={(v) => onChange(`${prefix}_${k}`, v)}
+          disabled={disabled}
+        />
+      ))}
+    </div>
+  );
+}
 
-export default function WebsiteCustomizer({ config: initialConfig, onConfigChange }) {
-  const [config, setConfig] = useState(initialConfig || {
-    title: "PRMS",
-    description: "Property Rental Management System",
-    background_color: "#F3F6FB",
-    logo_url: "",
-    company_name: "Property Rental Management System",
+/* ── Preview (rendered inline) ── */
+function PreviewPanel({ config, theme }) {
+  const useDark = theme === 'dark';
+  const raw = pick(config, useDark ? 'dark_' : 'light_');
+  const active = { ...pick(DEFAULTS, useDark ? 'dark_' : 'light_'), ...raw };
+
+  const logoSrc = config.logo_url ? getFullUrl(config.logo_url) : null;
+
+  return (
+    <div className="preview-area">
+      <div className="preview-toolbar">
+        <span>Live Preview — {theme === 'dark' ? '🌙 Dark Mode' : '☀️ Light Mode'}</span>
+      </div>
+      <div className="preview-iframe-wrapper">
+        <div style={{
+          backgroundColor: active.body_bg || '#f9fafb',
+          minHeight: '480px',
+          display: 'flex',
+          flexDirection: 'column',
+          color: theme === 'dark' ? '#e5e7eb' : '#111827',
+        }}>
+          {/* Header */}
+          <div style={{
+            backgroundColor: active.header_bg,
+            padding: '12px 24px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            borderBottom: `2px solid ${active.accent_color}`,
+          }}>
+            {logoSrc && <img src={logoSrc} alt="Logo" style={{ height: '32px', objectFit: 'contain' }} />}
+            <span style={{ fontWeight: 700, fontSize: '18px', color: theme === 'dark' ? '#fff' : '#111827' }}>
+              {config.company_name || 'PRMS'}
+            </span>
+          </div>
+          {/* Sidebar + Body */}
+          <div style={{ flex: 1, display: 'flex' }}>
+            {/* Sidebar Preview */}
+            <div style={{
+              width: '60px',
+              backgroundColor: active.sidebar_bg,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              paddingTop: '16px',
+              gap: '8px',
+              borderRight: `1px solid ${theme === 'dark' ? '#334155' : '#e2e8f0'}`,
+            }}>
+              {['🏠','🏢','📋','👤'].map((icon, i) => (
+                <div key={i} style={{
+                  width: 32, height: 32, borderRadius: 6,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 14, opacity: 0.7,
+                }}>{icon}</div>
+              ))}
+            </div>
+            {/* Body */}
+            <div style={{ flex: 1, padding: '32px 24px', textAlign: 'center' }}>
+            <h2 style={{ color: active.accent_color, marginBottom: 8, fontSize: '28px' }}>
+              {config.company_name || 'PRMS'}
+            </h2>
+            <p style={{ maxWidth: 500, margin: '0 auto', fontSize: '15px', opacity: 0.8 }}>
+              Property Rental Management System
+            </p>
+            <div style={{ marginTop: 24, display: 'flex', justifyContent: 'center', gap: 12 }}>
+              <span style={{
+                padding: '8px 24px',
+                borderRadius: 8,
+                background: active.accent_color,
+                color: '#fff',
+                fontWeight: 600,
+                fontSize: 14,
+              }}>
+                Browse Properties
+              </span>
+              <span style={{
+                padding: '8px 24px',
+                borderRadius: 8,
+                border: `1px solid ${active.accent_color}`,
+                color: active.accent_color,
+                fontWeight: 600,
+                fontSize: 14,
+              }}>
+                Contact Us
+              </span>
+            </div>
+          </div>
+          </div>
+          {/* Footer */}
+          <div style={{
+            backgroundColor: active.footer_bg,
+            padding: '16px 24px',
+            textAlign: 'center',
+            color: '#9ca3af',
+            fontSize: '13px',
+          }}>
+            © {new Date().getFullYear()} {config.company_name || 'PRMS'} — Property Rental Management System
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* helper */
+function pick(obj, prefix) {
+  const r = {};
+  const k = prefix.replace('_', '');
+  Object.keys(obj).filter((kk) => kk.startsWith(prefix)).forEach((kk) => {
+    r[kk.replace(prefix, '')] = obj[kk];
   });
+  return r;
+}
+
+/* ── Main ── */
+export default function WebsiteCustomizer() {
+  const [config, setConfig] = useState(DEFAULTS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState(null);
-  const [htmlUrl, setHtmlUrl] = useState(null);
+  const [status, setStatus] = useState(null);
+  const [dirty, setDirty] = useState(false);
+  const [theme, setTheme] = useState('light');
+  const previewKeyRef = useRef(0);
+  const origRef = useRef(null);
 
-  // Load config from Flask API on mount
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const data = await fetchConfig();
-        if (!cancelled) {
-          setConfig(data);
-        }
-      } catch (err) {
-        if (!cancelled) setError(err.message);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => { cancelled = true; };
+  /* load */
+  const loadConfig = useCallback(async () => {
+    try {
+      const res = await customizerApi.getConfig();
+      const body = res?.data ?? res;
+      setConfig((prev) => ({ ...DEFAULTS, ...body }));
+      origRef.current = { ...DEFAULTS, ...body };
+      setDirty(false);
+    } catch (err) {
+      setStatus({ type: 'error', msg: `Load failed: ${err.message}` });
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  // Update child config when local state changes
-  useEffect(() => {
-    onConfigChange && onConfigChange(config);
-  }, [config, onConfigChange]);
+  useEffect(() => { loadConfig(); }, [loadConfig]);
 
-  const handleFieldChange = useCallback(
-    async (field, value) => {
-      setSaving(true);
-      try {
-        const data = await patchField(field, value);
-        setConfig((prev) => ({ ...prev, [field]: value }));
-      } catch (err) {
-        setError(`Failed to update ${field}: ${err.message}`);
-      } finally {
-        setSaving(false);
-      }
-    },
-    [],
-  );
+  /* change handlers */
+  const onCompanyChange = (v) => {
+    setConfig((p) => ({ ...p, company_name: v }));
+    setDirty(true);
+  };
 
-  const handleTitleChange = (value) => handleFieldChange("title", value);
-  const handleDescriptionChange = (value) => handleFieldChange("description", value);
-  const handleBgColorChange = (value) => handleFieldChange("background_color", value);
-  const handleLogoChange = (value) => handleFieldChange("logo_url", value);
-  const handleCompanyNameChange = (value) => handleFieldChange("company_name", value);
+  const onColorChange = (field, value) => {
+    setConfig((p) => ({ ...p, [field]: value }));
+    setDirty(true);
+    previewKeyRef.current++;
+  };
 
-  const handleReset = async () => {
+  const onLogoUpload = async (file) => {
+    if (!file) return;
     setSaving(true);
     try {
-      const data = await resetConfig();
-      setConfig(data);
+      const fd = new FormData();
+      fd.append('logo', file);
+      const data = await customizerApi.uploadLogo(fd);
+      setConfig((p) => ({ ...p, logo_url: data?.data?.logo_url ?? data.logo_url }));
+      setDirty(true);
+      setStatus({ type: 'success', msg: 'Logo uploaded successfully.' });
     } catch (err) {
-      setError(`Reset failed: ${err.message}`);
+      setStatus({ type: 'error', msg: err.message });
     } finally {
       setSaving(false);
     }
   };
 
-  const handleGenerateHtml = async () => {
+  const onLogoRemove = async () => {
     setSaving(true);
     try {
-      const url = await generateHtmlPreview();
-      setHtmlUrl(url);
-      window.open(url, "_blank");
+      await customizerApi.removeLogo();
+      setConfig((p) => ({ ...p, logo_url: '' }));
+      setDirty(true);
+      setStatus({ type: 'success', msg: 'Logo removed.' });
     } catch (err) {
-      setError(`Generate HTML failed: ${err.message}`);
+      setStatus({ type: 'error', msg: err.message });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  /* save */
+  const handleSave = async () => {
+    setSaving(true);
+    previewKeyRef.current++;
+    try {
+      await customizerApi.updateConfig(config);
+      origRef.current = { ...config };
+      setDirty(false);
+      setStatus({ type: 'success', msg: 'Changes saved. Refreshing...' });
+      setTimeout(() => window.location.reload(), 400);
+    } catch (err) {
+      setStatus({ type: 'error', msg: err.message });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  /* reset */
+  const handleReset = async () => {
+    setSaving(true);
+    try {
+      await customizerApi.updateConfig(DEFAULTS);
+      setConfig(DEFAULTS);
+      origRef.current = { ...DEFAULTS };
+      setDirty(false);
+      setStatus({ type: 'success', msg: 'Reset to defaults.' });
+    } catch (err) {
+      setStatus({ type: 'error', msg: err.message });
     } finally {
       setSaving(false);
     }
@@ -315,116 +313,67 @@ export default function WebsiteCustomizer({ config: initialConfig, onConfigChang
 
   if (loading) {
     return (
-      <div className="wc-page" data-testid="wc-loading">
-        <div className="wc-spinner"></div>
-        <p>Loading Customizer...</p>
+      <div className="customizer-loading">
+        <div className="spinner" />
+        <span>Loading customizer...</span>
       </div>
     );
   }
 
   return (
-    <div className="wc-page" data-testid="wc-page">
-      <header className="wc-page-header">
-        <h1 className="wc-page-title">Website Customizer</h1>
-        <p className="wc-page-subtitle">
-          Customize the look and feel of your public-facing website.
-        </p>
-        <div className="wc-header-actions">
-          <button
-            type="button"
-            className="wc-button wc-button-secondary"
-            onClick={handleReset}
-            disabled={saving}
-            title="Reset all fields to defaults"
-          >
-            Reset
-          </button>
-          <button
-            type="button"
-            className="wc-button wc-button-primary"
-            onClick={handleGenerateHtml}
-            disabled={saving}
-            title="Generate HTML preview"
-          >
-            Generate HTML
+    <div className="customizer-page">
+      {/* Header */}
+      <div className="customizer-header">
+        <h1>Website Customizer</h1>
+        <div className="customizer-actions">
+          <button type="button" onClick={handleReset} disabled={saving}>Reset</button>
+          <button type="button" className="btn-primary" onClick={handleSave} disabled={saving || !dirty}>
+            {saving ? 'Saving...' : dirty ? 'Save Changes' : 'Save'}
           </button>
         </div>
-      </header>
+      </div>
 
-      {error && (
-        <div className="wc-error-banner" data-testid="wc-error">
-          {error}
-          <button className="wc-error-close" onClick={() => setError(null)} type="button">
-            x
-          </button>
+      {/* Status bar */}
+      {status && (
+        <div className={`status-bar ${status.type}`}>
+          <span>{status.msg}</span>
+          <button className="close-btn" type="button" onClick={() => setStatus(null)}>✕</button>
         </div>
       )}
 
-      <div className="wc-body">
-        {/* Left: Live Preview */}
-        <section className="wc-left" aria-label="Live preview">
-          <LivePreview config={config} />
-          {htmlUrl && (
-            <div className="wc-html-url">
-              Preview URL: <a href={htmlUrl} target="_blank" rel="noopener">{htmlUrl}</a>
-            </div>
-          )}
-        </section>
+      {/* Theme tabs */}
+      <div className="theme-tabs">
+        <button className={`theme-tab ${theme === 'light' ? 'active' : ''}`} type="button" onClick={() => setTheme('light')}>
+          ☀️ Light Mode
+        </button>
+        <button className={`theme-tab ${theme === 'dark' ? 'active' : ''}`} type="button" onClick={() => setTheme('dark')}>
+          🌙 Dark Mode
+        </button>
+      </div>
 
-        {/* Right: Property Editors */}
-        <section className="wc-right" aria-label="Customization properties">
-          <div className="wc-properties-panel">
-            <h2 className="wc-panel-title">Properties</h2>
-            <div className="wc-properties-content">
-              <div className="wc-text-input">
-                <label htmlFor="wc-title">Title</label>
-                <input
-                  id="wc-title"
-                  type="text"
-                  value={config.title || ""}
-                  onChange={(e) => handleTitleChange(e.target.value)}
-                  placeholder="e.g. PRMS"
-                  disabled={saving}
-                />
-              </div>
+      {/* Body */}
+      <div className="customizer-body">
+        {/* Left: Preview */}
+        <PreviewPanel config={config} theme={theme} key={previewKeyRef.current} />
 
-              <div className="wc-text-input wc-text-input--large">
-                <label htmlFor="wc-desc">Description</label>
-                <textarea
-                  id="wc-desc"
-                  value={config.description || ""}
-                  onChange={(e) => handleDescriptionChange(e.target.value)}
-                  placeholder="e.g. Property Rental Management System"
-                  rows={3}
-                  disabled={saving}
-                />
-              </div>
-
-              <ColorInput
-                value={config.background_color}
-                onChange={handleBgColorChange}
-                label="Background Color"
-              />
-
-              <LogoInput
-                value={config.logo_url}
-                onChange={handleLogoChange}
-              />
-
-              <div className="wc-text-input">
-                <label htmlFor="wc-company">Company Name</label>
-                <input
-                  id="wc-company"
-                  type="text"
-                  value={config.company_name || ""}
-                  onChange={(e) => handleCompanyNameChange(e.target.value)}
-                  placeholder="e.g. Property Rental Management System"
-                  disabled={saving}
-                />
-              </div>
-            </div>
-          </div>
-        </section>
+        {/* Right: Editor */}
+        <div className="editor-panel">
+          <BrandingSection
+            company_name={config.company_name}
+            logo_url={config.logo_url}
+            onCompanyChange={onCompanyChange}
+            onLogoUpload={onLogoUpload}
+            onLogoRemove={onLogoRemove}
+            disabled={saving}
+          />
+          <hr className="customizer-divider" />
+          <ColorsSection
+            prefix={theme === 'light' ? 'light' : 'dark'}
+            colors={config}
+            onChange={onColorChange}
+            disabled={saving}
+          />
+        </div>
       </div>
     </div>
   );

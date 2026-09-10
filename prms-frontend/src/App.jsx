@@ -244,7 +244,7 @@ function AppRoutes() {
         />
         <Route path="settings" element={<Settings />} />
         <Route
-          path="settings/customizer"
+          path="customizer"
           element={
             <SuspenseWrapper>
               <WebsiteCustomizer />
@@ -309,14 +309,6 @@ function AppRoutes() {
         />
         <Route path="messages" element={<CommunicationHub />} />
         <Route path="settings" element={<Settings />} />
-        <Route
-          path="settings/customizer"
-          element={
-            <SuspenseWrapper>
-              <WebsiteCustomizer />
-            </SuspenseWrapper>
-          }
-        />
         <Route path="help" element={<LandlordSimplePage label="Help Center" />} />
       </Route>
 
@@ -357,14 +349,6 @@ function AppRoutes() {
         <Route path="maintenance" element={<TenantMaintenance />} />
         <Route path="messages" element={<TenantSimplePage label="Messages"><CommunicationHub /></TenantSimplePage>} />
         <Route path="settings" element={<Settings />} />
-        <Route
-          path="settings/customizer"
-          element={
-            <SuspenseWrapper>
-              <WebsiteCustomizer />
-            </SuspenseWrapper>
-          }
-        />
         <Route path="help" element={<TenantSimplePage label="Help Center" />} />
       </Route>
 

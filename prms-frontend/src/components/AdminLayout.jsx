@@ -30,6 +30,7 @@ function getTopbarTitle(activePage) {
     categories: 'Category Management',
     'audit-logs': 'Audit Logs',
     settings: 'Admin Settings',
+    customizer: 'Website Customizer',
     help: 'Admin Help Center',
   }
   return titles[activePage] || 'Admin Dashboard'

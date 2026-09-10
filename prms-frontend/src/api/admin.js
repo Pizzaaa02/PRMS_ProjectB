@@ -76,26 +76,4 @@ export const adminApi = {
     return apiClient.get(`/admin/themes/${themeId}`);
   },
 
-  /* Website Customizer */
-
-  getCustomizerConfig() {
-    return apiClient.get('/customizer');
-  },
-
-  updateCustomizerConfig(data) {
-    return apiClient.put('/customizer', data);
-  },
-
-  patchCustomizerField(field, value) {
-    return apiClient.patch(`/customizer/${field}`, { value });
-  },
-
-  generateCustomizerHtml() {
-    return apiClient.get('/customizer/generate-html', { responseType: 'blob' });
-  },
-
-  resetCustomizerConfig() {
-    return apiClient.post('/customizer/reset', {});
-  },
-
 };
