@@ -13,12 +13,20 @@ export async function requestViewing(data: {
 }, tenantId: string) {
   const property = await prisma.property.findUnique({ where: { id: data.propertyId } });
   if (!property) throw new Error('Property not found');
+  const preferred = new Date(data.preferredTime);
+  if (Number.isNaN(preferred.getTime()) || preferred.getTime() <= Date.now()) {
+    throw new Error('Preferred viewing time must be a valid date in the future');
+  }
+  const alternative = data.alternativeTime ? new Date(data.alternativeTime) : undefined;
+  if (alternative && (Number.isNaN(alternative.getTime()) || alternative.getTime() <= Date.now())) {
+    throw new Error('Alternative viewing time must be a valid date in the future');
+  }
   return prisma.viewingAppointment.create({
     data: {
       propertyId: data.propertyId,
       tenantId,
-      preferredTime: new Date(data.preferredTime),
-      alternativeTime: data.alternativeTime ? new Date(data.alternativeTime) : undefined,
+      preferredTime: preferred,
+      alternativeTime: alternative,
       message: data.message,
       status: 'REQUESTED',
     },
@@ -70,6 +78,12 @@ export async function reschedule(id: string, tenantId: string, data: { preferred
   if (!['REQUESTED', 'ACCEPTED', 'PROPOSED_ALTERNATE'].includes(viewing.status)) {
     throw new Error('This viewing can no longer be rescheduled');
   }
+  if (data.preferredTime && new Date(data.preferredTime).getTime() <= Date.now()) {
+    throw new Error('Preferred viewing time must be in the future');
+  }
+  if (data.alternativeTime && new Date(data.alternativeTime).getTime() <= Date.now()) {
+    throw new Error('Alternative viewing time must be in the future');
+  }
   return prisma.viewingAppointment.update({
     where: { id },
     data: {
@@ -104,6 +118,7 @@ export async function accept(id: string, respondedById: string) {
 
 export async function proposeAlternate(id: string, respondedById: string, proposedTime: string) {
   if (!proposedTime) throw new Error('A proposed time is required');
+  if (new Date(proposedTime).getTime() <= Date.now()) throw new Error('Proposed viewing time must be in the future');
   const viewing = await prisma.viewingAppointment.findUnique({ where: { id } });
   if (!viewing) throw new Error('Viewing appointment not found');
   if (!['REQUESTED', 'ACCEPTED'].includes(viewing.status)) throw new Error('An alternate time can only be proposed for a pending viewing');
@@ -114,11 +129,30 @@ export async function proposeAlternate(id: string, respondedById: string, propos
   });
 }
 
+// Viewings booked back-to-back on the same property need a gap to actually
+// walk through it — anything closer than this to an already-confirmed slot
+// counts as an overlap.
+const VIEWING_BUFFER_MS = 60 * 60 * 1000;
+
+async function assertNoOverlap(propertyId: string, time: Date, excludeId: string) {
+  const nearby = await prisma.viewingAppointment.findMany({
+    where: {
+      propertyId,
+      status: 'CONFIRMED',
+      id: { not: excludeId },
+    },
+  });
+  const conflict = nearby.some((v) => Math.abs(v.preferredTime.getTime() - time.getTime()) < VIEWING_BUFFER_MS);
+  if (conflict) throw new Error('This property already has a confirmed viewing too close to that time — pick a different slot');
+}
+
 export async function confirmAttendance(id: string, tenantId: string) {
   const viewing = await prisma.viewingAppointment.findUnique({ where: { id } });
   if (!viewing) throw new Error('Viewing appointment not found');
   if (viewing.tenantId !== tenantId) throw new Error('You can only confirm your own viewing');
   if (!['ACCEPTED', 'PROPOSED_ALTERNATE'].includes(viewing.status)) throw new Error('This viewing is not ready to be confirmed');
+  const finalTime = viewing.status === 'PROPOSED_ALTERNATE' && viewing.proposedTime ? viewing.proposedTime : viewing.preferredTime;
+  await assertNoOverlap(viewing.propertyId, finalTime, viewing.id);
   return prisma.viewingAppointment.update({
     where: { id },
     data: {

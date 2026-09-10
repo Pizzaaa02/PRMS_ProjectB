@@ -147,6 +147,9 @@ export async function approveApplication(id: string, data: {
   if (data.security_deposit == null || data.utility_deposit == null || !data.offer_expiry) {
     throw new Error('security_deposit, utility_deposit and offer_expiry are required to approve an application');
   }
+  if (new Date(data.offer_expiry).getTime() <= Date.now()) {
+    throw new Error('offer_expiry must be a future date');
+  }
   const booking = await prisma.booking.findUnique({ where: { id } });
   if (!booking) throw new Error('Application not found');
   if (booking.status === 'CANCELLED') throw new Error('This application is closed and cannot be approved');
@@ -257,12 +260,16 @@ export async function cancelBooking(id: string) {
 }
 
 export async function deleteBooking(id: string) {
-  const [paymentCount, invoiceCount] = await Promise.all([
+  const [paymentCount, invoiceCount, agreementCount] = await Promise.all([
     prisma.payment.count({ where: { bookingId: id } }),
     prisma.invoice.count({ where: { bookingId: id } }),
+    prisma.agreement.count({ where: { bookingId: id } }),
   ]);
   if (paymentCount > 0 || invoiceCount > 0) {
     throw new Error('Cannot delete a booking with payment or invoice records. Cancel it instead to preserve the financial history.');
+  }
+  if (agreementCount > 0) {
+    throw new Error('Cannot delete an application that has a tenancy agreement. Cancel it instead to preserve the agreement history.');
   }
   return prisma.booking.delete({ where: { id } });
 }

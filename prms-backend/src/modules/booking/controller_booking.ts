@@ -30,10 +30,19 @@ export class BookingController {
     } catch (error: any) { HELPERS(req).log({ action: 'VIEW_BOOKINGS', entity: 'Booking', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(500).json({ success: false, error: { message: error.message } }); }
   };
 
-  getById = async (req: Request, res: Response) => {
+  getById = async (req: AuthRequest, res: Response) => {
     try {
       const booking = await bookingService.getBookingById(String(req.params.id));
       if (!booking) return res.status(404).json({ success: false, error: { message: 'Booking not found' } });
+
+      const role = (req.user!.role || '').toLowerCase();
+      const isOwnBooking = booking.userId === req.user!.id;
+      const hasAuthority = isOwnBooking || (await hasPropertyAuthority(req.user!.id, role, (booking as any).property.ownerId, booking.propertyId));
+      if (!hasAuthority) {
+        HELPERS(req).log({ action: 'VIEW_BOOKING', entity: 'Booking', entityId: booking.id, status: 'Failed', level: 'warn', description: `Blocked: user ${req.user!.id} tried to view a booking they don't own or manage` });
+        return res.status(403).json({ success: false, error: { message: 'You do not have access to this booking' } });
+      }
+
       HELPERS(req).log({ action: 'VIEW_BOOKING', entity: 'Booking', entityId: booking.id, description: `Viewed booking ${booking.id}` });
       res.json(successResponse(booking));
     } catch (error: any) { HELPERS(req).log({ action: 'VIEW_BOOKING', entity: 'Booking', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(500).json({ success: false, error: { message: error.message } }); }

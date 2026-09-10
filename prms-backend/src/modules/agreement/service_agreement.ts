@@ -24,6 +24,10 @@ export async function generateAgreement(bookingId: string, terms?: string) {
   const booking = await prisma.booking.findUnique({ where: { id: bookingId }, include: { property: true } });
   if (!booking) throw new Error('Application not found');
   if (booking.status !== 'CONFIRMED') throw new Error('An agreement can only be generated for an approved application');
+  if (booking.offer_expiry && booking.offer_expiry.getTime() <= Date.now()) {
+    await prisma.booking.update({ where: { id: bookingId }, data: { status: 'CANCELLED', application_stage: 'EXPIRED' } });
+    throw new Error('The rental offer has expired — a new offer must be issued before an agreement can be generated');
+  }
 
   const existing = await prisma.agreement.findMany({ where: { bookingId }, orderBy: { version: 'desc' } });
   const nextVersion = existing.length ? existing[0].version + 1 : 1;
