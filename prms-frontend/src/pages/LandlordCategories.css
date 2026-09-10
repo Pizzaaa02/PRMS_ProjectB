@@ -189,12 +189,16 @@
 }
 
 .action-btn.save {
-  background: var(--success-fixed);
-  border-color: var(--success-border);
-  color: var(--success-label);
+  background: var(--primary-container);
+  border-color: var(--primary-container);
+  color: var(--on-primary);
   width: auto;
   padding: 0 var(--spacing-sm);
   gap: var(--spacing-xs);
+}
+
+.action-btn.save:hover {
+  filter: brightness(1.15);
 }
 
 .action-btn.save span {
@@ -206,6 +210,9 @@
   background: var(--surface-container);
   border-color: var(--border-color);
   color: var(--text-primary);
+  width: auto;
+  padding: 0 var(--spacing-sm);
+  gap: var(--spacing-xs);
 }
 
 .action-btn.danger:hover {

@@ -1774,6 +1774,7 @@ body.customization-mode [data-customize-id].customization-hover {
   align-items: center;
   gap: 6px;
   padding-bottom: 8px;
+  cursor: pointer;
 }
 .step-progress > div.active {
   color: var(--primary-container);

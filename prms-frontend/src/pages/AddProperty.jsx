@@ -127,7 +127,7 @@ function AddProperty() {
     setSubmitting(true);
     try {
       const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || window.location.origin || 'http://localhost:3500';
-      const token = localStorage.getItem('accessToken');
+      const token = sessionStorage.getItem('accessToken');
       const endpoint = id ? `/properties/${id}` : '/properties';
 
       // Build JSON body — align frontend fields to backend DTO (schema source of truth)

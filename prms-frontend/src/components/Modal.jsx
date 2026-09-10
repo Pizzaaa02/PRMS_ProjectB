@@ -76,5 +76,6 @@ style.textContent = `
   }
 `;
 if (!document.querySelector('style[data-modal-css]')) {
+  style.setAttribute('data-modal-css', 'true');
   document.head.appendChild(style);
 }

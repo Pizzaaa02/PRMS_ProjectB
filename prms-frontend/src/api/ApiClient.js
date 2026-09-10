@@ -20,7 +20,7 @@ const apiClient = axios.create({
 
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('accessToken');
+    const token = sessionStorage.getItem('accessToken');
 
     if (
       token &&
@@ -65,7 +65,7 @@ const processQueue = (error, token = null) => {
 /* ------------------------------------------------------------------ */
 
 async function refreshToken() {
-  const refreshTokenValue = localStorage.getItem('refreshToken');
+  const refreshTokenValue = sessionStorage.getItem('refreshToken');
 
   if (
     !refreshTokenValue ||
@@ -146,13 +146,13 @@ apiClient.interceptors.response.use(
           );
         }
 
-        localStorage.setItem(
+        sessionStorage.setItem(
           'accessToken',
           newAccessToken
         );
 
         if (tokens.refreshToken) {
-          localStorage.setItem(
+          sessionStorage.setItem(
             'refreshToken',
             tokens.refreshToken
           );
@@ -187,9 +187,6 @@ function logoutUser() {
   if (isLoggingOut) return;
 
   isLoggingOut = true;
-
-  localStorage.removeItem('accessToken');
-  localStorage.removeItem('refreshToken');
 
   sessionStorage.clear();
   

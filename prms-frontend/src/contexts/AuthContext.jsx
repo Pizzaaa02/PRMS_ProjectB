@@ -96,8 +96,8 @@ function AuthProvider({ children }) {
         // Store tokens — successResponse wraps in {success, message, data: {user, tokens}}
         const tokens = data?.data?.tokens;
         if (tokens) {
-          localStorage.setItem('accessToken', tokens.accessToken);
-          localStorage.setItem('refreshToken', tokens.refreshToken);
+          sessionStorage.setItem('accessToken', tokens.accessToken);
+          sessionStorage.setItem('refreshToken', tokens.refreshToken);
         }
 
         // Fetch current user with normalized shape
@@ -134,8 +134,8 @@ function AuthProvider({ children }) {
         // Store tokens — successResponse wraps in {success, message, data: {user, tokens, isNewUser}}
         const tokens = data?.data?.tokens || data?.tokens;
         if (tokens) {
-          localStorage.setItem('accessToken', tokens.accessToken);
-          localStorage.setItem('refreshToken', tokens.refreshToken);
+          sessionStorage.setItem('accessToken', tokens.accessToken);
+          sessionStorage.setItem('refreshToken', tokens.refreshToken);
         }
 
         // Issue #3: isNewUser flag from backend
@@ -177,9 +177,9 @@ function AuthProvider({ children }) {
       } catch {
         /* best-effort */
       }
-      // Clear ALL auth-related localStorage
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
+      // Clear ALL auth-related storage
+      sessionStorage.removeItem('accessToken');
+      sessionStorage.removeItem('refreshToken');
       localStorage.removeItem('prmsDashboardPath');
       sessionStorage.removeItem('prmsSelectedRole');
       localStorage.removeItem('prmsOnboarding');
@@ -236,7 +236,7 @@ function AuthProvider({ children }) {
   /* ------ Hydration — restore session (AUTH-003/004) ------ */
 
   useEffect(() => {
-    if (!localStorage.getItem('accessToken')) {
+    if (!sessionStorage.getItem('accessToken')) {
       dispatch({ type: ACTIONS.SET_LOADING, payload: false });
       return;
     }
@@ -254,8 +254,8 @@ function AuthProvider({ children }) {
         }
       })
       .catch(() => {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
+        sessionStorage.removeItem('accessToken');
+        sessionStorage.removeItem('refreshToken');
         dispatch({ type: ACTIONS.SET_LOADING, payload: false });
       })
       .finally(() => {
