@@ -30,6 +30,7 @@ function getTopbarTitle(activePage) {
     finance: 'Finance',
     reports: 'Reports',
     customizer: 'System Preferences',
+    privacy: 'Privacy & Personal Data',
     help: 'Help Center',
   }
   return titles[activePage] || 'Agent Dashboard'

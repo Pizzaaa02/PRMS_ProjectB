@@ -33,6 +33,10 @@ function getTopbarTitle(activePage) {
     'audit-logs': 'Audit Logs',
     settings: 'Admin Settings',
     customizer: 'System Preferences',
+    privacy: 'Privacy & Personal Data',
+    'privacy-requests': 'Privacy Requests',
+    retention: 'Data Retention',
+    'breach-register': 'Data Breach Register',
     help: 'Admin Help Center',
   }
   return titles[activePage] || 'Admin Dashboard'

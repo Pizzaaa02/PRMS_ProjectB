@@ -9,6 +9,7 @@ import {
   Building2,
   Settings as SettingsIcon,
   ShieldCheck,
+  Lock,
 } from 'lucide-react'
 import './Settings.css'
 
@@ -42,6 +43,16 @@ function getCustomizerPath(role) {
   return ROUTES.admin.customizer
 }
 
+function getPrivacyPath(role) {
+  if (!role) return '/admin/privacy'
+  const lower = role.toLowerCase()
+  if (lower.includes('admin')) return '/admin/privacy'
+  if (lower.includes('landlord')) return '/landlord/privacy'
+  if (lower.includes('tenant')) return '/tenant/privacy'
+  if (lower.includes('agent')) return '/agent/privacy'
+  return '/admin/privacy'
+}
+
 function Settings() {
   const navigate = useNavigate()
   const { user } = useAuth()
@@ -50,6 +61,7 @@ function Settings() {
   const profilePath = getProfilePath(user?.role)
   const notificationsPath = getNotificationsPath(user?.role)
   const customizerPath = getCustomizerPath(user?.role)
+  const privacyPath = getPrivacyPath(user?.role)
 
   return (
     <div className="admin-content" data-customize-id="global.content">
@@ -103,6 +115,17 @@ function Settings() {
           <p>Personalize your own colors, logo, and company name.</p>
 
           <button type="button" onClick={() => navigate(customizerPath)}>Manage Preferences</button>
+        </div>
+
+        <div className="settings-card">
+          <div className="settings-card-icon red">
+            <Lock size={28} />
+          </div>
+
+          <h2>Privacy & Personal Data</h2>
+          <p>View your stored data, manage consent, and request access, correction or deletion.</p>
+
+          <button type="button" onClick={() => navigate(privacyPath)}>Manage Privacy</button>
         </div>
       </section>
 

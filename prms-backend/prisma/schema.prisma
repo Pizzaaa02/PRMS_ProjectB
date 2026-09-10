@@ -113,9 +113,78 @@ model User {
   uploadedFiles        UserProfileFile[]
   websiteCustomizer    WebsiteCustomizer?
   viewingAppointments  ViewingAppointment[] @relation("TenantViewings")
+  consentRecords       ConsentRecord[]
+  privacyRequests      PrivacyRequest[]
 
   @@index([email])
   @@map("users")
+}
+
+model ConsentRecord {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  type        String    // PRIVACY_NOTICE, MARKETING, TERMS
+  wording     String    // exact text shown to the user at the time
+  version     String    // e.g. "1.0" - bump when wording changes materially
+  consented   Boolean
+  consentedAt DateTime  @default(now())
+  withdrawnAt DateTime?
+  ipAddress   String?
+
+  @@index([userId])
+  @@index([userId, type])
+  @@map("consent_records")
+}
+
+model PrivacyRequest {
+  id              String    @id @default(uuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+  type            String    // ACCESS, CORRECTION, DELETION, CONSENT_WITHDRAWAL
+  details         String?
+  status          String    @default("SUBMITTED") // SUBMITTED, IN_REVIEW, APPROVED, REJECTED, COMPLETED
+  assignedAdminId String?
+  decision        String?
+  decisionReason  String?
+  submitted_at    DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+  completed_at    DateTime?
+
+  @@index([userId])
+  @@index([status])
+  @@map("privacy_requests")
+}
+
+model RetentionPolicy {
+  id            String   @id @default(uuid())
+  category      String   @unique
+  label         String
+  retentionDays Int
+  description   String?
+  updated_at    DateTime @updatedAt
+
+  @@map("retention_policies")
+}
+
+model DataBreachIncident {
+  id                 String    @id @default(uuid())
+  title              String
+  detectedAt         DateTime
+  nature             String
+  cause              String?
+  dataTypesAffected  String
+  affectedUserCount  Int       @default(0)
+  containmentAction  String?
+  riskAssessment     String?
+  notificationStatus String    @default("PENDING") // PENDING, COMMISSIONER_NOTIFIED, USERS_NOTIFIED, NOT_REQUIRED
+  resolution         String?
+  status             String    @default("OPEN") // OPEN, CONTAINED, RESOLVED
+  createdById        String?
+  created_at         DateTime  @default(now())
+  updated_at         DateTime  @updatedAt
+
+  @@map("data_breach_incidents")
 }
 
 model Role {

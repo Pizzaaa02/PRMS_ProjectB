@@ -9,6 +9,7 @@ import { adminApi } from './admin';
 import { communicationApi } from './communication';
 import { viewingApi } from './viewing';
 import { agreementApi } from './agreement';
+import { privacyApi } from './privacy';
 import { apiClient, logoutUser, getApiError } from './ApiClient';
 
 export {
@@ -23,6 +24,7 @@ export {
   communicationApi,
   viewingApi,
   agreementApi,
+  privacyApi,
   apiClient,
   logoutUser,
   getApiError,

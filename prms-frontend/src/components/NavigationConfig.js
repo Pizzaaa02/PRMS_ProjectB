@@ -16,19 +16,23 @@ import {
   Bell,
   ShieldCheck,
   Palette,
+  Lock,
+  Trash2,
+  AlertTriangle,
 } from 'lucide-react'
 
 const roleRoutes = {
   Tenant:    { prefix: '/tenant',   pages: ['dashboard', 'notifications', 'properties', 'bookings', 'viewings', 'payments', 'maintenance', 'messages', 'settings'] },
   Landlord:  { prefix: '/landlord', pages: ['dashboard', 'notifications', 'properties', 'bookings', 'viewings', 'finance', 'heatmap', 'categories', 'maintenance', 'messages', 'settings'] },
   Agent:     { prefix: '/agent',    pages: ['dashboard', 'notifications', 'properties', 'bookings', 'viewings', 'maintenance', 'messages', 'categories', 'reports', 'finance', 'settings'] },
-  Admin:     { prefix: '/admin',    pages: ['dashboard', 'notifications', 'users', 'properties', 'bookings', 'viewings', 'finance', 'maintenance', 'messages', 'reports', 'categories', 'audit-logs', 'settings'] },
+  Admin:     { prefix: '/admin',    pages: ['dashboard', 'notifications', 'users', 'properties', 'bookings', 'viewings', 'finance', 'maintenance', 'messages', 'reports', 'categories', 'audit-logs', 'privacy-requests', 'retention', 'breach-register', 'settings'] },
 }
 
-// Reachable only via Settings > "Website Customizer" now, not as its own
-// sidebar icon - kept here so the topbar title/active-highlight still
-// resolve correctly when a user is actually on that page.
-const HIDDEN_PAGES = ['customizer']
+// Reachable only via Settings (e.g. "System Preferences", "Privacy & Personal
+// Data") rather than their own sidebar icon - kept here so the topbar
+// title/active-highlight still resolve correctly when a user is on one of
+// these pages.
+const HIDDEN_PAGES = ['customizer', 'privacy']
 
 const pageMeta = {
   dashboard:    { label: 'Dashboard',       icon: LayoutDashboard },
@@ -46,8 +50,12 @@ const pageMeta = {
   users:        { label: 'Users',           icon: Users },
   reports:      { label: 'Reports',         icon: FileText },
   customizer:   { label: 'Customizer',      icon: Palette },
+  privacy:      { label: 'Privacy',         icon: Lock },
   help:         { label: 'Help',            icon: CircleHelp },
   'audit-logs': { label: 'Audit Logs',      icon: ShieldCheck },
+  'privacy-requests': { label: 'Privacy Requests', icon: Lock },
+  retention:          { label: 'Retention',        icon: Trash2 },
+  'breach-register':  { label: 'Breach Register',  icon: AlertTriangle },
 }
 
 /** Build sidebar nav items for a given role */

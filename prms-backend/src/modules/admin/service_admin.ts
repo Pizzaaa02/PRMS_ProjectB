@@ -43,7 +43,7 @@ export async function getSystemSettingsByCategory(category: string) {
 }
 
 // Categories safe for public consumption (no sensitive internal config)
-const publicCategories = ['theme', 'branding', 'header', 'footer', 'homepage', 'features'];
+const publicCategories = ['theme', 'branding', 'header', 'footer', 'homepage', 'features', 'privacy'];
 
 export async function getPublicSystemSettings() {
   return prisma.systemSetting.findMany({

@@ -29,8 +29,8 @@ export class AuthController {
       return res.status(400).json({ success: false, error: { message: errors.array()[0].msg } });
     }
     try {
-      const { email, password, full_name, phone, role } = req.body;
-      const user = await authService.registerUser(email, password, full_name, phone, role);
+      const { email, password, full_name, phone, role, consents } = req.body;
+      const user = await authService.registerUser(email, password, full_name, phone, role, consents, (req as any).ip);
       const tokens = authService.generateTokens(user.id);
       await authService.saveRefreshToken(user.id, tokens.refreshToken);
       HELPERS(req).log({ userId: user.id, username: user.email, userRole: role || 'Tenant', action: 'USER_REGISTRATION', entity: 'User', entityId: user.id, description: `New user registered with role ${role || 'Tenant'}`, status: 'Success', level: 'info' });

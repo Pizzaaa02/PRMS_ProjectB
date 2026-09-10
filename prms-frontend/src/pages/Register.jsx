@@ -14,6 +14,11 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useRegistration } from '../contexts/RegistrationContext';
+import { privacyApi } from '../api';
+import {
+  PRIVACY_NOTICE_ACK_TEXT, PRIVACY_NOTICE_VERSION,
+  MARKETING_CONSENT_TEXT, MARKETING_CONSENT_VERSION,
+} from '../config/legalContent';
 
 function Register() {
   const navigate = useNavigate();
@@ -43,6 +48,8 @@ function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
+  const [privacyAck, setPrivacyAck] = useState(false);
+  const [marketingConsent, setMarketingConsent] = useState(false);
 
   function handleChange(field, value) {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -60,6 +67,12 @@ function Register() {
       return;
     }
 
+    if (!privacyAck) {
+      setSubmitting(false);
+      setFormError('You must acknowledge the Privacy Notice to create an account');
+      return;
+    }
+
     const result = await register(
       {
         full_name: `${formData.firstName} ${formData.lastName}`.trim(),
@@ -67,6 +80,10 @@ function Register() {
         phone: formData.phone,
         password: formData.password,
         role: selectedRole,
+        consents: [
+          { type: 'PRIVACY_NOTICE', wording: PRIVACY_NOTICE_ACK_TEXT, version: PRIVACY_NOTICE_VERSION, consented: true },
+          { type: 'MARKETING', wording: MARKETING_CONSENT_TEXT, version: MARKETING_CONSENT_VERSION, consented: marketingConsent },
+        ],
       },
       navigate
     );
@@ -297,6 +314,42 @@ function Register() {
                   minLength={6}
                 />
               </div>
+            </motion.div>
+
+            <motion.div
+              className="register-consent-block"
+              initial={{ y: 18, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.68, duration: 0.35 }}
+            >
+              <label className="register-consent-checkbox">
+                <input
+                  type="checkbox"
+                  checked={privacyAck}
+                  onChange={(e) => setPrivacyAck(e.target.checked)}
+                />
+                <span>
+                  I acknowledge the{' '}
+                  <a href="/privacy-notice" target="_blank" rel="noopener noreferrer">Privacy Notice</a>
+                  {' '}and consent to my personal data being processed for account and
+                  rental-management purposes. *
+                </span>
+              </label>
+              <label className="register-consent-checkbox">
+                <input
+                  type="checkbox"
+                  checked={marketingConsent}
+                  onChange={(e) => setMarketingConsent(e.target.checked)}
+                />
+                <span>
+                  I would like to receive optional marketing communications (new listings,
+                  offers, newsletters). Not required to use PRMS.
+                </span>
+              </label>
+              <p className="register-terms-note">
+                By creating an account you also agree to the{' '}
+                <a href="/terms" target="_blank" rel="noopener noreferrer">Terms and Conditions</a>.
+              </p>
             </motion.div>
 
             {/* Error message */}

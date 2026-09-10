@@ -564,6 +564,43 @@ form label {
   margin-top: 0;
 }
 
+.register-consent-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 4px 0 14px;
+}
+
+.register-consent-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary, #64748b);
+  cursor: pointer;
+}
+
+.register-consent-checkbox input {
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+
+.register-consent-checkbox a {
+  color: var(--primary-color, #8a2be2);
+  font-weight: 600;
+}
+
+.register-terms-note {
+  font-size: 12px;
+  color: var(--text-secondary, #94a3b8);
+  margin: 0;
+}
+
+.register-terms-note a {
+  color: var(--primary-color, #8a2be2);
+  font-weight: 600;
+}
+
 /* ================= ROLE SELECTION PAGE ================= */
 
 .role-page {

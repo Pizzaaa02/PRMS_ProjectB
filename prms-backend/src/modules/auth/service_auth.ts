@@ -16,9 +16,24 @@ async function ensureAgentRecord(userId: string) {
   });
 }
 
-export async function registerUser(email: string, password: string, full_name?: string, phone?: string, role?: string) {
+export async function registerUser(
+  email: string,
+  password: string,
+  full_name?: string,
+  phone?: string,
+  role?: string,
+  consents?: { type: string; wording: string; version: string; consented: boolean }[],
+  ipAddress?: string,
+) {
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) throw new Error('Email already registered');
+  // PDPA: the Privacy Notice acknowledgement is mandatory to hold an
+  // account here — everything else (e.g. marketing) is optional and must
+  // never be required.
+  const privacyAck = consents?.find((c) => c.type === 'PRIVACY_NOTICE');
+  if (!privacyAck || !privacyAck.consented) {
+    throw new Error('You must acknowledge the Privacy Notice to create an account');
+  }
 
   const passwordHash = await bcrypt.hash(password, 10);
   // firebase_uid is a unique column; password-based accounts have no real
@@ -45,6 +60,19 @@ export async function registerUser(email: string, password: string, full_name?: 
 
   if ((role || 'Tenant') === 'Agent') {
     await ensureAgentRecord(user.id);
+  }
+
+  if (consents?.length) {
+    await prisma.consentRecord.createMany({
+      data: consents.map((c) => ({
+        userId: user.id,
+        type: c.type,
+        wording: c.wording,
+        version: c.version,
+        consented: c.consented,
+        ipAddress,
+      })),
+    });
   }
 
   return user;

@@ -28,6 +28,7 @@ function getTopbarTitle(activePage) {
     profile: 'Profile',
     settings: 'Settings',
     customizer: 'System Preferences',
+    privacy: 'Privacy & Personal Data',
     help: 'Help Center',
   }
   return titles[activePage] || 'Tenant Portal'

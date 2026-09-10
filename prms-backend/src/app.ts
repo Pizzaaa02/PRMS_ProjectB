@@ -129,6 +129,9 @@ router.use('/viewings', viewingRoutes);
 import agreementRoutes from './modules/agreement/routes_agreement';
 router.use('/agreements', agreementRoutes);
 
+import privacyRoutes from './modules/privacy/routes_privacy';
+router.use('/privacy', privacyRoutes);
+
 app.use(router);
 app.use(errorHandler);
 

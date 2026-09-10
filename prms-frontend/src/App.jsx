@@ -73,6 +73,12 @@ const SuspenseWrapper = ({ children }) => (
 const MyBookings = lazy(() => import('./pages/MyBookings'));
 const LandlordBookings = lazy(() => import('./pages/LandlordBookings'));
 const Viewings = lazy(() => import('./pages/Viewings'));
+const PrivacyNotice = lazy(() => import('./pages/PrivacyNotice'));
+const TermsAndConditions = lazy(() => import('./pages/TermsAndConditions'));
+const PrivacyPersonalData = lazy(() => import('./pages/PrivacyPersonalData'));
+const AdminPrivacyRequests = lazy(() => import('./pages/AdminPrivacyRequests'));
+const AdminRetention = lazy(() => import('./pages/AdminRetention'));
+const AdminBreachRegister = lazy(() => import('./pages/AdminBreachRegister'));
 const AdminBookings = lazy(() => import('./pages/AdminBookings'));
 const TenantPayments = lazy(() => import('./pages/TenantPayments'));
 const TenantMaintenance = lazy(() => import('./pages/TenantMaintenance'));
@@ -129,6 +135,10 @@ function AppRoutes() {
           </SuspenseWrapper>
         }
       />
+
+      {/*  PDPA: Privacy Notice + Terms, viewable whether logged in or not  */}
+      <Route path="/privacy-notice" element={<PrivacyNotice />} />
+      <Route path="/terms" element={<TermsAndConditions />} />
 
       {/*  Public routes (auth-001: RoleSelection -> Register -> Login)  */}
       <Route
@@ -225,6 +235,10 @@ function AppRoutes() {
         />
         <Route path="bookings" element={<AdminBookings />} />
         <Route path="viewings" element={<Viewings />} />
+        <Route path="privacy" element={<PrivacyPersonalData />} />
+        <Route path="privacy-requests" element={<AdminPrivacyRequests />} />
+        <Route path="retention" element={<AdminRetention />} />
+        <Route path="breach-register" element={<AdminBreachRegister />} />
         <Route
           path="finance"
           element={
@@ -293,6 +307,7 @@ function AppRoutes() {
         <Route path="properties/:id" element={<PropertyDetail />} />
         <Route path="bookings" element={<LandlordBookings />} />
         <Route path="viewings" element={<Viewings />} />
+        <Route path="privacy" element={<PrivacyPersonalData />} />
         <Route
           path="finance"
           element={
@@ -357,6 +372,7 @@ function AppRoutes() {
         <Route path="properties/:id" element={<PropertyDetail />} />
         <Route path="bookings" element={<MyBookings />} />
         <Route path="viewings" element={<Viewings />} />
+        <Route path="privacy" element={<PrivacyPersonalData />} />
         <Route path="payments" element={<TenantPayments />} />
         <Route path="payments/:id" element={<PaymentReceipt />} />
         <Route path="maintenance" element={<TenantMaintenance />} />
@@ -413,6 +429,7 @@ function AppRoutes() {
           }
         />
         <Route path="viewings" element={<Viewings />} />
+        <Route path="privacy" element={<PrivacyPersonalData />} />
         <Route path="maintenance" element={<AgentMaintenance />} />
         <Route path="messages" element={<CommunicationHub />} />
         <Route path="categories" element={<AgentCategories />} />
