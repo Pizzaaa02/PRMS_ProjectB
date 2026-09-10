@@ -250,11 +250,6 @@ export default function TenantSimplePage({ type, label, children }) {
           alert('Failed to update: ' + e.message)
         }
       }
-    } else if (resolvedType === 'messages') {
-      // CommunicationHub renders below (as `children`) and owns the actual
-      // compose flow - this just tells it to open, since it isn't reachable
-      // via props through this page shell.
-      window.dispatchEvent(new CustomEvent('prms:new-message'))
     }
   }
 
@@ -272,9 +267,11 @@ export default function TenantSimplePage({ type, label, children }) {
           <h1>{cfg.title}</h1>
           <p>{cfg.subtitle}</p>
         </div>
-        <button type="button" className="tenant-simple-primary-btn" onClick={handlePrimaryBtn}>
-          {cfg.primaryBtn}
-        </button>
+        {resolvedType !== 'messages' && (
+          <button type="button" className="tenant-simple-primary-btn" onClick={handlePrimaryBtn}>
+            {cfg.primaryBtn}
+          </button>
+        )}
       </section>
 
       {children && <section style={{ marginBottom: '1.5rem' }}>{children}</section>}

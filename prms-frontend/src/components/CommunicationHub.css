@@ -34,14 +34,14 @@
 .comm-new-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  height: 32px;
-  padding: 0 12px;
+  gap: 8px;
+  height: 40px;
+  padding: 0 18px;
   border: none;
   border-radius: 8px;
   background: var(--primary-container);
   color: var(--on-primary);
-  font-size: 0.8rem;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   transition: filter 0.15s;

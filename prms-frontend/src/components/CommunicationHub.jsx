@@ -27,15 +27,6 @@ function CommunicationHub() {
     loadConversations();
   }, []);
 
-  // Lets a "New Message" button living outside this component (e.g. the
-  // hero button on TenantSimplePage) open the compose view without prop
-  // drilling through the page shells that mount this as `children`.
-  useEffect(() => {
-    const handler = () => openCompose();
-    window.addEventListener('prms:new-message', handler);
-    return () => window.removeEventListener('prms:new-message', handler);
-  }, [user]);
-
   useEffect(() => {
     if (selectedConv?.id) {
       loadMessages();
