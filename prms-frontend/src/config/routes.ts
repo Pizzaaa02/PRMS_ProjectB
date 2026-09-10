@@ -41,6 +41,7 @@ export const ROUTES = {
   landlord: {
     root: '/landlord',
     dashboard: '/landlord/dashboard',
+    notifications: '/landlord/notifications',
     properties: '/landlord/properties',
     propertyAdd: '/landlord/properties/add',
     propertyEdit: '/landlord/properties/edit',
@@ -58,6 +59,7 @@ export const ROUTES = {
   tenant: {
     root: '/tenant',
     dashboard: '/tenant/dashboard',
+    notifications: '/tenant/notifications',
     properties: '/tenant/properties',
     propertyDetail: (id: string) => `/tenant/properties/${id}`,
     bookings: '/tenant/bookings',
@@ -73,6 +75,7 @@ export const ROUTES = {
   agent: {
     root: '/agent',
     dashboard: '/agent/dashboard',
+    notifications: '/agent/notifications',
     properties: '/agent/properties',
     propertyDetail: (id: string) => `/agent/properties/${id}`,
     bookings: '/agent/bookings',

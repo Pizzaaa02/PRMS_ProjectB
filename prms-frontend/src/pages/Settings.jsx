@@ -20,18 +20,13 @@ function getProfilePath(role) {
   return ROUTES.admin.profile
 }
 
-function getAuditLogsPath(role) {
-  if (!role) return ROUTES.admin.auditLogs
-  const lower = role.toLowerCase()
-  if (lower.includes('admin')) return ROUTES.admin.auditLogs
-  // Audit logs are admin-only; other roles see the admin path
-  return ROUTES.admin.auditLogs
-}
-
 function getNotificationsPath(role) {
   if (!role) return ROUTES.admin.notifications
   const lower = role.toLowerCase()
   if (lower.includes('admin')) return ROUTES.admin.notifications
+  if (lower.includes('landlord')) return ROUTES.landlord.notifications
+  if (lower.includes('tenant')) return ROUTES.tenant.notifications
+  if (lower.includes('agent')) return ROUTES.agent.notifications
   return ROUTES.admin.notifications
 }
 
@@ -41,7 +36,6 @@ function Settings() {
 
   const isAdmin = (user?.role || '').toLowerCase().includes('admin')
   const profilePath = getProfilePath(user?.role)
-  const auditLogsPath = getAuditLogsPath(user?.role)
   const notificationsPath = getNotificationsPath(user?.role)
 
   return (
@@ -76,16 +70,18 @@ function Settings() {
           <button type="button" onClick={() => navigate(notificationsPath)}>Manage Notifications</button>
         </div>
 
-        <div className="settings-card">
-          <div className="settings-card-icon red">
-            <ShieldCheck size={28} />
+        {isAdmin && (
+          <div className="settings-card">
+            <div className="settings-card-icon red">
+              <ShieldCheck size={28} />
+            </div>
+
+            <h2>Security Settings</h2>
+            <p>Review login activity, enable verification, and manage session access.</p>
+
+            <button type="button" onClick={() => navigate(ROUTES.admin.auditLogs)}>Manage Security</button>
           </div>
-
-          <h2>Security Settings</h2>
-          <p>Review login activity, enable verification, and manage session access.</p>
-
-          <button type="button" onClick={() => navigate(auditLogsPath)}>Manage Security</button>
-        </div>
+        )}
 
         {isAdmin && (
           <div className="settings-card">
