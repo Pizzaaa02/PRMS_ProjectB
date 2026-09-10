@@ -60,6 +60,15 @@
   font-size: 15px;
 }
 
+.tenant-booking-section-title {
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+}
+
 /* ---- Date fields ---- */
 .tenant-booking-dates {
   display: grid;

@@ -54,13 +54,6 @@ function BookingCard({ property, onBookClick }) {
   const [showCalendar, setShowCalendar] = useState(false);
 
   const today = new Date().toISOString().slice(0, 10);
-  const defaultCheckIn = today;
-  const defaultCheckOut = new Date(Date.now() + 5 * 24 * 3600 * 1000).toISOString().slice(0, 10);
-
-  useEffect(() => {
-    setCheckIn(defaultCheckIn);
-    setCheckOut(defaultCheckOut);
-  }, []);
 
   const nightlyRate = property.rent || 0;
   // checkOut can be momentarily empty right after clicking a calendar day

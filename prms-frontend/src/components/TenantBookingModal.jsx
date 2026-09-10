@@ -138,9 +138,10 @@ function TenantBookingModal({ property, isOpen, onClose }) {
                 </p>
 
                 {/* Date pickers */}
+                <h3 className="tenant-booking-section-title">Booking Details</h3>
                 <div className="tenant-booking-dates">
                   <label className="tenant-booking-field">
-                    <span>Check-in</span>
+                    <span>Start Date</span>
                     <input
                       type="date"
                       min={todayStr}
@@ -151,7 +152,7 @@ function TenantBookingModal({ property, isOpen, onClose }) {
                   </label>
 
                   <label className="tenant-booking-field">
-                    <span>Check-out</span>
+                    <span>End Date</span>
                     <input
                       type="date"
                       min={startDate || todayStr}
