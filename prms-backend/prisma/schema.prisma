@@ -111,6 +111,7 @@ model User {
   personalCategories   PropertyCategory[] @relation("user_categories")
   preferences          UserPreference?
   uploadedFiles        UserProfileFile[]
+  websiteCustomizer    WebsiteCustomizer?
 
   @@index([email])
   @@map("users")
@@ -411,6 +412,8 @@ model UserProfileFile {
 
 model WebsiteCustomizer {
   id             String  @id @default(uuid())
+  userId         String  @unique
+  user           User    @relation(fields: [userId], references: [id])
   company_name   String  @default("PRMS")
   logo_url       String?
   logo_thumb_url String?

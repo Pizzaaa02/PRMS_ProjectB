@@ -27,6 +27,7 @@ function getTopbarTitle(activePage) {
     messages: 'Messages',
     profile: 'Profile',
     settings: 'Settings',
+    customizer: 'Website Customizer',
     help: 'Help Center',
   }
   return titles[activePage] || 'Landlord Portal'

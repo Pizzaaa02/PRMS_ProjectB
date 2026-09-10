@@ -1,9 +1,12 @@
-import { useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
 import { customizerApi } from '../api/customizer'
 import { getFullUrl } from '../config/apiBaseUrl'
 
 /**
- * Maps customizer DB fields to the CSS custom properties the layouts consume.
+ * Maps customizer DB fields to the CSS custom properties every layout's
+ * CSS already consumes (AdminLayout.css, LandlordLayout.css, etc.), so
+ * painting these here is what makes the Website Customizer's colors show
+ * up across every role's pages, not just the public homepage.
  *
  * customizer field         -> CSS variable(s)
  * ---------------------    -> --------------------------------
@@ -15,11 +18,10 @@ import { getFullUrl } from '../config/apiBaseUrl'
  *                         -> --accent-color             (active-gradient)
  * light_footer_bg         -> --footer-background-color
  *
- * Dark variants applied the same way.
- *
- * Only the active theme's values are painted onto the shared CSS variables
- * so light/dark don't fight over the same slot.
- * A MutationObserver re-paints when the user toggles data-theme.
+ * Only Light Mode is customizable - Dark Mode always keeps the app's own
+ * built-in dark styling, so there is no dark_* half of this map. A
+ * MutationObserver re-paints (or un-paints) when the user toggles
+ * data-theme.
  */
 const PAINT_MAP = [
   ['light_header_bg',  ['--header-background-color']],
@@ -28,12 +30,6 @@ const PAINT_MAP = [
   ['light_body_bg',    ['--background-color', '--page-bg']],
   ['light_accent_color',['--primary-color', '--accent-color']],
   ['light_footer_bg',  ['--footer-background-color']],
-  ['dark_header_bg',   ['--header-background-color']],
-  ['dark_sidebar_bg',  ['--sidebar-bg']],
-  ['dark_card_bg',     ['--card-bg']],
-  ['dark_body_bg',     ['--background-color', '--page-bg']],
-  ['dark_accent_color', ['--primary-color', '--accent-color']],
-  ['dark_footer_bg',   ['--footer-background-color']],
 ]
 
 function getTheme() {
@@ -44,8 +40,15 @@ function getTheme() {
 
 function paintTheme(data, theme) {
   const root = document.documentElement.style
+  if (theme !== 'light') {
+    // Dark mode is not customizable - remove any painted light-mode
+    // values so the app's own default dark styling shows through.
+    for (const [, cssVars] of PAINT_MAP) {
+      for (const cv of cssVars) root.removeProperty(cv)
+    }
+    return
+  }
   for (const [field, cssVars] of PAINT_MAP) {
-    if (!field.startsWith(theme)) continue
     const value = data[field]
     if (value) {
       for (const cv of cssVars) {
@@ -55,17 +58,22 @@ function paintTheme(data, theme) {
   }
 }
 
-function useBranding() {
+const BrandingContext = createContext({ name: 'PRMS', logoUrl: null, colors: {} })
+
+/**
+ * Mounted once at the app root (see App.jsx) so the customizer's colors
+ * stay painted across every route and role for the whole session, instead
+ * of only while a single page (the old per-page hook this replaced) is
+ * mounted. Being permanently mounted also means the CSS variables never
+ * need to be un-painted on navigation - there's nowhere to leak from.
+ */
+export function BrandingProvider({ children }) {
   const [name, setName] = useState('PRMS')
   const [logoUrl, setLogoUrl] = useState(null)
   const [colors, setColors] = useState({})
 
   useEffect(() => {
     let observer = null
-    // GuestHome can unmount (user clicks Sign In) before this fetch
-    // resolves - without this guard, the .then() below still ran and
-    // painted the variables onto <html> *after* the cleanup below had
-    // already fired, so they were never actually removed.
     let cancelled = false
 
     async function load() {
@@ -80,13 +88,9 @@ function useBranding() {
           setLogoUrl(getFullUrl(data.logo_url))
         }
 
-        /* ── Store full customizer payload ── */
         setColors(data)
-
-        /* ── Paint active theme ── */
         paintTheme(data, getTheme())
 
-        /* ── Re-paint when user toggles theme ── */
         observer = new MutationObserver(() => {
           paintTheme(data, getTheme())
         })
@@ -101,26 +105,21 @@ function useBranding() {
 
     load()
 
-    /* ── useEffect cleanup: disconnect the observer AND un-paint the
-       variables. Without this, navigating away from the public site
-       (e.g. clicking Sign In and logging in) left the customizer's
-       public-facing colors sitting as inline styles on <html>, which -
-       being higher specificity than any stylesheet rule - silently
-       overrode the authenticated app's own colors (dashboards, sidebar,
-       buttons) for the rest of the session. ── */
     return () => {
       cancelled = true
       if (observer) observer.disconnect()
-      const root = document.documentElement.style
-      const painted = new Set()
-      for (const [, cssVars] of PAINT_MAP) {
-        for (const cv of cssVars) painted.add(cv)
-      }
-      painted.forEach((cv) => root.removeProperty(cv))
     }
   }, [])
 
-  return { name, logoUrl, colors }
+  return (
+    <BrandingContext.Provider value={{ name, logoUrl, colors }}>
+      {children}
+    </BrandingContext.Provider>
+  )
+}
+
+export function useBranding() {
+  return useContext(BrandingContext)
 }
 
 export default useBranding

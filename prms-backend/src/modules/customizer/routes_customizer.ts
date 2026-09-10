@@ -1,7 +1,6 @@
 import express from 'express';
 import multer from 'multer';
-import { authenticate } from '../../middleware/auth';
-import { adminOnly } from '../../middleware/rbac';
+import { authenticate, optionalAuth } from '../../middleware/auth';
 import { CustomizerController } from './controller_customizer';
 
 const router = express.Router();
@@ -16,15 +15,20 @@ const logoUpload = multer({
   },
 });
 
-// GET /config is public — guests need it for branding
-router.get('/config', ctrl.getConfig);
-router.get('/preview', ctrl.getPreview);
+// Branding is per-user now (each account has its own), so /config and
+// /preview use optionalAuth: a logged-in caller gets their own config, a
+// guest (no token yet, e.g. the public landing page before sign-in) gets
+// the plain defaults rather than any particular user's customization.
+router.get('/config', optionalAuth, ctrl.getConfig);
+router.get('/preview', optionalAuth, ctrl.getPreview);
 router.get('/health', (_req, res) => res.json({ success: true, service: 'customizer', status: 'ok' }));
 
-// Protected routes
+// Every authenticated user manages their own branding - not admin-only,
+// since each role (and each individual account within a role) has its
+// own independent customizer.
 router.use(authenticate);
-router.put('/config', adminOnly, ctrl.updateConfig);
-router.post('/upload-logo', adminOnly, logoUpload.single('logo'), ctrl.uploadLogo);
-router.delete('/logo', adminOnly, ctrl.removeLogo);
+router.put('/config', ctrl.updateConfig);
+router.post('/upload-logo', logoUpload.single('logo'), ctrl.uploadLogo);
+router.delete('/logo', ctrl.removeLogo);
 
 export default router;

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useSettings } from '../contexts/SettingsContext'
-import useBranding from '../hooks/useBranding'
+import { useBranding } from '../contexts/BrandingContext'
 import ThemeSwitcher from '../components/ThemeSwitcher'
 import {
   ArrowRight,

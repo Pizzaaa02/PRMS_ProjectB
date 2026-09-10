@@ -3,7 +3,9 @@ import { customizerApi } from '../api/customizer';
 import { getFullUrl } from '../config/apiBaseUrl';
 import './WebsiteCustomizer.css';
 
-/* ── defaults ── */
+/* ── defaults ──
+   Only Light Mode is customizable - Dark Mode always keeps the app's own
+   built-in dark styling, so there are no dark_* fields here. */
 const DEFAULTS = {
   company_name: 'PRMS',
   logo_url: '',
@@ -13,12 +15,6 @@ const DEFAULTS = {
   light_footer_bg: '#111827',
   light_accent_color: '#2563eb',
   light_card_bg: '#ffffff',
-  dark_header_bg: '#1f2937',
-  dark_sidebar_bg: '#1f2937',
-  dark_body_bg: '#111827',
-  dark_footer_bg: '#030712',
-  dark_accent_color: '#60a5fa',
-  dark_card_bg: '#334155',
 };
 
 /* ── ColorInput ── */
@@ -69,7 +65,7 @@ function BrandingSection({ company_name, logo_url, onCompanyChange, onLogoUpload
 }
 
 /* ── Colors section ── */
-function ColorsSection({ prefix, colors, onChange, disabled }) {
+function ColorsSection({ colors, onChange, disabled }) {
   const fields = [
     ['header_bg', 'Header Background'],
     ['sidebar_bg', 'Sidebar Background'],
@@ -84,8 +80,8 @@ function ColorsSection({ prefix, colors, onChange, disabled }) {
         <ColorInput
           key={k}
           label={l}
-          value={colors[`${prefix}_${k}`]}
-          onChange={(v) => onChange(`${prefix}_${k}`, v)}
+          value={colors[`light_${k}`]}
+          onChange={(v) => onChange(`light_${k}`, v)}
           disabled={disabled}
         />
       ))}
@@ -94,17 +90,15 @@ function ColorsSection({ prefix, colors, onChange, disabled }) {
 }
 
 /* ── Preview (rendered inline) ── */
-function PreviewPanel({ config, theme }) {
-  const useDark = theme === 'dark';
-  const raw = pick(config, useDark ? 'dark_' : 'light_');
-  const active = { ...pick(DEFAULTS, useDark ? 'dark_' : 'light_'), ...raw };
+function PreviewPanel({ config }) {
+  const active = { ...pick(DEFAULTS, 'light_'), ...pick(config, 'light_') };
 
   const logoSrc = config.logo_url ? getFullUrl(config.logo_url) : null;
 
   return (
     <div className="preview-area">
       <div className="preview-toolbar">
-        <span>Live Preview — {theme === 'dark' ? '🌙 Dark Mode' : '☀️ Light Mode'}</span>
+        <span>Live Preview — ☀️ Light Mode</span>
       </div>
       <div className="preview-iframe-wrapper">
         <div style={{
@@ -112,7 +106,7 @@ function PreviewPanel({ config, theme }) {
           minHeight: '480px',
           display: 'flex',
           flexDirection: 'column',
-          color: theme === 'dark' ? '#e5e7eb' : '#111827',
+          color: '#111827',
         }}>
           {/* Header */}
           <div style={{
@@ -124,7 +118,7 @@ function PreviewPanel({ config, theme }) {
             borderBottom: `2px solid ${active.accent_color}`,
           }}>
             {logoSrc && <img src={logoSrc} alt="Logo" style={{ height: '32px', objectFit: 'contain' }} />}
-            <span style={{ fontWeight: 700, fontSize: '18px', color: theme === 'dark' ? '#fff' : '#111827' }}>
+            <span style={{ fontWeight: 700, fontSize: '18px', color: '#111827' }}>
               {config.company_name || 'PRMS'}
             </span>
           </div>
@@ -139,7 +133,7 @@ function PreviewPanel({ config, theme }) {
               alignItems: 'center',
               paddingTop: '16px',
               gap: '8px',
-              borderRight: `1px solid ${theme === 'dark' ? '#334155' : '#e2e8f0'}`,
+              borderRight: '1px solid #e2e8f0',
             }}>
               {['🏠','🏢','📋','👤'].map((icon, i) => (
                 <div key={i} style={{
@@ -200,7 +194,6 @@ function PreviewPanel({ config, theme }) {
 /* helper */
 function pick(obj, prefix) {
   const r = {};
-  const k = prefix.replace('_', '');
   Object.keys(obj).filter((kk) => kk.startsWith(prefix)).forEach((kk) => {
     r[kk.replace(prefix, '')] = obj[kk];
   });
@@ -214,7 +207,6 @@ export default function WebsiteCustomizer() {
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState(null);
   const [dirty, setDirty] = useState(false);
-  const [theme, setTheme] = useState('light');
   const previewKeyRef = useRef(0);
   const origRef = useRef(null);
 
@@ -300,8 +292,8 @@ export default function WebsiteCustomizer() {
     setSaving(true);
     try {
       await customizerApi.updateConfig(DEFAULTS);
-      setConfig(DEFAULTS);
-      origRef.current = { ...DEFAULTS };
+      setConfig((p) => ({ ...p, ...DEFAULTS }));
+      origRef.current = { ...origRef.current, ...DEFAULTS };
       setDirty(false);
       setStatus({ type: 'success', msg: 'Reset to defaults.' });
     } catch (err) {
@@ -341,20 +333,14 @@ export default function WebsiteCustomizer() {
         </div>
       )}
 
-      {/* Theme tabs */}
-      <div className="theme-tabs">
-        <button className={`theme-tab ${theme === 'light' ? 'active' : ''}`} type="button" onClick={() => setTheme('light')}>
-          ☀️ Light Mode
-        </button>
-        <button className={`theme-tab ${theme === 'dark' ? 'active' : ''}`} type="button" onClick={() => setTheme('dark')}>
-          🌙 Dark Mode
-        </button>
-      </div>
+      <p className="customizer-hint">
+        Only Light Mode can be customized here — Dark Mode always keeps its own built-in look.
+      </p>
 
       {/* Body */}
       <div className="customizer-body">
         {/* Left: Preview */}
-        <PreviewPanel config={config} theme={theme} key={previewKeyRef.current} />
+        <PreviewPanel config={config} key={previewKeyRef.current} />
 
         {/* Right: Editor */}
         <div className="editor-panel">
@@ -368,7 +354,6 @@ export default function WebsiteCustomizer() {
           />
           <hr className="customizer-divider" />
           <ColorsSection
-            prefix={theme === 'light' ? 'light' : 'dark'}
             colors={config}
             onChange={onColorChange}
             disabled={saving}

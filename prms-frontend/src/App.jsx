@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { RegistrationProvider } from './contexts/RegistrationContext';
 import { SettingsProvider } from './contexts/SettingsContext';
+import { BrandingProvider } from './contexts/BrandingContext';
 import { CustomizationProvider } from './contexts/CustomizationContext';
 import { UserPreferencesProvider } from './contexts/UserPreferencesContext';
 import { FeatureFlagsProvider } from './contexts/FeatureFlagsContext';
@@ -309,6 +310,14 @@ function AppRoutes() {
         />
         <Route path="messages" element={<CommunicationHub />} />
         <Route path="settings" element={<Settings />} />
+        <Route
+          path="customizer"
+          element={
+            <SuspenseWrapper>
+              <WebsiteCustomizer />
+            </SuspenseWrapper>
+          }
+        />
         <Route path="help" element={<LandlordSimplePage label="Help Center" />} />
       </Route>
 
@@ -349,6 +358,14 @@ function AppRoutes() {
         <Route path="maintenance" element={<TenantMaintenance />} />
         <Route path="messages" element={<TenantSimplePage label="Messages"><CommunicationHub /></TenantSimplePage>} />
         <Route path="settings" element={<Settings />} />
+        <Route
+          path="customizer"
+          element={
+            <SuspenseWrapper>
+              <WebsiteCustomizer />
+            </SuspenseWrapper>
+          }
+        />
         <Route path="help" element={<TenantSimplePage label="Help Center" />} />
       </Route>
 
@@ -396,6 +413,14 @@ function AppRoutes() {
         <Route path="categories" element={<AgentCategories />} />
         <Route path="settings" element={<Settings />} />
         <Route
+          path="customizer"
+          element={
+            <SuspenseWrapper>
+              <WebsiteCustomizer />
+            </SuspenseWrapper>
+          }
+        />
+        <Route
           path="finance"
           element={
             <SuspenseWrapper>
@@ -429,17 +454,19 @@ function App() {
     <BrowserRouter>
       <ErrorBoundary>
         <SettingsProvider>
-          <CustomizationProvider>
-            <AuthProvider>
-              <UserPreferencesProvider>
-                <FeatureFlagsProvider>
-                  <RegistrationProvider>
-                    <AppRoutes />
-                  </RegistrationProvider>
-                </FeatureFlagsProvider>
-              </UserPreferencesProvider>
-            </AuthProvider>
-          </CustomizationProvider>
+          <BrandingProvider>
+            <CustomizationProvider>
+              <AuthProvider>
+                <UserPreferencesProvider>
+                  <FeatureFlagsProvider>
+                    <RegistrationProvider>
+                      <AppRoutes />
+                    </RegistrationProvider>
+                  </FeatureFlagsProvider>
+                </UserPreferencesProvider>
+              </AuthProvider>
+            </CustomizationProvider>
+          </BrandingProvider>
         </SettingsProvider>
       </ErrorBoundary>
     </BrowserRouter>

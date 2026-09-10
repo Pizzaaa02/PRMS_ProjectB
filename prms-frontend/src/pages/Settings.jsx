@@ -32,14 +32,24 @@ function getNotificationsPath(role) {
   return ROUTES.admin.notifications
 }
 
+function getCustomizerPath(role) {
+  if (!role) return ROUTES.admin.customizer
+  const lower = role.toLowerCase()
+  if (lower.includes('admin')) return ROUTES.admin.customizer
+  if (lower.includes('landlord')) return ROUTES.landlord.customizer
+  if (lower.includes('tenant')) return ROUTES.tenant.customizer
+  if (lower.includes('agent')) return ROUTES.agent.customizer
+  return ROUTES.admin.customizer
+}
+
 function Settings() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const [securityOpen, setSecurityOpen] = useState(false)
 
-  const isAdmin = (user?.role || '').toLowerCase().includes('admin')
   const profilePath = getProfilePath(user?.role)
   const notificationsPath = getNotificationsPath(user?.role)
+  const customizerPath = getCustomizerPath(user?.role)
 
   return (
     <div className="admin-content" data-customize-id="global.content">
@@ -84,18 +94,16 @@ function Settings() {
           <button type="button" onClick={() => setSecurityOpen(true)}>Manage Security</button>
         </div>
 
-        {isAdmin && (
-          <div className="settings-card">
-            <div className="settings-card-icon green">
-              <Building2 size={28} />
-            </div>
-
-            <h2>System Preferences</h2>
-            <p>Adjust dashboard layout, property display, language, and system theme.</p>
-
-            <button type="button" onClick={() => navigate(ROUTES.admin.customizer)}>Manage Preferences</button>
+        <div className="settings-card">
+          <div className="settings-card-icon green">
+            <Building2 size={28} />
           </div>
-        )}
+
+          <h2>Website Customizer</h2>
+          <p>Personalize your own colors, logo, and company name.</p>
+
+          <button type="button" onClick={() => navigate(customizerPath)}>Manage Preferences</button>
+        </div>
       </section>
 
       <ChangePasswordModal isOpen={securityOpen} onClose={() => setSecurityOpen(false)} />

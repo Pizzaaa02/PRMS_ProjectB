@@ -4,12 +4,18 @@ import { getImageUrl } from '../config/imageHelper';
 
 const SettingsContext = createContext(null);
 
-/* Key -> CSS variable mapping for theme injection on <html> */
+/* Key -> CSS variable mapping for theme injection on <html>.
+   --header-background-color, --footer-background-color, --primary-color,
+   --accent-color and --background-color are deliberately NOT mapped here
+   even though matching settings keys exist (theme_primary_color,
+   theme_accent_color, theme_background_color, header_background_color,
+   footer_background_color) - BrandingContext (the Website Customizer) owns
+   those same CSS variables globally now. Painting them from both places
+   was a real race condition: whichever context's async fetch resolved
+   last silently overwrote the other's colors, which is what made the
+   customizer's colors look like they randomly reverted on theme toggle. */
 const THEME_VARIABLE_MAP = {
-  theme_primary_color:       '--primary-color',
   theme_secondary_color:     '--secondary-color',
-  theme_accent_color:        '--accent-color',
-  theme_background_color:    '--background-color',
   theme_text_color:          '--text-color',
   theme_font_family:         '--font-family',
   theme_border_radius:       '--border-radius',
@@ -22,10 +28,8 @@ const THEME_VARIABLE_MAP = {
   theme_shadow_enabled:      '--shadow-enabled',
   theme_shadow_size:         '--shadow-size',
   theme_animation_enabled:   '--animation-enabled',
-  header_background_color:   '--header-background-color',
   header_text_color:         '--header-text-color',
   header_cta_button_color:   '--header-cta-button-color',
-  footer_background_color:   '--footer-background-color',
   footer_text_color:         '--footer-text-color',
 };
 

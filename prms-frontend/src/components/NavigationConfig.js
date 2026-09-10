@@ -18,9 +18,9 @@ import {
 } from 'lucide-react'
 
 const roleRoutes = {
-  Tenant:    { prefix: '/tenant',   pages: ['dashboard', 'notifications', 'properties', 'bookings', 'payments', 'maintenance', 'messages', 'settings'] },
-  Landlord:  { prefix: '/landlord', pages: ['dashboard', 'notifications', 'properties', 'bookings', 'finance', 'heatmap', 'categories', 'maintenance', 'messages', 'settings'] },
-  Agent:     { prefix: '/agent',    pages: ['dashboard', 'notifications', 'properties', 'bookings', 'maintenance', 'messages', 'categories', 'reports', 'finance', 'settings'] },
+  Tenant:    { prefix: '/tenant',   pages: ['dashboard', 'notifications', 'properties', 'bookings', 'payments', 'maintenance', 'messages', 'settings', 'customizer'] },
+  Landlord:  { prefix: '/landlord', pages: ['dashboard', 'notifications', 'properties', 'bookings', 'finance', 'heatmap', 'categories', 'maintenance', 'messages', 'settings', 'customizer'] },
+  Agent:     { prefix: '/agent',    pages: ['dashboard', 'notifications', 'properties', 'bookings', 'maintenance', 'messages', 'categories', 'reports', 'finance', 'settings', 'customizer'] },
   Admin:     { prefix: '/admin',    pages: ['dashboard', 'notifications', 'users', 'properties', 'bookings', 'finance', 'maintenance', 'messages', 'reports', 'categories', 'audit-logs', 'settings', 'customizer'] },
 }
 

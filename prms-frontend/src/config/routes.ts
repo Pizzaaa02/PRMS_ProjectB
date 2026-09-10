@@ -53,6 +53,7 @@ export const ROUTES = {
     messages: '/landlord/messages',
     settings: '/landlord/settings',
     profile: '/landlord/profile',
+    customizer: '/landlord/customizer',
     help: '/landlord/help',
   } as const,
 
@@ -69,6 +70,7 @@ export const ROUTES = {
     messages: '/tenant/messages',
     settings: '/tenant/settings',
     profile: '/tenant/profile',
+    customizer: '/tenant/customizer',
     help: '/tenant/help',
   } as const,
 
@@ -85,6 +87,7 @@ export const ROUTES = {
     categories: '/agent/categories',
     settings: '/agent/settings',
     profile: '/agent/profile',
+    customizer: '/agent/customizer',
     help: '/agent/help',
   } as const,
 

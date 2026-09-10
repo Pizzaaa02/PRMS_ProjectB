@@ -1,20 +1,21 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
+import { AuthRequest } from '../../middleware/auth';
 import { CustomizerService } from './service_customizer';
 import { validateHex } from './dto';
 
 const service = new CustomizerService();
 
 export class CustomizerController {
-  getConfig = async (_req: Request, res: Response) => {
+  getConfig = async (req: AuthRequest, res: Response) => {
     try {
-      const config = await service.getConfig();
+      const config = await service.getConfig(req.user?.id);
       res.json({ success: true, data: config });
     } catch (err: any) {
       res.status(500).json({ success: false, error: err.message });
     }
   };
 
-  updateConfig = async (req: Request, res: Response) => {
+  updateConfig = async (req: AuthRequest, res: Response) => {
     try {
       const payload: Record<string, string | null> = {};
       const errors: string[] = [];
@@ -47,19 +48,20 @@ export class CustomizerController {
         return res.status(400).json({ success: false, errors });
       }
 
-      const config = await service.updateConfig(payload);
+      const config = await service.updateConfig(req.user!.id, payload);
       res.json({ success: true, data: config });
     } catch (err: any) {
       res.status(500).json({ success: false, error: err.message });
     }
   };
 
-  uploadLogo = async (req: Request, res: Response) => {
+  uploadLogo = async (req: AuthRequest, res: Response) => {
     try {
       if (!req.file) {
         return res.status(400).json({ success: false, error: 'No file uploaded' });
       }
       const config = await service.uploadLogo(
+        req.user!.id,
         (req.file as Express.Multer.File).buffer,
         (req.file as Express.Multer.File).originalname,
       );
@@ -69,18 +71,18 @@ export class CustomizerController {
     }
   };
 
-  removeLogo = async (_req: Request, res: Response) => {
+  removeLogo = async (req: AuthRequest, res: Response) => {
     try {
-      const config = await service.removeLogo();
+      const config = await service.removeLogo(req.user!.id);
       res.json({ success: true, data: config });
     } catch (err: any) {
       res.status(500).json({ success: false, error: err.message });
     }
   };
 
-  getPreview = async (_req: Request, res: Response) => {
+  getPreview = async (req: AuthRequest, res: Response) => {
     try {
-      const config = await service.getConfig();
+      const config = await service.getConfig(req.user?.id);
       const theme = config.active_theme === 'dark' ? 'dark' : 'light';
       const headerBg = theme === 'dark' ? config.dark_header_bg : config.light_header_bg;
       const bodyBg = theme === 'dark' ? config.dark_body_bg : config.light_body_bg;
