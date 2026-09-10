@@ -52,6 +52,10 @@ export const authApi = {
     });
   },
 
+  setPassword({ newPassword }) {
+    return apiClient.post('/auth/set-password', { newPassword });
+  },
+
   forgotPassword({ email }) {
     return apiClient.post('/auth/forgot-password', { email });
   },

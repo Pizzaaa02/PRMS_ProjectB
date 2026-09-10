@@ -91,6 +91,7 @@ export async function getCurrentUser(userId: string) {
     select: {
       id: true, email: true, full_name: true, phone: true,
       profile_img_url: true, firebase_uid: true, is_active: true, created_at: true,
+      passwordHash: true,
       UserRole: { include: { role: true } },
     },
   });
@@ -149,6 +150,21 @@ export async function changePassword(
 
   const valid = await bcrypt.compare(currentPassword, user.passwordHash);
   if (!valid) throw new Error('Current password is incorrect');
+
+  const newHash = await bcrypt.hash(newPassword, 10);
+  return prisma.user.update({
+    where: { id: userId },
+    data: { passwordHash: newHash },
+  });
+}
+
+/* For Google-only accounts that don't have a password yet - lets them add
+   one so they can also log in with email/password. Refuses if the account
+   already has a password (use changePassword for that instead). */
+export async function setPassword(userId: string, newPassword: string) {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw new Error('User not found');
+  if (user.passwordHash) throw new Error('Account already has a password - use change password instead');
 
   const newHash = await bcrypt.hash(newPassword, 10);
   return prisma.user.update({

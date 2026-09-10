@@ -60,6 +60,7 @@ function AuthProvider({ children }) {
       profile_img_url: user.profile_img_url,
       firebase_uid: user.firebase_uid,
       role: user.role || 'Tenant',
+      hasPassword: user.hasPassword ?? true,
     };
   }
 
@@ -217,6 +218,20 @@ function AuthProvider({ children }) {
     }
   }, []);
 
+  /* ------ Set password (Google-only accounts with no password yet) ------ */
+
+  const setPassword = useCallback(async ({ newPassword }) => {
+    try {
+      await authApi.setPassword({ newPassword });
+      dispatch({ type: ACTIONS.SET_USER, payload: { ...state.user, hasPassword: true } });
+      return { success: true };
+    } catch (err) {
+      const msg = getApiError(err);
+      dispatch({ type: ACTIONS.SET_ERROR, payload: msg });
+      return { success: false, error: msg };
+    }
+  }, [state.user]);
+
   /* ------ Upload profile image ------ */
 
   const uploadProfileImage = useCallback(async (file) => {
@@ -282,6 +297,7 @@ function AuthProvider({ children }) {
     logout,
     updateProfile,
     changePassword,
+    setPassword,
     uploadProfileImage,
     clearError,
   };

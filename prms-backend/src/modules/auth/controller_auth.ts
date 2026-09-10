@@ -103,6 +103,7 @@ export class AuthController {
         profile_img_url: user.profile_img_url,
         firebase_uid: user.firebase_uid,
         role: user.UserRole[0]?.role.name || 'Tenant',
+        hasPassword: !!user.passwordHash,
       }));
     } catch (error: any) {
       res.status(404).json({ success: false, error: { message: error.message } });
@@ -142,6 +143,21 @@ export class AuthController {
       res.json(successResponse(null, 'Password changed successfully'));
     } catch (error: any) {
       HELPERS(req).log({ userId: req.user?.id, username: req.user?.email, action: 'PASSWORD_CHANGE', entity: 'User', description: `Password change failed: ${error.message}`, status: 'Failed', level: 'error', errorMessage: error.message });
+      res.status(400).json({ success: false, error: { message: error.message } });
+    }
+  };
+
+  setPassword = async (req: AuthRequest, res: Response) => {
+    try {
+      const { newPassword } = req.body;
+      if (!newPassword || newPassword.length < 6) {
+        return res.status(400).json({ success: false, error: { message: 'Password must be at least 6 characters' } });
+      }
+      await authService.setPassword(req.user!.id, newPassword);
+      HELPERS(req).log({ userId: req.user!.id, username: req.user!.email, userRole: req.user!.role, action: 'PASSWORD_SET', entity: 'User', entityId: req.user!.id, description: 'Password set for Google-only account', status: 'Success', level: 'info' });
+      res.json(successResponse(null, 'Password set successfully'));
+    } catch (error: any) {
+      HELPERS(req).log({ userId: req.user?.id, username: req.user?.email, action: 'PASSWORD_SET', entity: 'User', description: `Password set failed: ${error.message}`, status: 'Failed', level: 'error', errorMessage: error.message });
       res.status(400).json({ success: false, error: { message: error.message } });
     }
   };
