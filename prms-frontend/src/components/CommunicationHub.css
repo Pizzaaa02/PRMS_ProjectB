@@ -1,7 +1,11 @@
 .communication-hub {
-  height: 100%;
   display: flex;
-  flex-direction: column;
+  height: min(720px, calc(100vh - 200px));
+  min-height: 480px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg, 16px);
+  background: var(--card-bg);
+  overflow: hidden;
 }
 
 .comm-loading {
@@ -10,33 +14,36 @@
   color: var(--text-secondary);
 }
 
-/* Conversation list */
-.comm-list-full {
+/* Sidebar (conversation list) */
+.comm-sidebar {
+  width: 320px;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  height: 100%;
+  border-right: 1px solid var(--border-color);
+  min-height: 0;
 }
 
-.comm-title {
-  font-size: 1.1rem;
-  font-weight: 700;
-  margin: 0;
-  padding: 0 4px;
-}
-
-.comm-list-top {
+.comm-sidebar-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  padding: 18px 16px 14px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.comm-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 0;
 }
 
 .comm-new-btn {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  height: 40px;
-  padding: 0 18px;
+  height: 36px;
+  padding: 0 16px;
   border: none;
   border-radius: 8px;
   background: var(--primary-container);
@@ -51,13 +58,10 @@
   filter: brightness(1.15);
 }
 
-.comm-compose-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 4px 4px 12px;
-  font-weight: 600;
-  font-size: 0.92rem;
+.comm-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
 }
 
 .comm-compose-hint {
@@ -66,17 +70,29 @@
   font-size: 0.85rem;
 }
 
+.comm-contact-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
 .comm-list-item {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 8px;
+  padding: 12px 10px;
   cursor: pointer;
   border-radius: 10px;
   transition: background 0.15s;
 }
 
 .comm-list-item:hover {
+  background: var(--surface-container);
+}
+
+.comm-list-item.active {
   background: var(--surface-container);
 }
 
@@ -104,17 +120,22 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 8px;
   margin-bottom: 2px;
 }
 
 .comm-list-name {
   font-weight: 600;
   font-size: 0.88rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .comm-list-time {
   font-size: 0.74rem;
   color: var(--text-secondary);
+  flex-shrink: 0;
 }
 
 .comm-list-preview {
@@ -145,13 +166,34 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  flex: 1;
+  padding: 48px 16px;
   color: var(--text-secondary);
   font-size: 0.9rem;
+  text-align: center;
 }
 
 .comm-empty-icon {
   opacity: 0.4;
+}
+
+/* Main pane */
+.comm-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.comm-main-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--text-secondary);
+  opacity: 0.7;
+  font-size: 0.92rem;
 }
 
 /* Thread view */
@@ -159,13 +201,14 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-height: 0;
 }
 
 .comm-thread-header {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px 8px;
+  gap: 12px;
+  padding: 16px 18px;
   border-bottom: 1px solid var(--border-color);
 }
 
@@ -174,7 +217,7 @@
   border: none;
   cursor: pointer;
   color: var(--text-secondary);
-  display: flex;
+  display: none;
   align-items: center;
 }
 
@@ -184,21 +227,21 @@
 
 .comm-thread-name {
   font-weight: 600;
-  font-size: 0.92rem;
+  font-size: 0.95rem;
 }
 
 /* Messages */
 .comm-messages {
   flex: 1;
   overflow-y: auto;
-  padding: 16px 8px;
+  padding: 20px 18px;
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
 .comm-msg-bubble {
-  max-width: 75%;
+  max-width: 70%;
   padding: 10px 14px;
   border-radius: 14px;
   font-size: 0.88rem;
@@ -207,7 +250,7 @@
 
 .comm-msg-mine {
   align-self: flex-end;
-  background: var(--primary-color);
+  background: var(--primary-container);
   color: var(--on-primary);
   border-bottom-right-radius: 4px;
 }
@@ -221,6 +264,8 @@
 
 .comm-msg-text {
   margin-bottom: 2px;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .comm-msg-time {
@@ -232,8 +277,8 @@
 /* Input row */
 .comm-input-row {
   display: flex;
-  gap: 8px;
-  padding: 12px 8px;
+  gap: 10px;
+  padding: 14px 18px;
   border-top: 1px solid var(--border-color);
 }
 
@@ -244,10 +289,12 @@
   padding: 10px 16px;
   font-size: 0.88rem;
   outline: none;
+  background: var(--surface);
+  color: var(--text-primary);
 }
 
 .comm-input:focus {
-  border-color: var(--primary-color);
+  border-color: var(--primary-container);
 }
 
 .comm-send-btn {
@@ -262,8 +309,30 @@
   border: none;
   cursor: pointer;
   flex-shrink: 0;
+  transition: filter 0.15s;
 }
 
 .comm-send-btn:hover {
-  background: var(--primary-fixed);
+  filter: brightness(1.15);
+}
+
+/* Narrow screens: show either the list or the thread, never a cramped
+   side-by-side. The existing back button drives navigation between them. */
+@media (max-width: 760px) {
+  .comm-sidebar {
+    width: 100%;
+    border-right: none;
+  }
+
+  .communication-hub.has-selected .comm-sidebar {
+    display: none;
+  }
+
+  .communication-hub:not(.has-selected) .comm-main {
+    display: none;
+  }
+
+  .comm-back-btn {
+    display: flex;
+  }
 }

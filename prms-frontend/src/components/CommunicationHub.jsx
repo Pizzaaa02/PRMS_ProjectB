@@ -4,9 +4,11 @@ import { communicationApi } from '../api';
 import { bookingApi } from '../api/booking';
 import { userApi } from '../api/user';
 import { useAuth } from '../contexts/AuthContext';
+import Modal from './Modal';
 import {
   Send,
   MessageCircle,
+  MessagesSquare,
   ChevronLeft,
   SquarePen,
 } from 'lucide-react';
@@ -186,47 +188,19 @@ function CommunicationHub() {
   if (loading) return <div className="comm-loading">Loading messages...</div>;
 
   return (
-    <div className="communication-hub">
-      {/* Conversation list */}
-      {!selectedConv ? (
-        <div className="comm-list-full">
-          <div className="comm-list-top">
-            <h2 className="comm-title">Messages</h2>
-            <button type="button" className="comm-new-btn" onClick={openCompose}>
-              <SquarePen size={16} /> New
-            </button>
-          </div>
+    <div className={`communication-hub ${selectedConv ? 'has-selected' : ''}`}>
+      {/* Conversation list — always visible on wide screens, hidden behind
+          the thread on narrow ones once something is selected. */}
+      <aside className="comm-sidebar">
+        <div className="comm-sidebar-header">
+          <h2 className="comm-title">Messages</h2>
+          <button type="button" className="comm-new-btn" onClick={openCompose}>
+            <SquarePen size={16} /> New
+          </button>
+        </div>
 
-          {composing ? (
-            <div className="comm-compose">
-              <div className="comm-compose-header">
-                <button type="button" className="comm-back-btn" onClick={() => setComposing(false)}>
-                  <ChevronLeft size={18} />
-                </button>
-                <span>New Message</span>
-              </div>
-              {contactsLoading ? (
-                <p className="comm-compose-hint">Loading contacts...</p>
-              ) : contacts.length === 0 ? (
-                <p className="comm-compose-hint">
-                  {(user?.role || '').toLowerCase() === 'admin'
-                    ? 'No other users in the system yet.'
-                    : 'No contacts yet — messaging unlocks once you have a booking together.'}
-                </p>
-              ) : (
-                contacts.map((c) => (
-                  <div key={c.id} className="comm-list-item" onClick={() => startConversation(c)}>
-                    <div className="comm-avatar">{c.name?.[0]?.toUpperCase() || '?'}</div>
-                    <div className="comm-list-content">
-                      <div className="comm-list-header">
-                        <span className="comm-list-name">{c.name}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          ) : conversations.length === 0 ? (
+        <div className="comm-list">
+          {conversations.length === 0 ? (
             <div className="comm-empty">
               <MessageCircle size={32} className="comm-empty-icon" />
               <p>No conversations yet</p>
@@ -235,7 +209,7 @@ function CommunicationHub() {
             conversations.map((conv) => (
               <motion.div
                 key={conv.id}
-                className="comm-list-item"
+                className={`comm-list-item ${selectedConv?.id === conv.id ? 'active' : ''}`}
                 initial={{ opacity: 0, x: -8 }}
                 animate={{ opacity: 1, x: 0 }}
                 onClick={() => setSelectedConv(conv)}
@@ -255,54 +229,89 @@ function CommunicationHub() {
             ))
           )}
         </div>
-      ) : (
-        /* Conversation thread */
-        <div className="comm-thread">
-          <div className="comm-thread-header">
-            <button className="comm-back-btn" onClick={() => setSelectedConv(null)}>
-              <ChevronLeft size={18} />
-            </button>
-            <div className="comm-thread-avatar">{selectedConv.partner?.full_name?.[0]?.toUpperCase() || '?'}</div>
-            <span className="comm-thread-name">{selectedConv.partner?.full_name || 'User'}</span>
-          </div>
+      </aside>
 
-          <div className="comm-messages">
-            <AnimatePresence>
-              {messages.map((msg) => {
-                const isMe = msg.senderId === user?.id;
-                return (
-                  <motion.div
-                    key={msg.id}
-                    className={`comm-msg-bubble ${isMe ? 'comm-msg-mine' : 'comm-msg-theirs'}`}
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                  >
-                    <div className="comm-msg-text">{msg.content}</div>
-                    <div className="comm-msg-time">
-                      {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
-            <div ref={messagesEndRef} />
-          </div>
+      {/* Thread */}
+      <main className="comm-main">
+        {selectedConv ? (
+          <div className="comm-thread">
+            <div className="comm-thread-header">
+              <button className="comm-back-btn" onClick={() => setSelectedConv(null)}>
+                <ChevronLeft size={18} />
+              </button>
+              <div className="comm-thread-avatar">{selectedConv.partner?.full_name?.[0]?.toUpperCase() || '?'}</div>
+              <span className="comm-thread-name">{selectedConv.partner?.full_name || 'User'}</span>
+            </div>
 
-          <div className="comm-input-row">
-            <input
-              type="text"
-              className="comm-input"
-              placeholder="Type a message..."
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyDown={handleKeyDown}
-            />
-            <button className="comm-send-btn" onClick={handleSend}>
-              <Send size={18} />
-            </button>
+            <div className="comm-messages">
+              <AnimatePresence>
+                {messages.map((msg) => {
+                  const isMe = msg.senderId === user?.id;
+                  return (
+                    <motion.div
+                      key={msg.id}
+                      className={`comm-msg-bubble ${isMe ? 'comm-msg-mine' : 'comm-msg-theirs'}`}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                    >
+                      <div className="comm-msg-text">{msg.content}</div>
+                      <div className="comm-msg-time">
+                        {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+              <div ref={messagesEndRef} />
+            </div>
+
+            <div className="comm-input-row">
+              <input
+                type="text"
+                className="comm-input"
+                placeholder="Type a message..."
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyDown={handleKeyDown}
+              />
+              <button className="comm-send-btn" onClick={handleSend}>
+                <Send size={18} />
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="comm-main-empty">
+            <MessagesSquare size={44} />
+            <p>Select a conversation to start chatting</p>
+          </div>
+        )}
+      </main>
+
+      {/* New Message — small popup window instead of taking over the list */}
+      <Modal isOpen={composing} onOpenChange={(open) => !open && setComposing(false)} title="New Message">
+        {contactsLoading ? (
+          <p className="comm-compose-hint">Loading contacts...</p>
+        ) : contacts.length === 0 ? (
+          <p className="comm-compose-hint">
+            {(user?.role || '').toLowerCase() === 'admin'
+              ? 'No other users in the system yet.'
+              : 'No contacts yet — messaging unlocks once you have a booking together.'}
+          </p>
+        ) : (
+          <div className="comm-contact-list">
+            {contacts.map((c) => (
+              <div key={c.id} className="comm-list-item" onClick={() => startConversation(c)}>
+                <div className="comm-avatar">{c.name?.[0]?.toUpperCase() || '?'}</div>
+                <div className="comm-list-content">
+                  <div className="comm-list-header">
+                    <span className="comm-list-name">{c.name}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
