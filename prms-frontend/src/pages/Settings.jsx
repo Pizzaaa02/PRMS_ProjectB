@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSettings } from '../contexts/SettingsContext'
 import { useAuth } from '../contexts/AuthContext'
 import { ROUTES } from '../config/routes'
+import ChangePasswordModal from '../components/ChangePasswordModal'
 import {
   Bell,
   Building2,
@@ -33,6 +35,7 @@ function getNotificationsPath(role) {
 function Settings() {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const [securityOpen, setSecurityOpen] = useState(false)
 
   const isAdmin = (user?.role || '').toLowerCase().includes('admin')
   const profilePath = getProfilePath(user?.role)
@@ -54,7 +57,7 @@ function Settings() {
           </div>
 
           <h2>Account Settings</h2>
-          <p>Update profile details, email address, contact number, and password.</p>
+          <p>Update profile details, contact number, and profile photo.</p>
 
           <button type="button" onClick={() => navigate(profilePath)}>Manage Account</button>
         </div>
@@ -70,18 +73,16 @@ function Settings() {
           <button type="button" onClick={() => navigate(notificationsPath)}>Manage Notifications</button>
         </div>
 
-        {isAdmin && (
-          <div className="settings-card">
-            <div className="settings-card-icon red">
-              <ShieldCheck size={28} />
-            </div>
-
-            <h2>Security Settings</h2>
-            <p>Review login activity, enable verification, and manage session access.</p>
-
-            <button type="button" onClick={() => navigate(ROUTES.admin.auditLogs)}>Manage Security</button>
+        <div className="settings-card">
+          <div className="settings-card-icon red">
+            <ShieldCheck size={28} />
           </div>
-        )}
+
+          <h2>Security Settings</h2>
+          <p>Change your password to keep your account secure.</p>
+
+          <button type="button" onClick={() => setSecurityOpen(true)}>Manage Security</button>
+        </div>
 
         {isAdmin && (
           <div className="settings-card">
@@ -96,6 +97,8 @@ function Settings() {
           </div>
         )}
       </section>
+
+      <ChangePasswordModal isOpen={securityOpen} onClose={() => setSecurityOpen(false)} />
     </div>
   )
 }
