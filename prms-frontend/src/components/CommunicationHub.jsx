@@ -1,11 +1,13 @@
 import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { communicationApi } from '../api';
+import { bookingApi } from '../api/booking';
 import { useAuth } from '../contexts/AuthContext';
 import {
   Send,
   MessageCircle,
   ChevronLeft,
+  SquarePen,
 } from 'lucide-react';
 import './CommunicationHub.css';
 
@@ -16,17 +18,70 @@ function CommunicationHub() {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
+  const [composing, setComposing] = useState(false);
+  const [contacts, setContacts] = useState([]);
+  const [contactsLoading, setContactsLoading] = useState(false);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
     loadConversations();
   }, []);
 
+  // Lets a "New Message" button living outside this component (e.g. the
+  // hero button on TenantSimplePage) open the compose view without prop
+  // drilling through the page shells that mount this as `children`.
   useEffect(() => {
-    if (selectedConv) {
+    const handler = () => openCompose();
+    window.addEventListener('prms:new-message', handler);
+    return () => window.removeEventListener('prms:new-message', handler);
+  }, [user]);
+
+  useEffect(() => {
+    if (selectedConv?.id) {
       loadMessages();
+    } else if (selectedConv) {
+      // Freshly-started conversation - nothing sent yet, nothing to fetch.
+      setMessages([]);
     }
   }, [selectedConv]);
+
+  async function openCompose() {
+    setComposing(true);
+    setContactsLoading(true);
+    try {
+      const role = (user?.role || '').toLowerCase();
+      const map = {};
+      if (role === 'landlord') {
+        const { data } = await bookingApi.landlordBookings();
+        const items = data?.data || data || [];
+        items.forEach((b) => {
+          if (b.userId && b.userId !== user?.id && !map[b.userId]) {
+            map[b.userId] = { id: b.userId, name: b.user?.full_name || 'Tenant' };
+          }
+        });
+      } else if (role === 'tenant') {
+        const { data } = await bookingApi.myBookings();
+        const items = data?.data || data || [];
+        items.forEach((b) => {
+          const ownerId = b.property?.ownerId;
+          if (ownerId && !map[ownerId]) {
+            map[ownerId] = { id: ownerId, name: `Landlord — ${b.property?.title || 'Property'}` };
+          }
+        });
+      }
+      setContacts(Object.values(map));
+    } catch (e) {
+      console.error(e);
+      setContacts([]);
+    } finally {
+      setContactsLoading(false);
+    }
+  }
+
+  function startConversation(contact) {
+    setComposing(false);
+    setSelectedConv({ id: null, partner: { id: contact.id, full_name: contact.name } });
+  }
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -84,15 +139,24 @@ function CommunicationHub() {
   }
 
   async function handleSend() {
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() || !selectedConv) return;
+    const isNewConversation = !selectedConv.id;
     try {
       await communicationApi.send({
         content: newMessage,
-        conversationId: selectedConv.id,
+        // Omit conversationId for a brand-new thread - the backend derives
+        // a deterministic `conv-<senderId>-<receiverId>` id when none is
+        // sent, so reusing it later just means passing selectedConv.id.
+        ...(isNewConversation ? {} : { conversationId: selectedConv.id }),
         receiverId: selectedConv.partner.id,
       });
       setNewMessage('');
-      loadMessages();
+      if (isNewConversation) {
+        await loadConversations();
+        setSelectedConv((prev) => ({ ...prev, id: `conv-${user?.id}-${prev.partner.id}` }));
+      } else {
+        loadMessages();
+      }
     } catch (e) {
       console.error(e);
     }
@@ -112,8 +176,43 @@ function CommunicationHub() {
       {/* Conversation list */}
       {!selectedConv ? (
         <div className="comm-list-full">
-          <h2 className="comm-title">Messages</h2>
-          {conversations.length === 0 ? (
+          <div className="comm-list-top">
+            <h2 className="comm-title">Messages</h2>
+            <button type="button" className="comm-new-btn" onClick={openCompose}>
+              <SquarePen size={16} /> New
+            </button>
+          </div>
+
+          {composing ? (
+            <div className="comm-compose">
+              <div className="comm-compose-header">
+                <button type="button" className="comm-back-btn" onClick={() => setComposing(false)}>
+                  <ChevronLeft size={18} />
+                </button>
+                <span>New Message</span>
+              </div>
+              {contactsLoading ? (
+                <p className="comm-compose-hint">Loading contacts...</p>
+              ) : contacts.length === 0 ? (
+                <p className="comm-compose-hint">
+                  {(user?.role || '').toLowerCase() === 'landlord' || (user?.role || '').toLowerCase() === 'tenant'
+                    ? 'No contacts yet — messaging unlocks once you have a booking together.'
+                    : 'Nothing to start a new conversation with here yet.'}
+                </p>
+              ) : (
+                contacts.map((c) => (
+                  <div key={c.id} className="comm-list-item" onClick={() => startConversation(c)}>
+                    <div className="comm-avatar">{c.name?.[0]?.toUpperCase() || '?'}</div>
+                    <div className="comm-list-content">
+                      <div className="comm-list-header">
+                        <span className="comm-list-name">{c.name}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          ) : conversations.length === 0 ? (
             <div className="comm-empty">
               <MessageCircle size={32} className="comm-empty-icon" />
               <p>No conversations yet</p>

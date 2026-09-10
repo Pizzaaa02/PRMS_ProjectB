@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { categoryApi } from '../api/categories'
 import { useAuth } from '../contexts/AuthContext'
+import Modal from '../components/Modal'
 import {
   FolderOpen,
   Plus,
@@ -283,38 +284,35 @@ function LandlordCategories() {
         </>
       )}
 
-      {showForm && !loading && editingId === null && (
-        <AnimatePresence>
-          <motion.div
-            className="landlord-categories-inline-form"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-          >
-            <h3>New Personal Category</h3>
-            <input
-              className="form-input"
-              value={formName}
-              onChange={(e) => setFormName(e.target.value)}
-              placeholder="Category name *"
-            />
-            <input
-              className="form-input"
-              value={formDesc}
-              onChange={(e) => setFormDesc(e.target.value)}
-              placeholder="Description (optional)"
-            />
-            <div className="form-actions">
-              <button className="action-btn save" onClick={submitForm}>
-                <CheckCircle2 size={15} /> Create
-              </button>
-              <button className="action-btn cancel" onClick={() => setShowForm(false)}>
-                <X size={15} /> Cancel
-              </button>
-            </div>
-          </motion.div>
-        </AnimatePresence>
-      )}
+      <Modal
+        isOpen={showForm && editingId === null}
+        onOpenChange={setShowForm}
+        title="New Personal Category"
+        footer={
+          <>
+            <button className="action-btn cancel" onClick={() => setShowForm(false)}>
+              <X size={15} /> Cancel
+            </button>
+            <button className="action-btn save" onClick={submitForm}>
+              <CheckCircle2 size={15} /> Create
+            </button>
+          </>
+        }
+      >
+        <input
+          className="form-input"
+          value={formName}
+          onChange={(e) => setFormName(e.target.value)}
+          placeholder="Category name *"
+        />
+        <input
+          className="form-input"
+          value={formDesc}
+          onChange={(e) => setFormDesc(e.target.value)}
+          placeholder="Description (optional)"
+          style={{ marginTop: 12 }}
+        />
+      </Modal>
 
       <AnimatePresence>
         {toast && (

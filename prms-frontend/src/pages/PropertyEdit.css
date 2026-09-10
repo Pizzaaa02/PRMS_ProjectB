@@ -378,8 +378,6 @@
 .pe-select:focus,
 .pe-textarea:focus {
   outline: none;
-  border-color: var(--primary-color, #3366ff);
-  box-shadow: 0 0 0 3px rgba(51, 102, 255, 0.1);
 }
 
 .pe-input--error,

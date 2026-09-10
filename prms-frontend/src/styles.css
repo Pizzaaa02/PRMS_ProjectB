@@ -2,6 +2,30 @@
   box-sizing: border-box;
 }
 
+/* A handful of pages (MaintenanceForm, MyBookings, TenantDashboard,
+   TenantMaintenance, LandlordMaintenance, AgentProperties) use Tailwind
+   utility class names in their JSX (flex, gap-2, mt-4, ...), but this
+   project has no Tailwind — none of them did anything, which is why
+   e.g. the maintenance ticket form's step tabs, priority buttons, and
+   footer all stacked instead of laying out in a row. Minimal shim for
+   the exact set actually used, matching Tailwind's own values. */
+.flex { display: flex; }
+.flex-wrap { flex-wrap: wrap; }
+.gap-2 { gap: 8px; }
+.justify-between { justify-content: space-between; }
+.mt-2 { margin-top: 8px; }
+.mt-4 { margin-top: 16px; }
+
+/* Scrollbars hidden app-wide (page and any inner scrollable panel, e.g.
+   the audit log feed) — scrolling still works via wheel/touch/keyboard,
+   this only removes the visible scrollbar chrome. */
+* {
+  scrollbar-width: none;
+}
+*::-webkit-scrollbar {
+  display: none;
+}
+
 /* Website Customizer – CSS variables (injectable at runtime) */
 :root {
   --primary-color:       #8a2be2;
@@ -203,6 +227,12 @@ input {
   --border-color: #374151;
   --border-color-strong: #4b5563;
   --shadow-color: rgba(0, 0, 0, 0.3);
+  /* Button background: near-black navy reads fine on a light page, but
+     nearly disappears against a near-black dark-mode page. Swap it for
+     the brand purple in dark mode instead so buttons stay visible —
+     every button fixed to use var(--primary-container) picks this up
+     automatically, no per-button change needed. */
+  --primary-container: #8a2be2;
   --card-bg: #1e1e1e;
   --sidebar-bg: #0a0a0a;
   --sidebar-text: #e5e7eb;
@@ -389,8 +419,7 @@ form label {
 }
 
 .input-box:focus-within {
-  border-color: var(--secondary-accent);
-  box-shadow: 0 0 0 3px rgba(129, 43, 202, 0.1);
+  border-color: var(--border-color);
 }
 
 .input-box input {
@@ -1076,6 +1105,7 @@ form label {
   border: none;
   outline: none;
   background: transparent;
+  color: var(--text-primary);
   font-size: 17px;
 }
 
@@ -1513,10 +1543,10 @@ form label {
 
 .btn-primary {
   display: flex; align-items: center; gap: 8px;
-  padding: 10px 20px;
+  height: 40px; padding: 0 18px;
   background: var(--primary-container);
   color: var(--on-primary); border: none; border-radius: 10px;
-  font-weight: 600; font-size: 14px; cursor: pointer;
+  font-weight: 600; font-size: 13px; cursor: pointer;
 }
 .btn-primary:hover { filter: brightness(1.15); }
 
@@ -1539,13 +1569,6 @@ form label {
   gap: 16px; margin-bottom: 20px; flex-wrap: wrap;
 }
 
-.properties-search {
-  display: flex; align-items: center; gap: 10px;
-  background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 10px;
-  padding: 10px 16px; flex: 1; max-width: 400px; color: #9ca3af;
-}
-.properties-search input { border: none; background: transparent; outline: none; color: #374151; font-size: 14px; width: 100%; }
-.properties-filter-icon { border-left: 1px solid #e5e7eb; padding-left: 10px; cursor: pointer; }
 
 .properties-view-controls { display: flex; align-items: center; gap: 12px; }
 .properties-type-filters { display: flex; gap: 6px; }
@@ -1665,6 +1688,111 @@ body.customization-mode [data-customize-id].customization-hover {
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-low);
   padding: var(--spacing-xl);
+}
+
+/* Shared popup dialog (components/Modal.jsx) — used by the category
+   "add" forms, booking details, and maintenance ticket forms. Its own
+   width/spacing classes (mx-auto, w-[480px]/[750px]/[1000px]) assume
+   Tailwind, which this project doesn't have, so the dialog had no real
+   width, padding, or card styling at all — it just shrank to fit its
+   content with a plain white background. */
+.modal {
+  width: 480px;
+  max-width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: var(--spacing-lg);
+}
+.modal.w-\[750px\] { width: 750px; }
+.modal.w-\[1000px\] { width: 1000px; }
+
+.modal .modal-header {
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--border-color);
+}
+.modal .modal-header h3 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 18px;
+  font-weight: 700;
+}
+/* The header's own Close button (rendered by Modal.jsx as
+   `btn-text close-btn`) relied on .btn-text from a page-specific
+   stylesheet that isn't always loaded wherever Modal is used, so it
+   fell back to a plain bordered browser-default button. Styled directly
+   here instead, so it's guaranteed regardless of the host page. */
+.modal .modal-header .close-btn {
+  background: none;
+  border: none;
+  padding: 4px 8px;
+  color: var(--primary-container);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+.modal .modal-header .close-btn:hover {
+  background: var(--surface-container);
+}
+.modal .modal-body {
+  color: var(--text-primary);
+}
+.modal .modal-body > * + * {
+  margin-top: var(--spacing-md);
+}
+.modal .modal-footer {
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--border-color);
+}
+.modal .form-input {
+  width: 100%;
+  box-sizing: border-box;
+}
+.modal .input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Maintenance ticket form's step tabs (Details / Photos / Location) —
+   had no CSS anywhere, so they just stacked as plain text. */
+.step-progress {
+  display: flex;
+  gap: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--border-color);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.step-progress > div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-bottom: 8px;
+}
+.step-progress > div.active {
+  color: var(--primary-container);
+  border-bottom: 2px solid var(--primary-container);
+}
+
+/* Neutral (unselected) pill, e.g. the non-active priority options in the
+   maintenance form — the selected one already gets real styling via
+   .btn.btn-sm.btn-primary. */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-container);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 /* Trend indicator pill */

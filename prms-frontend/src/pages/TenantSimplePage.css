@@ -22,14 +22,14 @@
 }
 
 .tenant-simple-primary-btn {
-  height: 52px;
-  padding: 0 var(--spacing-lg);
+  height: 40px;
+  padding: 0 18px;
   border: none;
   border-radius: var(--radius-md);
   background: var(--primary-container);
   color: var(--on-primary);
-  font-size: 17px;
-  font-weight: 900;
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
 }
 
@@ -114,6 +114,7 @@
   border: none;
   outline: none;
   background: transparent;
+  color: var(--text-primary);
   font-size: 15px;
 }
 
@@ -159,14 +160,14 @@
 }
 
 .tenant-simple-table-row button {
-  height: 38px;
-  padding: 0 var(--spacing-md);
+  height: 32px;
+  padding: 0 12px;
   border: none;
   border-radius: var(--radius-sm);
   background: var(--primary-container);
   color: var(--on-primary);
-  font-size: 13px;
-  font-weight: 900;
+  font-size: 12px;
+  font-weight: 600;
   cursor: pointer;
 }
 

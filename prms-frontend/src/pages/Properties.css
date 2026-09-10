@@ -41,15 +41,14 @@
   gap: var(--spacing-sm);
   padding: 0 var(--spacing-lg);
   height: 48px;
-  border: 1px solid var(--border-low);
-  border-radius: var(--radius-md);
-  background: var(--surface);
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--surface-container);
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .properties-search:focus-within {
-  border-color: var(--secondary-accent);
-  box-shadow: 0 0 0 3px rgba(129, 43, 202, 0.1);
+  border-color: var(--border-color);
 }
 
 .search-icon {

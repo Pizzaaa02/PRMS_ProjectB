@@ -86,6 +86,25 @@
   background: #2b5de6;
 }
 
+/* ── Back button ── */
+.pd-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 16px;
+  padding: 8px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md, 8px);
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.pd-back-btn:hover {
+  background: var(--surface-container);
+}
+
 /* ── Breadcrumb ── */
 .pd-breadcrumb {
   display: flex;
@@ -729,10 +748,13 @@
   text-align: center;
   font-size: 13px;
   padding: 6px 0;
-  cursor: default;
+  cursor: pointer;
   border-radius: 50%;
   color: var(--text-color, #1a1a1a);
   transition: background 0.15s;
+}
+.booking-minical-day:not(.cal-disabled):hover {
+  background: var(--surface-container);
 }
 
 .booking-minical-other {
@@ -742,6 +764,11 @@
 .cal-past {
   color: var(--text-disabled, #cbd5e1);
   text-decoration: line-through;
+}
+
+.cal-disabled {
+  pointer-events: none;
+  cursor: not-allowed;
 }
 
 .cal-selected {

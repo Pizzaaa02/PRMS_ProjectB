@@ -24,13 +24,14 @@
 .agent-categories-add-btn {
   display: inline-flex;
   align-items: center;
-  gap: var(--spacing-xs);
-  padding: var(--spacing-sm) var(--spacing-md);
-  background: linear-gradient(135deg, var(--primary-accent), var(--secondary-accent));
+  gap: 8px;
+  height: 40px;
+  padding: 0 18px;
+  background: var(--primary-container);
   color: var(--on-primary);
   border: none;
   border-radius: var(--radius-md);
-  font-size: 0.88rem;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
 }
@@ -154,8 +155,7 @@
 }
 
 .form-input:focus {
-  border-color: var(--primary-accent);
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.12);
+  border-color: var(--border-color);
 }
 
 .form-actions {
@@ -166,11 +166,13 @@
 
 .form-actions .btn-primary {
   flex: 1;
-  padding: var(--spacing-sm);
+  height: 40px;
+  padding: 0 18px;
   background: var(--primary-container);
   color: var(--on-primary);
   border: none;
   border-radius: var(--radius-md);
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
 }

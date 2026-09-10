@@ -30,18 +30,20 @@
 .finance-export-btn {
   display: inline-flex;
   align-items: center;
-  gap: var(--spacing-xs);
-  padding: var(--spacing-xs) var(--spacing-sm);
-  background: var(--surface-container);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  font-size: 0.84rem;
-  color: var(--text-secondary);
+  gap: 8px;
+  height: 40px;
+  padding: 0 18px;
+  background: var(--primary-container);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--on-primary);
   cursor: pointer;
 }
 
 .finance-export-btn:hover {
-  background: var(--border-color);
+  filter: brightness(1.15);
 }
 
 /* Summary cards */

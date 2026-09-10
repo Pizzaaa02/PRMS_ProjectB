@@ -91,7 +91,7 @@ export default function TenantMaintenance() {
       )}
 
       {/* Create Form */}
-      {formOpen && <MaintenanceForm onSuccess={() => { setFormOpen(false); load(); }} />}
+      {formOpen && <MaintenanceForm onSuccess={() => { setFormOpen(false); load(); }} onClose={() => setFormOpen(false)} />}
     </div>
   );
 }

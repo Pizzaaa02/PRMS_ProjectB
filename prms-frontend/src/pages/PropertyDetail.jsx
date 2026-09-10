@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   ChevronRight,
+  ArrowLeft,
   Clock,
   Droplets,
   Edit3,
@@ -27,6 +28,7 @@ import { useAuth } from '../contexts/AuthContext';
 import TenantBookingModal from '../components/TenantBookingModal';
 import ImageGallery from '../components/ImageGallery';
 import { VideoUploader, DocumentUploader } from '../components/MediaUploader';
+import { getPropertyRoute } from '../config/routes';
 import './PropertyDetail.css';
 
 /* ================= AMENITY ICON MAP ================= */
@@ -61,12 +63,13 @@ function BookingCard({ property, onBookClick }) {
   }, []);
 
   const nightlyRate = property.rent || 0;
-  const nights = Math.max(
-    1,
-    Math.round(
-      (new Date(checkOut) - new Date(checkIn)) / (1000 * 60 * 60 * 24)
-    )
-  );
+  // checkOut can be momentarily empty right after clicking a calendar day
+  // to start a fresh range (before its checkout day is picked) — fall
+  // back to 1 night instead of showing "RM NaN" in the price breakdown.
+  const rawNights = checkIn && checkOut
+    ? Math.round((new Date(checkOut) - new Date(checkIn)) / (1000 * 60 * 60 * 24))
+    : 1;
+  const nights = Math.max(1, Number.isFinite(rawNights) ? rawNights : 1);
   const subtotal = nightlyRate * nights;
   const cleaningFee = Math.round(nightlyRate * 0.28);
   const serviceFee = Math.round(nightlyRate * 0.33);
@@ -77,32 +80,74 @@ function BookingCard({ property, onBookClick }) {
       style: 'currency', currency: 'MYR', minimumFractionDigits: 0,
     }).format(n);
 
-  // Mini calendar helpers
-  const currentMonth = checkIn ? new Date(checkIn) : new Date();
-  const monthName = currentMonth.toLocaleString('default', { month: 'long' });
-  const year = currentMonth.getFullYear();
-  const firstDay = new Date(year, currentMonth.getMonth(), 1).getDay();
-  const daysInMonth = new Date(year, currentMonth.getMonth() + 1, 0).getDate();
-  const todayNum = new Date().getDate();
-  const checkInNum = checkIn ? new Date(checkIn).getDate() : 0;
-  const checkOutNum = checkOut ? new Date(checkOut).getDate() : 0;
+  // Mini calendar — the viewed month is independent of checkIn/checkOut so
+  // browsing months with </> doesn't silently change the actual booking
+  // dates (it used to call setCheckIn on every month change).
+  const [viewDate, setViewDate] = useState(() => new Date());
+  useEffect(() => {
+    if (checkIn) setViewDate(new Date(checkIn + 'T00:00:00'));
+  }, [checkIn]);
 
-  const getDayClass = (day) => {
-    if (day >= checkInNum && day < checkOutNum) return 'cal-selected';
-    if (day === checkInNum || day === checkOutNum) return 'cal-boundary';
-    if (day < todayNum) return 'cal-past';
+  const monthName = viewDate.toLocaleString('default', { month: 'long' });
+  const year = viewDate.getFullYear();
+  const month = viewDate.getMonth();
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  const todayMidnight = new Date();
+  todayMidnight.setHours(0, 0, 0, 0);
+  const checkInDate = checkIn ? new Date(checkIn + 'T00:00:00') : null;
+  const checkOutDate = checkOut ? new Date(checkOut + 'T00:00:00') : null;
+
+  const toISODate = (d) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
+  // Compares full dates (year + month + day), not just the day-of-month
+  // number — comparing bare day numbers broke as soon as the calendar
+  // showed a month other than checkIn's (e.g. day 5 of next month was
+  // wrongly marked "past" just because 5 < today's day-of-month).
+  const getDayClass = (date, isPast) => {
+    if (isPast) return 'cal-past cal-disabled';
+    if (checkInDate && checkOutDate && date >= checkInDate && date < checkOutDate) return 'cal-selected';
+    if (checkInDate && date.getTime() === checkInDate.getTime()) return 'cal-boundary';
+    if (checkOutDate && date.getTime() === checkOutDate.getTime()) return 'cal-boundary';
     return '';
   };
 
-  // Build calendar days
+  function handleDayClick(date, isPast) {
+    if (isPast) return; // dates before today are unavailable
+    const iso = toISODate(date);
+    // First click (or restarting after a full range is already picked)
+    // sets check-in; the next click after that sets check-out, as long as
+    // it's a later date — otherwise it just moves check-in there instead.
+    if (!checkInDate || (checkOutDate && date >= checkOutDate) || date < checkInDate) {
+      setCheckIn(iso);
+      setCheckOut('');
+    } else {
+      setCheckOut(iso);
+    }
+  }
+
+  // Build calendar days as real Date objects spanning the full 6-week grid
+  // (leading days from the previous month, the current month, and trailing
+  // days from the next), so every cell carries an unambiguous date.
   const calDays = [];
-  const paddingMonths = [];
-  for (let i = 0; i < firstDay; i++) {
-    const prevMonthDay = new Date(year, currentMonth.getMonth(), 0 - (firstDay - 1 - i)).getDate();
-    calDays.push({ day: prevMonthDay, current: false });
+  for (let i = firstDay; i > 0; i--) {
+    const d = new Date(year, month, 1 - i);
+    calDays.push({ date: d, current: false, isPast: d < todayMidnight });
   }
   for (let d = 1; d <= daysInMonth; d++) {
-    calDays.push({ day: d, current: true });
+    const date = new Date(year, month, d);
+    calDays.push({ date, current: true, isPast: date < todayMidnight });
+  }
+  while (calDays.length % 7 !== 0) {
+    const last = calDays[calDays.length - 1].date;
+    const d = new Date(last.getFullYear(), last.getMonth(), last.getDate() + 1);
+    calDays.push({ date: d, current: false, isPast: d < todayMidnight });
   }
 
   return (
@@ -165,14 +210,14 @@ function BookingCard({ property, onBookClick }) {
           <div className="booking-minical-header">
             <span
               className="booking-minical-nav"
-              onClick={() => setCheckIn(new Date(year, currentMonth.getMonth() - 1, 1).toISOString().slice(0, 10))}
+              onClick={() => setViewDate(new Date(year, month - 1, 1))}
             >
               {'<'}
             </span>
             <span>{monthName} {year}</span>
             <span
               className="booking-minical-nav"
-              onClick={() => setCheckIn(new Date(year, currentMonth.getMonth() + 1, 1).toISOString().slice(0, 10))}
+              onClick={() => setViewDate(new Date(year, month + 1, 1))}
             >
               {'>'}
             </span>
@@ -186,9 +231,10 @@ function BookingCard({ property, onBookClick }) {
             {calDays.map((d, i) => (
               <span
                 key={i}
-                className={`booking-minical-day ${getDayClass(d.day)}${!d.current ? ' booking-minical-other' : ''}`}
+                className={`booking-minical-day ${getDayClass(d.date, d.isPast)}${!d.current ? ' booking-minical-other' : ''}`}
+                onClick={() => handleDayClick(d.date, d.isPast)}
               >
-                {d.day}
+                {d.date.getDate()}
               </span>
             ))}
           </div>
@@ -270,6 +316,19 @@ function PropertyDetail() {
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterStatus, setNewsletterStatus] = useState(null); // null | 'success' | 'error'
+
+  function handleBack() {
+    // Prefer real browser history (works from any properties list —
+    // Tenant's, Landlord's, Agent's, Admin's, or the public one) so the
+    // user lands back exactly where they clicked in from. Falls back to
+    // that role's properties list only when there's no history to go back
+    // to (e.g. the page was opened directly via URL).
+    if (location.key !== 'default') {
+      navigate(-1);
+    } else {
+      navigate(getPropertyRoute(user?.role));
+    }
+  }
 
   function handleNewsletterSubmit(e) {
     e.preventDefault();
@@ -410,9 +469,14 @@ function PropertyDetail() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
       >
+        {/* ── Back ── */}
+        <button type="button" className="pd-back-btn" onClick={handleBack}>
+          <ArrowLeft size={16} /> Back
+        </button>
+
         {/* ── Breadcrumb ── */}
         <div className="pd-breadcrumb" data-customize-id="detail.breadcrumb">
-          <Link to="/properties">Properties</Link>
+          <Link to={getPropertyRoute(user?.role)}>Properties</Link>
           <ChevronRight size={12} />
           <span>{property.city || 'Kuala Lumpur'}</span>
           <ChevronRight size={12} />

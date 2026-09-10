@@ -59,31 +59,20 @@
 }
 
 .settings-card button {
-  height: 48px;
-  padding: 0 var(--spacing-lg);
+  height: 40px;
+  padding: 0 18px;
   border: none;
   border-radius: var(--radius-md);
   background: var(--primary-container);
   color: var(--on-primary);
-  font-size: 15px;
-  font-weight: 800;
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: filter 0.15s;
 }
 
 .settings-card button:hover {
-  background: var(--on-primary);
-  color: var(--primary-container);
-}
-
-[data-theme="dark"] .settings-card button {
-  background: var(--primary-accent, #8a2be2);
-  color: #ffffff;
-}
-
-[data-theme="dark"] .settings-card button:hover {
-  background: #ffffff;
-  color: var(--primary-accent, #8a2be2);
+  filter: brightness(1.15);
 }
 
 @media (max-width: 900px) {

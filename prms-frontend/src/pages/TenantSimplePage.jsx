@@ -250,6 +250,11 @@ export default function TenantSimplePage({ type, label, children }) {
           alert('Failed to update: ' + e.message)
         }
       }
+    } else if (resolvedType === 'messages') {
+      // CommunicationHub renders below (as `children`) and owns the actual
+      // compose flow - this just tells it to open, since it isn't reachable
+      // via props through this page shell.
+      window.dispatchEvent(new CustomEvent('prms:new-message'))
     }
   }
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { categoryApi } from '../api/categories'
+import Modal from '../components/Modal'
 import {
   FolderOpen,
   Plus,
@@ -218,42 +219,43 @@ function AdminCategories() {
         </div>
       )}
 
-      {showForm && !loading && editingId === null && (
-        <motion.div
-          className="admin-categories-inline-form"
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <input
-            className="form-input"
-            value={formName}
-            onChange={(e) => setFormName(e.target.value)}
-            placeholder="Category name *"
-          />
-          <input
-            className="form-input"
-            value={formDesc}
-            onChange={(e) => setFormDesc(e.target.value)}
-            placeholder="Description (optional)"
-          />
-          <label className="form-checkbox">
-            <input
-              type="checkbox"
-              checked={formShared}
-              onChange={(e) => setFormShared(e.target.checked)}
-            />{' '}
-            Shared across system
-          </label>
-          <div className="form-actions">
-            <button className="action-btn save" onClick={submitForm}>
-              <Save size={15} /> Create
-            </button>
+      <Modal
+        isOpen={showForm && editingId === null}
+        onOpenChange={setShowForm}
+        title="Add Category"
+        footer={
+          <>
             <button className="action-btn cancel" onClick={() => setShowForm(false)}>
               <X size={15} /> Cancel
             </button>
-          </div>
-        </motion.div>
-      )}
+            <button className="action-btn save" onClick={submitForm}>
+              <Save size={15} /> Create
+            </button>
+          </>
+        }
+      >
+        <input
+          className="form-input"
+          value={formName}
+          onChange={(e) => setFormName(e.target.value)}
+          placeholder="Category name *"
+        />
+        <input
+          className="form-input"
+          value={formDesc}
+          onChange={(e) => setFormDesc(e.target.value)}
+          placeholder="Description (optional)"
+          style={{ marginTop: 12 }}
+        />
+        <label className="form-checkbox" style={{ marginTop: 12, display: 'block' }}>
+          <input
+            type="checkbox"
+            checked={formShared}
+            onChange={(e) => setFormShared(e.target.checked)}
+          />{' '}
+          Shared across system
+        </label>
+      </Modal>
 
       <AnimatePresence>
         {toast && (

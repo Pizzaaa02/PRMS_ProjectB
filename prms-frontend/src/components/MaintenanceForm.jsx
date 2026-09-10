@@ -19,8 +19,7 @@ const PRIORITY_MAP = {
   low: { label: 'Low', color: '#22c55e' },
 };
 
-export default function MaintenanceForm({ onSuccess, initialData }) {
-  const [open, setOpen] = useState(true);
+export default function MaintenanceForm({ onSuccess, onClose, initialData }) {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState(
     initialData || {
@@ -75,7 +74,7 @@ export default function MaintenanceForm({ onSuccess, initialData }) {
       // preview only rather than silently failing ticket creation.
       const res = await maintenanceApi.createTicket(data);
       onSuccess?.(res.data.data);
-      setOpen(false);
+      onClose?.();
     } catch (e) { alert(e.response?.data?.message || 'Failed to create ticket'); }
     finally { setUploading(false); }
   };
@@ -91,14 +90,13 @@ export default function MaintenanceForm({ onSuccess, initialData }) {
     { label: 'Location', icon: '📍' },
   ];
 
-  if (!open) return null;
-
   return (
-    <Modal isOpen={open} onOpenChange={setOpen} title="Maintenance Ticket">
-      {/* Steps */}
+    <Modal isOpen onOpenChange={() => onClose?.()} title="Maintenance Ticket">
+      {/* Steps — clickable so you can jump straight to a step, not just
+          step-by-step via Next/Back */}
       <div className="step-progress">
         {steps.map((s, i) => (
-          <div key={i} className={i === step ? 'active' : ''}>{s.icon} {s.label}</div>
+          <div key={i} className={i === step ? 'active' : ''} onClick={() => setStep(i)}>{s.icon} {s.label}</div>
         ))}
       </div>
 

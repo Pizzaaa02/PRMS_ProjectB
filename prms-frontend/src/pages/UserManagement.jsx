@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { userApi } from '../api/user'
+import Modal from '../components/Modal'
 import {
   Users,
   UserPlus,
@@ -442,37 +443,13 @@ export default function UserManagement() {
         )}
       </div>
 
-      {/* ── Modal slide-over ── */}
-      <AnimatePresence>
+      {/* ── Add/View/Edit popup ── */}
+      <Modal
+        isOpen={!!mode}
+        onOpenChange={(open) => !open && closeModal()}
+        title={mode === 'add' ? 'Add New User' : mode === 'view' ? 'User Details' : 'Edit User'}
+      >
         {mode && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              className="user-mgmt-backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={closeModal}
-            />
-
-            {/* Panel */}
-            <motion.div
-              className={`user-mgmt-panel ${mode === 'view' ? 'panel-view' : ''}`}
-              initial={{ x: 380, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: 380, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            >
-              {/* Panel header */}
-              <div className="panel-header">
-                <h2>
-                  {mode === 'add' && 'Add New User'}
-                  {mode === 'view' && 'User Details'}
-                  {mode === 'edit' && 'Edit User'}
-                </h2>
-                <button onClick={closeModal}><X size={18} /></button>
-              </div>
-
               <div className="panel-body">
                 {mode === 'view' && selectedUser && (
                   <ViewUserView user={selectedUser} onEdit={() => openEdit(selectedUser)} />
@@ -574,10 +551,8 @@ export default function UserManagement() {
                   </div>
                 )}
               </div>
-            </motion.div>
-          </>
         )}
-      </AnimatePresence>
+      </Modal>
 
       {/* Toast */}
       <AnimatePresence>
