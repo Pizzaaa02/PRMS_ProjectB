@@ -276,81 +276,89 @@ export default function TenantSimplePage({ type, label, children }) {
 
       {children && <section style={{ marginBottom: '1.5rem' }}>{children}</section>}
 
-      <section className="tenant-simple-cards">
-        {cards.map((card) => (
-          <article className="tenant-simple-card" key={card.label}>
-            <div className="tenant-simple-icon">
-              <Icon size={26} />
-            </div>
-            <p>{card.label}</p>
-            <h3>{card.value}</h3>
-          </article>
-        ))}
-      </section>
-
-      <section className="tenant-simple-table-card">
-        <div className="tenant-simple-table-header">
-          <h2>{cfg.title}</h2>
-          <div className="tenant-simple-search">
-            <Search size={17} />
-            <input
-              type="text"
-              placeholder="Search records..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-        </div>
-
-        {error && <p style={{ color: 'red', padding: 12 }}>{error}</p>}
-
-        {loading ? (
-          <div className="tenant-simple-table">
-            <div className="tenant-simple-table-head">Loading...</div>
-          </div>
-        ) : (
-          <div className="tenant-simple-table">
-            <div
-              className="tenant-simple-table-head"
-              style={{ gridTemplateColumns: `repeat(${cfg.columns.length}, 1fr)` }}
-            >
-              {cfg.columns.map((col) => (
-                <p key={col}>{col}</p>
-              ))}
-            </div>
-
-            {filteredRows.length === 0 && (
-              <div className="tenant-simple-table-row">
-                <div colSpan={cfg.columns.length} style={{ gridColumn: `1 / ${cfg.columns.length + 1}`, textAlign: 'center', padding: 20 }}>
-                  {searchTerm ? 'No matching records found.' : 'No records found'}
+      {/* Messages owns its own stats + conversation list inside
+          CommunicationHub (children above) - the generic cards/table below
+          are sourced from notifications, not real messages, and duplicate
+          that UI with a dead "Reply" button, so skip them here. */}
+      {resolvedType !== 'messages' && (
+        <>
+          <section className="tenant-simple-cards">
+            {cards.map((card) => (
+              <article className="tenant-simple-card" key={card.label}>
+                <div className="tenant-simple-icon">
+                  <Icon size={26} />
                 </div>
-              </div>
-            )}
+                <p>{card.label}</p>
+                <h3>{card.value}</h3>
+              </article>
+            ))}
+          </section>
 
-            {filteredRows.map((row, i) => {
-              const cells = cfg.renderRow ? cfg.renderRow(row, i) : row
-              if (!cells) return null
-              return (
+          <section className="tenant-simple-table-card">
+            <div className="tenant-simple-table-header">
+              <h2>{cfg.title}</h2>
+              <div className="tenant-simple-search">
+                <Search size={17} />
+                <input
+                  type="text"
+                  placeholder="Search records..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {error && <p style={{ color: 'red', padding: 12 }}>{error}</p>}
+
+            {loading ? (
+              <div className="tenant-simple-table">
+                <div className="tenant-simple-table-head">Loading...</div>
+              </div>
+            ) : (
+              <div className="tenant-simple-table">
                 <div
-                  className="tenant-simple-table-row"
+                  className="tenant-simple-table-head"
                   style={{ gridTemplateColumns: `repeat(${cfg.columns.length}, 1fr)` }}
-                  key={row.id || i}
                 >
-                  {cells.map((cell, ci) => (
-                    <div key={`${String(ci)}-${row.id || i}`}>
-                      {ci === cells.length - 1 ? (
-                        <button type="button" onClick={() => handleRowAction(row)}>{cell}</button>
-                      ) : (
-                        <span>{cell}</span>
-                      )}
-                    </div>
+                  {cfg.columns.map((col) => (
+                    <p key={col}>{col}</p>
                   ))}
                 </div>
-              )
-            })}
-          </div>
-        )}
-      </section>
+
+                {filteredRows.length === 0 && (
+                  <div className="tenant-simple-table-row">
+                    <div colSpan={cfg.columns.length} style={{ gridColumn: `1 / ${cfg.columns.length + 1}`, textAlign: 'center', padding: 20 }}>
+                      {searchTerm ? 'No matching records found.' : 'No records found'}
+                    </div>
+                  </div>
+                )}
+
+                {filteredRows.map((row, i) => {
+                  const cells = cfg.renderRow ? cfg.renderRow(row, i) : row
+                  if (!cells) return null
+                  return (
+                    <div
+                      className="tenant-simple-table-row"
+                      style={{ gridTemplateColumns: `repeat(${cfg.columns.length}, 1fr)` }}
+                      key={row.id || i}
+                    >
+                      {cells.map((cell, ci) => (
+                        <div key={`${String(ci)}-${row.id || i}`}>
+                          {ci === cells.length - 1 ? (
+                            <button type="button" onClick={() => handleRowAction(row)}>{cell}</button>
+                          ) : (
+                            <span>{cell}</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </section>
+        </>
+      )}
     </>
   )
 }
