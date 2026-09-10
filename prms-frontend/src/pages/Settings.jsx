@@ -35,22 +35,13 @@ function getNotificationsPath(role) {
   return ROUTES.admin.notifications
 }
 
-function getCustomizerPath(role) {
-  if (!role) return ROUTES.admin.customizer
-  const lower = role.toLowerCase()
-  if (lower.includes('admin')) return ROUTES.admin.customizer
-  if (lower.includes('landlord')) return ROUTES.landlord.customizer
-  if (lower.includes('tenant')) return ROUTES.tenant.customizer
-  return ROUTES.admin.customizer
-}
-
 function Settings() {
   const navigate = useNavigate()
   const { user } = useAuth()
 
+  const isAdmin = (user?.role || '').toLowerCase().includes('admin')
   const profilePath = getProfilePath(user?.role)
   const auditLogsPath = getAuditLogsPath(user?.role)
-  const customizerPath = getCustomizerPath(user?.role)
   const notificationsPath = getNotificationsPath(user?.role)
 
   return (
@@ -96,16 +87,18 @@ function Settings() {
           <button type="button" onClick={() => navigate(auditLogsPath)}>Manage Security</button>
         </div>
 
-        <div className="settings-card">
-          <div className="settings-card-icon green">
-            <Building2 size={28} />
+        {isAdmin && (
+          <div className="settings-card">
+            <div className="settings-card-icon green">
+              <Building2 size={28} />
+            </div>
+
+            <h2>System Preferences</h2>
+            <p>Adjust dashboard layout, property display, language, and system theme.</p>
+
+            <button type="button" onClick={() => navigate(ROUTES.admin.customizer)}>Manage Preferences</button>
           </div>
-
-          <h2>System Preferences</h2>
-          <p>Adjust dashboard layout, property display, language, and system theme.</p>
-
-          <button type="button" onClick={() => navigate(customizerPath)}>Manage Preferences</button>
-        </div>
+        )}
       </section>
     </div>
   )
