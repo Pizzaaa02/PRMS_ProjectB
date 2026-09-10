@@ -3,7 +3,9 @@ import { Link } from 'react-router-dom';
 import { Building2 } from 'lucide-react';
 import { getImageUrl } from '../config/imageHelper';
 import { bookingApi } from '../api/booking';
+import { useAuth } from '../contexts/AuthContext';
 import Modal from '../components/Modal';
+import AgreementPanel from '../components/AgreementPanel';
 import './SharedPageShell.css';
 
 const ALL_TABS = ['active', 'upcoming', 'past', 'cancelled'];
@@ -48,11 +50,13 @@ function matchesTab(booking, tab) {
 }
 
 export default function MyBookings() {
+  const { user } = useAuth();
   const [tab, setTab] = useState('active');
   const [allBookings, setAllBookings] = useState([]);
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [actionError, setActionError] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -60,6 +64,8 @@ export default function MyBookings() {
     try {
       const res = await bookingApi.myBookings();
       setAllBookings(res.data?.data || []);
+      // Keep the open modal's data fresh after an action instead of stale.
+      setSelected((prev) => prev && (res.data?.data || []).find((b) => (b._id || b.id) === (prev._id || prev.id)) || prev);
     } catch (e) {
       setError(e.response?.data?.message || e.response?.data?.error?.message || e.message || 'Failed to load bookings');
       console.error(e);
@@ -72,11 +78,27 @@ export default function MyBookings() {
 
   const bookings = allBookings.filter(b => matchesTab(b, tab));
 
+  async function handleWithdraw(id) {
+    setActionError('');
+    try {
+      await bookingApi.withdraw(id);
+      await load();
+    } catch (e) { setActionError(e.response?.data?.error?.message || 'Failed to withdraw application'); }
+  }
+
+  async function handleSubmitNotice(id) {
+    setActionError('');
+    try {
+      await bookingApi.submitNotice(id);
+      await load();
+    } catch (e) { setActionError(e.response?.data?.error?.message || 'Failed to submit notice'); }
+  }
+
   return (
     <div className="page-shell">
       <div className="page-header">
-        <h1 className="page-title">My Bookings</h1>
-        <Link to="/tenant/properties" className="btn btn-primary">+ Book New Property</Link>
+        <h1 className="page-title">My Applications</h1>
+        <Link to="/tenant/properties" className="btn btn-primary">+ Apply to Rent</Link>
       </div>
 
       <div className="card-table">
@@ -114,7 +136,7 @@ export default function MyBookings() {
           </div>
         ) : (
           <div className="bookings-empty-state">
-            <p>No bookings found for this category.</p>
+            <p>No applications found for this category.</p>
             <Link to="/tenant/properties" className="btn btn-primary">Browse Properties</Link>
           </div>
         )}
@@ -123,15 +145,45 @@ export default function MyBookings() {
       {selected && (
         <Modal
           isOpen={!!selected}
-          onOpenChange={open => { if (!open) setSelected(null); }}
-          title="Booking Details"
+          onOpenChange={open => { if (!open) { setSelected(null); setActionError(''); } }}
+          title="Application Details"
+          size="lg"
           footer={<button type="button" className="btn btn-outline" onClick={() => setSelected(null)}>Close</button>}
         >
           <p><strong>Property:</strong> {selected.property?.title || selected.property?.name || 'N/A'}</p>
-          <p><strong>Status:</strong> {formatStatus(selected.status)}</p>
-          <p><strong>Check In:</strong> {formatDate(selected.start_date)}</p>
-          <p><strong>Check Out:</strong> {formatDate(selected.end_date)}</p>
-          <p><strong>Amount:</strong> {formatAmount(selected.totalAmount ?? selected.monthlyRate)}</p>
+          <p><strong>Status:</strong> {formatStatus(selected.status)}{selected.application_stage ? ` — ${formatStatus(selected.application_stage)}` : ''}</p>
+          <p><strong>Preferred Move-in:</strong> {formatDate(selected.start_date)}</p>
+          <p><strong>Expected End:</strong> {formatDate(selected.end_date)}</p>
+          <p><strong>Occupants:</strong> {selected.occupants ?? '—'}</p>
+          {selected.rejection_reason && <p><strong>Rejection reason:</strong> {selected.rejection_reason}</p>}
+          {selected.reviewer_notes && <p><strong>Landlord notes:</strong> {selected.reviewer_notes}</p>}
+
+          {actionError && <div className="alert alert-danger mt-2">{actionError}</div>}
+
+          {selected.status === 'PENDING' && (
+            <button type="button" className="btn btn-danger mt-2" onClick={() => handleWithdraw(selected._id || selected.id)}>
+              Withdraw Application
+            </button>
+          )}
+
+          {(selected.status === 'CONFIRMED' || selected.status === 'CHECKED_IN') && (
+            <div className="mt-4">
+              <h3 style={{ fontSize: 15, margin: '0 0 8px' }}>Tenancy Agreement</h3>
+              <AgreementPanel bookingId={selected._id || selected.id} booking={selected} role="tenant" userId={user?.id} />
+            </div>
+          )}
+
+          {selected.status === 'CHECKED_IN' && (
+            <div className="mt-4">
+              {selected.noticeSubmittedAt ? (
+                <p><strong>Move-out notice submitted:</strong> {formatDate(selected.noticeSubmittedAt)}</p>
+              ) : (
+                <button type="button" className="btn btn-outline" onClick={() => handleSubmitNotice(selected._id || selected.id)}>
+                  Submit Move-Out Notice
+                </button>
+              )}
+            </div>
+          )}
         </Modal>
       )}
     </div>

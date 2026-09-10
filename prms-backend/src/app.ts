@@ -74,6 +74,12 @@ app.use('/uploads/properties', (req, res, next) => {
     next();
 }, express.static(path.join(__dirname, '..', 'uploads', 'properties')));
 
+// Serve uploaded physically-signed agreement copies statically
+app.use('/uploads/agreements', (req, res, next) => {
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    next();
+}, express.static(path.join(__dirname, '..', 'uploads', 'agreements')));
+
 app.get('/health', async (req, res) => {
   try {
     await prisma.$queryRaw`SELECT 1`;
@@ -116,6 +122,12 @@ router.use('/notifications', notificationRoutes);
 
 import customizerRoutes from './modules/customizer/routes_customizer';
 router.use('/customizer', customizerRoutes);
+
+import viewingRoutes from './modules/viewing/routes_viewing';
+router.use('/viewings', viewingRoutes);
+
+import agreementRoutes from './modules/agreement/routes_agreement';
+router.use('/agreements', agreementRoutes);
 
 app.use(router);
 app.use(errorHandler);

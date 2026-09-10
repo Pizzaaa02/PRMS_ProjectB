@@ -7,6 +7,8 @@ import { userApi } from './user';
 import { searchApi } from './search';
 import { adminApi } from './admin';
 import { communicationApi } from './communication';
+import { viewingApi } from './viewing';
+import { agreementApi } from './agreement';
 import { apiClient, logoutUser, getApiError } from './ApiClient';
 
 export {
@@ -19,6 +21,8 @@ export {
   searchApi,
   adminApi,
   communicationApi,
+  viewingApi,
+  agreementApi,
   apiClient,
   logoutUser,
   getApiError,

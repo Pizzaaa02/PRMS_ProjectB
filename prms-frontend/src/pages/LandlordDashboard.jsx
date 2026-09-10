@@ -128,16 +128,22 @@ function LandlordDashboard() {
   }
 
   async function handleApprove(bookingId, status) {
-    /* Mark this approval in-flight */
+    // Approving now requires offer terms (deposits + expiry) that can't be
+    // meaningfully collected in a one-click dashboard widget, so "Approve"
+    // here hands off to the full review screen instead of bypassing them.
+    if (status === 'CONFIRMED') {
+      navigate(`${ROUTES.landlord.bookings}?review=${bookingId}`)
+      return
+    }
+    const reason = window.prompt('Reason for rejecting this application:')
+    if (!reason || !reason.trim()) return
+
+    /* Mark this rejection in-flight */
     setApprovals((prev) =>
       prev.map((a) => (a.id === bookingId ? { ...a, approving: true, approvalMsg: '' } : a))
     )
     try {
-      if (status === 'CONFIRMED') {
-        await bookingApi.confirm(bookingId)
-      } else {
-        await bookingApi.reject(bookingId)
-      }
+      await bookingApi.decline(bookingId, reason)
       setApprovals((prev) =>
         prev.map((a) =>
           a.id === bookingId
@@ -360,7 +366,7 @@ function LandlordDashboard() {
                         onClick={() => handleApprove(a.id, 'CONFIRMED')}
                         disabled={a.approving !== undefined && a.approving}
                       >
-                        {a.approving ? <Loader size={14} className="animate-spin" /> : 'Approve'}
+                        {a.approving ? <Loader size={14} className="animate-spin" /> : 'Review'}
                       </button>
                       <button
                         type="button"

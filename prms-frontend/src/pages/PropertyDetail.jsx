@@ -23,10 +23,11 @@ import {
   Wind,
   AlertTriangle,
 } from 'lucide-react';
-import { propertyApi } from '../api';
+import { propertyApi, viewingApi } from '../api';
 import { useAuth } from '../contexts/AuthContext';
 import TenantBookingModal from '../components/TenantBookingModal';
 import ImageGallery from '../components/ImageGallery';
+import Modal from '../components/Modal';
 import { VideoUploader, DocumentUploader } from '../components/MediaUploader';
 import { getPropertyRoute, getMessagesRoute } from '../config/routes';
 import './PropertyDetail.css';
@@ -57,6 +58,39 @@ function BookingCard({ property, onBookClick }) {
 
   const owner = property.owner;
   const isOwnProperty = !!(user && owner && (owner.id === user.id || property.ownerId === user.id));
+
+  const [showViewingModal, setShowViewingModal] = useState(false);
+  const [viewingPreferred, setViewingPreferred] = useState('');
+  const [viewingAlternative, setViewingAlternative] = useState('');
+  const [viewingMessage, setViewingMessage] = useState('');
+  const [viewingSubmitting, setViewingSubmitting] = useState(false);
+  const [viewingResult, setViewingResult] = useState(null);
+
+  async function handleRequestViewing() {
+    if (!viewingPreferred) return;
+    setViewingSubmitting(true);
+    setViewingResult(null);
+    try {
+      await viewingApi.request({
+        propertyId: property.id,
+        preferredTime: viewingPreferred,
+        alternativeTime: viewingAlternative || undefined,
+        message: viewingMessage || undefined,
+      });
+      setViewingResult({ success: true, message: 'Viewing requested — the landlord will respond soon.' });
+      setTimeout(() => {
+        setShowViewingModal(false);
+        setViewingResult(null);
+        setViewingPreferred('');
+        setViewingAlternative('');
+        setViewingMessage('');
+      }, 1800);
+    } catch (err) {
+      setViewingResult({ success: false, message: err.response?.data?.error?.message || 'Failed to request viewing' });
+    } finally {
+      setViewingSubmitting(false);
+    }
+  }
 
   function handleMessageOwner() {
     if (!owner?.id) return;
@@ -175,7 +209,7 @@ function BookingCard({ property, onBookClick }) {
         <div className="booking-inputs">
           <div className="booking-input-row">
             <div className="booking-input-col">
-              <span className="booking-input-label">CHECK-IN</span>
+              <span className="booking-input-label">PREFERRED MOVE-IN</span>
               <input
                 type="date"
                 value={checkIn}
@@ -185,7 +219,7 @@ function BookingCard({ property, onBookClick }) {
               />
             </div>
             <div className="booking-input-col">
-              <span className="booking-input-label">CHECKOUT</span>
+              <span className="booking-input-label">EXPECTED END</span>
               <input
                 type="date"
                 value={checkOut}
@@ -197,7 +231,7 @@ function BookingCard({ property, onBookClick }) {
           </div>
           <div className="booking-input-row">
             <div className="booking-input-col">
-              <span className="booking-input-label">GUESTS</span>
+              <span className="booking-input-label">OCCUPANTS</span>
               <input
                 type="number"
                 min={1}
@@ -245,12 +279,12 @@ function BookingCard({ property, onBookClick }) {
           </div>
         </div>
 
-        {/* Payment methods banner */}
+        {/* Applying banner */}
         <div className="booking-payment-banner">
-          SUPPORTED: FPX ONLINE BANKING · GRADAPAY
+          NO PAYMENT REQUIRED TO APPLY
         </div>
 
-        {/* Book button */}
+        {/* Apply button */}
         <button
           className="book-now-btn"
           onClick={() => {
@@ -259,7 +293,7 @@ function BookingCard({ property, onBookClick }) {
           }}
           disabled={property.status === 'OCCUPIED' || property.status === 'MAINTENANCE'}
         >
-          {property.status === 'OCCUPIED' ? 'Occupied' : property.status === 'MAINTENANCE' ? 'Maintenance' : 'Book Now'}
+          {property.status === 'OCCUPIED' ? 'Occupied' : property.status === 'MAINTENANCE' ? 'Maintenance' : 'Apply to Rent'}
         </button>
 
         {/* Approximate price */}
@@ -287,6 +321,19 @@ function BookingCard({ property, onBookClick }) {
           </div>
         </div>
 
+        {/* Request Viewing */}
+        {!isOwnProperty && user?.role?.toLowerCase() === 'tenant' && (
+          <button
+            type="button"
+            className="message-owner-btn"
+            style={{ marginBottom: 8 }}
+            onClick={() => setShowViewingModal(true)}
+          >
+            <Clock size={16} />
+            Request a Viewing
+          </button>
+        )}
+
         {/* Message Owner */}
         {!isOwnProperty && (
           <button
@@ -300,6 +347,39 @@ function BookingCard({ property, onBookClick }) {
           </button>
         )}
       </div>
+
+      <Modal
+        isOpen={showViewingModal}
+        onOpenChange={(open) => { if (!open) { setShowViewingModal(false); setViewingResult(null); } }}
+        title="Request a Viewing"
+        footer={(
+          <>
+            <button type="button" className="btn btn-outline" onClick={() => setShowViewingModal(false)}>Cancel</button>
+            <button type="button" className="btn btn-primary" onClick={handleRequestViewing} disabled={viewingSubmitting || !viewingPreferred}>
+              {viewingSubmitting ? 'Requesting…' : 'Request Viewing'}
+            </button>
+          </>
+        )}
+      >
+        {viewingResult ? (
+          <p style={{ color: viewingResult.success ? 'var(--status-success)' : 'var(--status-error)' }}>{viewingResult.message}</p>
+        ) : (
+          <>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 12, fontSize: 13, fontWeight: 600 }}>
+              Preferred Time
+              <input type="datetime-local" value={viewingPreferred} onChange={(e) => setViewingPreferred(e.target.value)} style={{ padding: '8px 10px', border: '1px solid var(--border-color)', borderRadius: 6 }} />
+            </label>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 12, fontSize: 13, fontWeight: 600 }}>
+              Alternative Time (optional)
+              <input type="datetime-local" value={viewingAlternative} onChange={(e) => setViewingAlternative(e.target.value)} style={{ padding: '8px 10px', border: '1px solid var(--border-color)', borderRadius: 6 }} />
+            </label>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13, fontWeight: 600 }}>
+              Message (optional)
+              <textarea rows={3} value={viewingMessage} onChange={(e) => setViewingMessage(e.target.value)} style={{ padding: '8px 10px', border: '1px solid var(--border-color)', borderRadius: 6, fontFamily: 'inherit' }} />
+            </label>
+          </>
+        )}
+      </Modal>
 
       {/* Report this listing */}
       <a href="#" className="report-listing">

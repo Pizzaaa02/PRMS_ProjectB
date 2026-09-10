@@ -99,6 +99,54 @@
   border-color: var(--status-error);
 }
 
+.tenant-booking-field input[type='number'],
+.tenant-booking-field textarea {
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 15px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s;
+  resize: vertical;
+}
+
+.tenant-booking-field input[type='number']:focus,
+.tenant-booking-field textarea:focus {
+  border-color: var(--status-error);
+}
+
+.tenant-booking-message-field {
+  margin-bottom: 16px;
+}
+
+.tenant-booking-computed-end {
+  margin: -8px 0 16px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.tenant-booking-consent {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tenant-booking-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.tenant-booking-checkbox input {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
 /* ---- Check Availability button ---- */
 .tenant-booking-check-btn {
   width: 100%;

@@ -48,4 +48,32 @@ export const bookingApi = {
   checkOverlap(params) {
     return apiClient.get('/bookings/check-overlap', { params });
   },
+
+  /* ── Application review (Part 4) ── */
+  review(id, reviewer_notes) {
+    return apiClient.patch(`/bookings/${id}/review`, { reviewer_notes });
+  },
+  requestInfo(id, reviewer_notes) {
+    return apiClient.patch(`/bookings/${id}/request-info`, { reviewer_notes });
+  },
+  approve(id, data) {
+    return apiClient.patch(`/bookings/${id}/approve`, data);
+  },
+  decline(id, reason) {
+    return apiClient.patch(`/bookings/${id}/decline`, { reason });
+  },
+  withdraw(id) {
+    return apiClient.patch(`/bookings/${id}/withdraw`);
+  },
+
+  /* ── Tenancy lifecycle (Part 8) ── */
+  moveIn(id, data) {
+    return apiClient.patch(`/bookings/${id}/move-in`, data);
+  },
+  submitNotice(id) {
+    return apiClient.patch(`/bookings/${id}/notice`);
+  },
+  moveOut(id, data) {
+    return apiClient.patch(`/bookings/${id}/move-out`, data);
+  },
 };

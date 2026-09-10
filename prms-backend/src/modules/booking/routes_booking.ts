@@ -23,4 +23,16 @@ router.patch('/:id/reject', authenticate, adminOrLandlordOrAgent, ctrl.reject);
 router.patch('/:id/cancel', authenticate, ctrl.cancel);
 router.delete('/:id', authenticate, adminOnly, ctrl.remove);
 
+// Application review (Part 4)
+router.patch('/:id/review', authenticate, adminOrLandlordOrAgent, ctrl.review);
+router.patch('/:id/request-info', authenticate, adminOrLandlordOrAgent, ctrl.requestInfo);
+router.patch('/:id/approve', authenticate, adminOrLandlord, ctrl.approve);
+router.patch('/:id/decline', authenticate, adminOrLandlord, ctrl.decline);
+router.patch('/:id/withdraw', authenticate, ctrl.withdraw);
+
+// Tenancy lifecycle (Part 8)
+router.patch('/:id/move-in', authenticate, adminOrLandlord, ctrl.moveIn);
+router.patch('/:id/notice', authenticate, ctrl.notice);
+router.patch('/:id/move-out', authenticate, adminOrLandlord, ctrl.moveOut);
+
 export default router;

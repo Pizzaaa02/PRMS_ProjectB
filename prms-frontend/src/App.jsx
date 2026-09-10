@@ -72,6 +72,7 @@ const SuspenseWrapper = ({ children }) => (
 /*  New pages (Module 2-3)  */
 const MyBookings = lazy(() => import('./pages/MyBookings'));
 const LandlordBookings = lazy(() => import('./pages/LandlordBookings'));
+const Viewings = lazy(() => import('./pages/Viewings'));
 const AdminBookings = lazy(() => import('./pages/AdminBookings'));
 const TenantPayments = lazy(() => import('./pages/TenantPayments'));
 const TenantMaintenance = lazy(() => import('./pages/TenantMaintenance'));
@@ -223,6 +224,7 @@ function AppRoutes() {
           element={<PropertyDetail />}
         />
         <Route path="bookings" element={<AdminBookings />} />
+        <Route path="viewings" element={<Viewings />} />
         <Route
           path="finance"
           element={
@@ -290,6 +292,7 @@ function AppRoutes() {
         <Route path="properties/edit/:id" element={<PropertyEdit />} />
         <Route path="properties/:id" element={<PropertyDetail />} />
         <Route path="bookings" element={<LandlordBookings />} />
+        <Route path="viewings" element={<Viewings />} />
         <Route
           path="finance"
           element={
@@ -353,6 +356,7 @@ function AppRoutes() {
         />
         <Route path="properties/:id" element={<PropertyDetail />} />
         <Route path="bookings" element={<MyBookings />} />
+        <Route path="viewings" element={<Viewings />} />
         <Route path="payments" element={<TenantPayments />} />
         <Route path="payments/:id" element={<PaymentReceipt />} />
         <Route path="maintenance" element={<TenantMaintenance />} />
@@ -408,6 +412,7 @@ function AppRoutes() {
             </SuspenseWrapper>
           }
         />
+        <Route path="viewings" element={<Viewings />} />
         <Route path="maintenance" element={<AgentMaintenance />} />
         <Route path="messages" element={<CommunicationHub />} />
         <Route path="categories" element={<AgentCategories />} />
