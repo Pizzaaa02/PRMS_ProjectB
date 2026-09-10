@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import PageTransition from './PageTransition'
 import { useAuth } from '../contexts/AuthContext'
+import { useBranding } from '../contexts/BrandingContext'
 import { buildNavItems, resolveActivePage } from './NavigationConfig'
 import NotificationDropdown from './NotificationDropdown'
 import ProfileDropdown from './ProfileDropdown'
@@ -37,6 +38,7 @@ function LandlordLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, logout } = useAuth()
+  const { name: brandName, logoUrl: brandLogo } = useBranding()
   const [searchTerm, setSearchTerm] = useState('')
 
   const role = user?.role || 'Landlord'
@@ -107,7 +109,8 @@ function LandlordLayout() {
       <section className="landlord-layout-main" data-customize-id="global.content">
         <header className="landlord-layout-topbar" data-customize-id="global.header">
           <div className="landlord-layout-brand" onClick={() => safeNavigate('/landlord')} data-customize-id="global.brand">
-            <h2 data-customize-id="global.brand.title">PRMS</h2>
+            {brandLogo && <img src={brandLogo} alt="" className="landlord-layout-brand-logo" />}
+            <h2 data-customize-id="global.brand.title">{brandName}</h2>
             <span></span>
             <p data-customize-id="global.brand.subtitle">{getTopbarTitle(activePage)}</p>
           </div>

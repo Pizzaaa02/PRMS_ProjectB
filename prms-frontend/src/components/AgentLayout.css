@@ -126,6 +126,12 @@
   cursor: pointer;
 }
 
+.agent-layout-brand-logo {
+  height: 32px;
+  max-width: 120px;
+  object-fit: contain;
+}
+
 .agent-layout-brand h2 {
   margin: 0;
   font-size: 28px;

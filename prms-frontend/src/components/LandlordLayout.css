@@ -123,6 +123,12 @@
   cursor: pointer;
 }
 
+.landlord-layout-brand-logo {
+  height: 32px;
+  max-width: 120px;
+  object-fit: contain;
+}
+
 .landlord-layout-brand h2 {
   margin: 0;
   font-size: 28px;
