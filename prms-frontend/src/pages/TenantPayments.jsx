@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { paymentApi } from '../api/payment';
 import { authApi } from '../api/auth';
+import './SharedPageShell.css';
 
 const STATUS_TABS = ['all', 'due', 'completed', 'failed'];
 
@@ -52,7 +53,7 @@ export default function TenantPayments() {
                   <td>{p.property?.title || 'N/A'}</td>
                   <td>{p.dueDate}</td>
                   <td>$ {p.amount}</td>
-                  <td><span className={`status-badge status-${(p.status||'').toLowerCase()}`}>{p.status}</span></td>
+                  <td><span className={`shell-status-badge status-${(p.status||'').toLowerCase()}`}>{p.status}</span></td>
                   <td>
                     {p.status === 'pending' && <button className="btn btn-sm btn-primary" onClick={() => markPaid(p._id || p.id)}>Pay Now</button>}
                     <Link to={`/receipt/${p._id || p.id}`} className="btn btn-sm btn-outline ml-1">Receipt</Link>

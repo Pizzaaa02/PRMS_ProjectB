@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { ROUTES } from '../config/routes'
 import {
   ArrowUp,
+  Building2,
   CalendarDays,
   CheckCircle2,
   Clock,
@@ -55,7 +56,7 @@ function AgentDashboard() {
             address: p.address || '',
             rent: p.rent || 0,
             status: p.status,
-            image: getImageUrl(p.images?.[0]?.url) || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0fd?q=80&w=1200&auto=format&fit=crop',
+            image: getImageUrl(p.images?.[0]?.url) || '',
           }))
         )
 
@@ -236,7 +237,13 @@ function AgentDashboard() {
           {assignedProperties.map((prop) => (
             <div className="agent-property-card" key={prop.id}>
               <div className="agent-property-img">
-                <img src={getImageUrl(prop.image)} alt={prop.title} />
+                {prop.image ? (
+                  <img src={prop.image} alt={prop.title} />
+                ) : (
+                  <div className="agent-property-img-placeholder">
+                    <Building2 size={28} />
+                  </div>
+                )}
               </div>
               <div className="agent-property-info">
                 <div className="agent-property-top">

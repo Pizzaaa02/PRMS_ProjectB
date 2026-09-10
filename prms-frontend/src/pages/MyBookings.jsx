@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import { Building2 } from 'lucide-react';
 import { getImageUrl } from '../config/imageHelper';
 import { bookingApi } from '../api/booking';
 import Modal from '../components/Modal';
@@ -93,7 +94,13 @@ export default function MyBookings() {
             {bookings.map(b => (
               <div key={b._id || b.id} className="booking-property-card" onClick={() => setSelected(b)} style={{ cursor: 'pointer' }}>
                 <div className="booking-property-card-header">
-                  <img className="booking-property-card-img" src={getImageUrl(b.property?.images?.[0]?.url) || '/placeholder.png'} alt={b.property?.title || 'Booked property'} />
+                  {b.property?.images?.[0]?.url ? (
+                    <img className="booking-property-card-img" src={getImageUrl(b.property.images[0].url)} alt={b.property?.title || 'Booked property'} />
+                  ) : (
+                    <div className="booking-property-card-img-placeholder">
+                      <Building2 size={32} />
+                    </div>
+                  )}
                   <span className={`shell-status-badge status-${(b.status || 'unknown').toLowerCase()}`}>{formatStatus(b.status)}</span>
                 </div>
                 <h3>{b.property?.title || b.property?.name || 'Property'}</h3>

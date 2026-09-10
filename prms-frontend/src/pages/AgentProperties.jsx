@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Building2 } from 'lucide-react';
 import { agentApi } from '../api/agents';
 import { getImageUrl } from '../config/imageHelper';
 import './SharedPageShell.css';
@@ -56,7 +57,13 @@ export default function AgentProperties() {
             {visibleProperties.map((p) => (
               <div key={p.id} className="booking-property-card" onClick={() => navigate(`/agent/properties/${p.id}`)} style={{ cursor: 'pointer' }}>
                 <div className="booking-property-card-header">
-                  <img className="booking-property-card-img" src={getImageUrl(p.images?.[0]?.url) || '/placeholder.png'} alt={p.title} />
+                  {p.images?.[0]?.url ? (
+                    <img className="booking-property-card-img" src={getImageUrl(p.images[0].url)} alt={p.title} />
+                  ) : (
+                    <div className="booking-property-card-img-placeholder">
+                      <Building2 size={32} />
+                    </div>
+                  )}
                   <span className={`shell-status-badge status-${(p.status || '').toLowerCase()}`}>{p.status}</span>
                 </div>
                 <h3>{p.title}</h3>
