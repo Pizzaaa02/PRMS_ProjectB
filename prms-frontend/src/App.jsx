@@ -408,6 +408,7 @@ function AppRoutes() {
           }
         />
         <Route path="maintenance" element={<AgentMaintenance />} />
+        <Route path="messages" element={<CommunicationHub />} />
         <Route path="categories" element={<AgentCategories />} />
         <Route path="settings" element={<Settings />} />
         <Route

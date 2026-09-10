@@ -21,6 +21,7 @@ function getTopbarTitle(activePage) {
     properties: 'Assigned Properties',
     bookings: 'Bookings',
     maintenance: 'Maintenance',
+    messages: 'Messages',
     categories: 'Property Categories',
     profile: 'Profile',
     settings: 'Settings',
