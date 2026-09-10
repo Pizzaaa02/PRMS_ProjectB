@@ -1514,11 +1514,25 @@ form label {
 .btn-primary {
   display: flex; align-items: center; gap: 8px;
   padding: 10px 20px;
-  background: linear-gradient(135deg, #9b3ee8, #7c3aed);
-  color: #fff; border: none; border-radius: 10px;
+  background: var(--primary-container);
+  color: var(--on-primary); border: none; border-radius: 10px;
   font-weight: 600; font-size: 14px; cursor: pointer;
 }
-.btn-primary:hover { background: linear-gradient(135deg, #7c3aed, #6d28d9); }
+.btn-primary:hover { filter: brightness(1.15); }
+
+/* Small action buttons ("View All", "See All", "New Request" on the
+   dashboards) — used in several pages' JSX but had no matching rule here
+   at all, so they rendered as bare unstyled browser buttons. */
+.btn-outline-sm,
+.btn-primary-sm {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px;
+  background: var(--primary-container);
+  color: var(--on-primary); border: none; border-radius: 8px;
+  font-weight: 600; font-size: 12px; cursor: pointer;
+}
+.btn-outline-sm:hover,
+.btn-primary-sm:hover { filter: brightness(1.15); }
 
 .properties-toolbar {
   display: flex; justify-content: space-between; align-items: center;

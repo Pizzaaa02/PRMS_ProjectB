@@ -167,7 +167,7 @@
 .form-actions .btn-primary {
   flex: 1;
   padding: var(--spacing-sm);
-  background: linear-gradient(135deg, var(--primary-accent), var(--secondary-accent));
+  background: var(--primary-container);
   color: var(--on-primary);
   border: none;
   border-radius: var(--radius-md);

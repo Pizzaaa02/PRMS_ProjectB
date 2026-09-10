@@ -151,7 +151,7 @@ function AgentDashboard() {
       <div className="landlord-page-title-row">
         <div>
           <h1>
-            <span className="material-symbols-outlined brand-icon">person_apARTment</span>
+            <span className="material-symbols-outlined brand-icon">apartment</span>
             Agent Dashboard
           </h1>
           <p>Welcome back, {user.full_name} — here&apos;s your portfolio overview.</p>
