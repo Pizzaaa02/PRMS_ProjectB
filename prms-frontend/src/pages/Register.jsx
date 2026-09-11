@@ -263,7 +263,7 @@ function Register() {
                 <Phone size={22} />
                 <input
                   type="tel"
-                  placeholder="+65 1234 5678"
+                  placeholder="+60 12-345 6789"
                   value={formData.phone}
                   onChange={(e) => handleChange('phone', e.target.value)}
                 />
