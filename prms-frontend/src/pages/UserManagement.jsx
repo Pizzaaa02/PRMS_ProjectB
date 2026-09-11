@@ -45,7 +45,10 @@ export default function UserManagement() {
   const [searchParams] = useSearchParams()
   const [search, setSearch] = useState(() => searchParams.get('search') || '')
   const [roleFilter, setRoleFilter] = useState('')
-  const [statusFilter, setStatusFilter] = useState('')
+  // Default to Active — deactivated/test accounts otherwise clutter the
+  // list by default (suspending a user, e.g. via cleanup after testing,
+  // never removes them from view). Admin can still switch to "All Status".
+  const [statusFilter, setStatusFilter] = useState('true')
   const [debouncedSearch, setDebouncedSearch] = useState('')
 
   /* Cards */
