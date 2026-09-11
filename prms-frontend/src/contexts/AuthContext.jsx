@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useReducer, useCallback } from 'react';
 import { authApi, getApiError } from '../api';
-import { ROUTES, roleToPath } from '../config/routes';
+import { roleToPath } from '../config/routes';
 
 /* ------ Actions ------ */
 
@@ -67,14 +67,23 @@ function AuthProvider({ children }) {
   /* ------ Register ------ */
 
   const register = useCallback(
-    async (data, navigate) => {
+    async (data) => {
       dispatch({ type: ACTIONS.SET_LOADING, payload: true });
       dispatch({ type: ACTIONS.CLEAR_ERROR });
       try {
         await authApi.register(data);
-        // After successful register, redirect to login page so user can authenticate
-        // Then the login function will redirect to the proper dashboard based on role
-        if (navigate) navigate(ROUTES.public.login);
+        // Success path never went through SET_USER or SET_ERROR (the only
+        // two reducer cases that clear loading), so it stayed stuck at the
+        // `true` set above forever - App.jsx gates its entire route tree on
+        // this flag, so the whole app was left frozen on the loading splash
+        // after a successful registration.
+        dispatch({ type: ACTIONS.SET_LOADING, payload: false });
+        // Navigating to /login is the caller's job (Register.jsx), and must
+        // happen AFTER it clears RegistrationContext's pendingRegistration -
+        // LoginGuard sends /login back to /role-selection while that flag is
+        // still true, so navigating from here (before the caller has a
+        // chance to clear it) bounced every successful registration back to
+        // the role picker instead of showing the login page.
         return { success: true };
       } catch (err) {
         const msg = getApiError(err);

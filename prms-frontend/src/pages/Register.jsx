@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useRegistration } from '../contexts/RegistrationContext';
+import { ROUTES } from '../config/routes';
 import { privacyApi } from '../api';
 import {
   PRIVACY_NOTICE_ACK_TEXT, PRIVACY_NOTICE_VERSION,
@@ -73,26 +74,31 @@ function Register() {
       return;
     }
 
-    const result = await register(
-      {
-        full_name: `${formData.firstName} ${formData.lastName}`.trim(),
-        email: formData.email,
-        phone: formData.phone,
-        password: formData.password,
-        role: selectedRole,
-        consents: [
-          { type: 'PRIVACY_NOTICE', wording: PRIVACY_NOTICE_ACK_TEXT, version: PRIVACY_NOTICE_VERSION, consented: true },
-          { type: 'MARKETING', wording: MARKETING_CONSENT_TEXT, version: MARKETING_CONSENT_VERSION, consented: marketingConsent },
-        ],
-      },
-      navigate
-    );
+    const result = await register({
+      full_name: `${formData.firstName} ${formData.lastName}`.trim(),
+      email: formData.email,
+      phone: formData.phone,
+      password: formData.password,
+      role: selectedRole,
+      consents: [
+        { type: 'PRIVACY_NOTICE', wording: PRIVACY_NOTICE_ACK_TEXT, version: PRIVACY_NOTICE_VERSION, consented: true },
+        { type: 'MARKETING', wording: MARKETING_CONSENT_TEXT, version: MARKETING_CONSENT_VERSION, consented: marketingConsent },
+      ],
+    });
 
     if (!result.success) {
       clearError();
     } else {
-      /* Issue #7: Clear registration state after successful registration */
+      // Clearing pendingRegistration and navigating client-side both trigger
+      // a re-render while this page (guarded by RoleSelectionGuard, which
+      // reads that same selectedRole/pendingRegistration state) is still
+      // mounted - RoleSelectionGuard's own re-render fires in that same
+      // batch and wins the race, bouncing back to /role-selection before
+      // react-router ever resolves the /login route we asked for. A hard
+      // navigation sidesteps the whole race: it tears down this component
+      // (and RoleSelectionGuard with it) instead of racing it.
       clearRegistration();
+      window.location.href = ROUTES.public.login;
     }
 
     setSubmitting(false);
