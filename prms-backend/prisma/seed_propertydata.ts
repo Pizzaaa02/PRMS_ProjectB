@@ -1,16 +1,15 @@
 /**
- * One-off, idempotent import of real Malaysian property listing data
- * (100 rows, sourced from two spreadsheets: Property_Listing.xlsx and
- * Property.xlsx) into prisma/data/malaysia_listings.json. Safe to re-run
- * — every property is upserted by its fixed id (mrl-001..mrl-100), and
- * this script never touches users or any other seed data.
+ * One-off, idempotent import of the "propertydata.xlsx" apartment listings
+ * (50 rows) into prisma/data/propertydata_apartments.json. Safe to re-run —
+ * every property is upserted by its fixed id (pd-001..pd-050), and this
+ * script never touches users or any other seed data.
  *
- * The spreadsheets' own "Owner ID" column is fictional (numeric IDs that
- * don't correspond to any real User in this database), so ownership is
- * instead round-robined across the three real Landlord accounts that
- * exist today.
+ * The spreadsheet's own OwnerID column is fictional (numeric IDs that don't
+ * correspond to any real User in this database), so ownership is instead
+ * round-robined across the real Landlord accounts that exist today — same
+ * approach as seed_malaysia_listings.ts.
  *
- * Run with: npx tsx prisma/seed_malaysia_listings.ts
+ * Run with: npx tsx prisma/seed_propertydata.ts
  */
 import { PrismaClient } from '@prisma/client';
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
@@ -37,7 +36,7 @@ type Listing = {
 };
 
 async function main() {
-  const dataPath = path.join(__dirname, 'data', 'malaysia_listings.json');
+  const dataPath = path.join(__dirname, 'data', 'propertydata_apartments.json');
   const listings: Listing[] = JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
   console.log(`Loaded ${listings.length} listings from ${dataPath}`);
 
@@ -84,7 +83,7 @@ async function main() {
     created++;
   }
 
-  console.log(`Seeded ${created} real Malaysian property listings.`);
+  console.log(`Seeded ${created} apartment listings from propertydata.xlsx.`);
 }
 
 main()
