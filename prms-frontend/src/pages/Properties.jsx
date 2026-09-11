@@ -317,9 +317,6 @@ function Properties() {
                                 /mo
                               </span>
                             </div>
-                            <div className="property-units">
-                              {p.unitCount || p.unit_count || 0} units
-                            </div>
                           </div>
                         </div>
                       </div>

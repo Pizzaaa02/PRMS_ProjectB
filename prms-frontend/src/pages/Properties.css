@@ -412,12 +412,6 @@
   font-size: 14px;
 }
 
-.property-units {
-  color: var(--text-secondary);
-  font-size: 13px;
-  font-weight: 500;
-}
-
 /* ── Pagination ── */
 .pagination-bar {
   display: flex;
