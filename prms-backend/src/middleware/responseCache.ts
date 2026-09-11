@@ -45,23 +45,28 @@ export function responseCache(req: Request, res: Response, next: NextFunction) {
     return res.status(entry.statusCode).type(entry.contentType).json(entry.body);
   }
 
-  // Override the json/send methods to capture the response for caching
+  // Override the json/send methods to capture the response for caching.
+  // Only cache success responses - caching a 401/403 (e.g. from an expired
+  // or invalid token) would serve that same error to every other user
+  // hitting this exact URL, with a valid token, for the rest of the TTL.
   const originalJson = res.json.bind(res);
   res.json = ((body: any) => {
-    cache.set(key, {
-      body,
-      statusCode: res.statusCode,
-      contentType: res.get('Content-Type') || 'application/json',
-      expiresAt: Date.now() + CACHE_TTL_MS,
-    });
-    res.set('Cache-Control', 'max-age=60');
-    res.set('X-Cache', 'MISS');
-    // Trim the cache if it gets too large (LRU-style: drop oldest 100 entries)
-    if (cache.size > 1000) {
-      const entries = [...cache.entries()].map(([k, v]) => ({ k, expiresAt: v.expiresAt }));
-      entries.sort((a, b) => a.expiresAt - b.expiresAt);
-      for (let i = 0; i < 100; i++) {
-        cache.delete(entries[i].k);
+    if (res.statusCode < 400) {
+      cache.set(key, {
+        body,
+        statusCode: res.statusCode,
+        contentType: res.get('Content-Type') || 'application/json',
+        expiresAt: Date.now() + CACHE_TTL_MS,
+      });
+      res.set('Cache-Control', 'max-age=60');
+      res.set('X-Cache', 'MISS');
+      // Trim the cache if it gets too large (LRU-style: drop oldest 100 entries)
+      if (cache.size > 1000) {
+        const entries = [...cache.entries()].map(([k, v]) => ({ k, expiresAt: v.expiresAt }));
+        entries.sort((a, b) => a.expiresAt - b.expiresAt);
+        for (let i = 0; i < 100; i++) {
+          cache.delete(entries[i].k);
+        }
       }
     }
     return originalJson(body);

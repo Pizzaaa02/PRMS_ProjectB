@@ -44,14 +44,14 @@ export async function getFinanceSummary(userId: string) {
 export async function getPayments(page = 1, limit = 10) {
   const skip = (page - 1) * limit;
   const [payments, total] = await Promise.all([
-    prisma.payment.findMany({ skip, take: limit, orderBy: { id: 'desc' }, include: { user: true, booking: { include: { property: true } } } }),
+    prisma.payment.findMany({ skip, take: limit, orderBy: { id: 'desc' }, include: { user: { select: { id: true, full_name: true, email: true } }, booking: { include: { property: true } } } }),
     prisma.payment.count(),
   ]);
   return { payments, total };
 }
 
 export async function getPaymentById(id: string) {
-  return prisma.payment.findUnique({ where: { id }, include: { user: true, booking: { include: { property: true } } } });
+  return prisma.payment.findUnique({ where: { id }, include: { user: { select: { id: true, full_name: true, email: true } }, booking: { include: { property: true } } } });
 }
 
 export async function createPayment(data: { bookingId: string; userId: string; amount: number; status: string; type?: string; method?: string; due_date?: string }) {

@@ -6,6 +6,7 @@ import { bookingApi } from '../api/booking';
 import { useAuth } from '../contexts/AuthContext';
 import Modal from '../components/Modal';
 import AgreementPanel from '../components/AgreementPanel';
+import { bookingStatusLabel } from '../config/bookingStatus';
 import './SharedPageShell.css';
 
 const ALL_TABS = ['active', 'upcoming', 'past', 'cancelled'];
@@ -22,10 +23,7 @@ function formatAmount(amount) {
   return new Intl.NumberFormat('en-MY', { style: 'currency', currency: 'MYR', minimumFractionDigits: 2 }).format(value);
 }
 
-function formatStatus(status) {
-  if (!status) return 'Unknown';
-  return String(status).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-}
+const formatStatus = bookingStatusLabel;
 
 // The real BookingStatus enum is PENDING/CONFIRMED/CHECKED_IN/CHECKED_OUT/
 // CANCELLED - there's no single status that means "active" or "upcoming"

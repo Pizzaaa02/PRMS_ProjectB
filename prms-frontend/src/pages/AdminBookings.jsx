@@ -7,8 +7,8 @@ import './AdminBookings.css';
 const TABS = [
   { key: 'PENDING', label: 'Pending' },
   { key: 'CONFIRMED', label: 'Confirmed' },
-  { key: 'CHECKED_IN', label: 'Checked In' },
-  { key: 'CHECKED_OUT', label: 'Checked Out' },
+  { key: 'CHECKED_IN', label: 'Moved In' },
+  { key: 'CHECKED_OUT', label: 'Moved Out' },
   { key: 'CANCELLED', label: 'Cancelled' },
 ];
 

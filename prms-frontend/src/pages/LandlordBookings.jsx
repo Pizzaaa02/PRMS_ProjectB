@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { bookingApi } from '../api/booking';
 import { useAuth } from '../contexts/AuthContext';
 import AgreementPanel from '../components/AgreementPanel';
+import { bookingStatusLabel } from '../config/bookingStatus';
 import './SharedPageShell.css';
 import './LandlordBookings.css';
 
@@ -133,7 +134,7 @@ export default function LandlordBookings() {
                     </div>
                     <div className="lb-row-dates">{formatDate(b.start_date)} → {formatDate(b.end_date)}</div>
                     <div className="lb-row-stage">
-                      <span className={`shell-status-badge status-${(b.status||'').toLowerCase()}`}>{b.status}</span>
+                      <span className={`shell-status-badge status-${(b.status||'').toLowerCase()}`}>{bookingStatusLabel(b.status)}</span>
                       {b.application_stage && <span className="lb-stage-chip">{STAGE_LABEL[b.application_stage] || b.application_stage}</span>}
                       {b.noticeSubmittedAt && <span className="lb-stage-chip lb-notice-chip">Notice given</span>}
                     </div>

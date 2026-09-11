@@ -38,7 +38,7 @@ export async function getAllProperties(page = 1, limit = 10, filters: { type?: s
 export async function getPropertyById(id: string) {
   return prisma.property.findUnique({
     where: { id },
-    include: { owner: true, amenities: true, images: true, category: true },
+    include: { owner: { select: { id: true, full_name: true, email: true, phone: true, profile_img_url: true } }, amenities: true, images: true, category: true },
   });
 }
 
@@ -69,7 +69,7 @@ export async function createProperty(data: any, ownerId: string) {
     await prisma.propertyImage.createMany({ data: imagesList.map((img: any) => ({ ...img, propertyId: property.id })) });
   }
 
-  return prisma.property.findUnique({ where: { id: property.id }, include: { amenities: true, images: true, owner: true, category: true } });
+  return prisma.property.findUnique({ where: { id: property.id }, include: { amenities: true, images: true, owner: { select: { id: true, full_name: true, email: true, phone: true, profile_img_url: true } }, category: true } });
 }
 
 export async function updateProperty(id: string, data: any) {
@@ -89,7 +89,7 @@ export async function updateProperty(id: string, data: any) {
   const updated = await prisma.property.update({
     where: { id },
     data,
-    include: { amenities: true, images: true, owner: true, category: true },
+    include: { amenities: true, images: true, owner: { select: { id: true, full_name: true, email: true, phone: true, profile_img_url: true } }, category: true },
   });
 
   // Sync media (images + videos)
@@ -107,7 +107,7 @@ export async function updateProperty(id: string, data: any) {
 
   return prisma.property.findUnique({
     where: { id },
-    include: { amenities: true, images: true, owner: true, category: true },
+    include: { amenities: true, images: true, owner: { select: { id: true, full_name: true, email: true, phone: true, profile_img_url: true } }, category: true },
   });
 }
 

@@ -58,20 +58,20 @@ export async function getAgentTickets(userId: string, page = 1, limit = 10, stat
 }
 
 export async function getTicketById(id: string) {
-  return prisma.maintenanceTicket.findUnique({ where: { id }, include: { user: true } });
+  return prisma.maintenanceTicket.findUnique({ where: { id }, include: { user: { select: { id: true, full_name: true, email: true, phone: true } } } });
 }
 
 export async function createTicket(data: { title: string; description: string; priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'; }, userId: string) {
   return prisma.maintenanceTicket.create({
     data: { ...data, user: { connect: { id: userId } } },
-    include: { user: true },
+    include: { user: { select: { id: true, full_name: true, email: true, phone: true } } },
   });
 }
 
 export async function updateTicket(id: string, data: { status?: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED'; assignedTo?: string; }) {
   return prisma.maintenanceTicket.update({
     where: { id }, data,
-    include: { user: true },
+    include: { user: { select: { id: true, full_name: true, email: true, phone: true } } },
   });
 }
 

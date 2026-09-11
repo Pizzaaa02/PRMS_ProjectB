@@ -72,7 +72,7 @@ export async function getUserMedia(userId: string, fileType?: string) {
   const [userFiles, propertyImages] = await Promise.all([
     prisma.userProfileFile.findMany({
       where: { userId },
-      include: { user: true },
+      include: { user: { select: { id: true, full_name: true, email: true } } },
     }),
     prisma.propertyImage.findMany({
       where: { property: { ownerId: userId } },

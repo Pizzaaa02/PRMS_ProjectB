@@ -15,14 +15,10 @@ import { paymentApi } from '../api/payment'
 import { maintenanceApi } from '../api/maintenance'
 import { adminApi } from '../api/admin'
 import { ROUTES } from '../config/routes'
+import { bookingStatusLabel } from '../config/bookingStatus'
 import './TenantSimplePage.css'
 
-function formatLabel(value) {
-  if (!value) return 'Unknown'
-  return String(value)
-    .replace(/_/g, ' ')
-    .replace(/\b\w/g, (c) => c.toUpperCase())
-}
+const formatLabel = bookingStatusLabel
 
 /* ---- Sub-page config (static metadata only) ---- */
 const subPages = {

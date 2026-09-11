@@ -2,10 +2,15 @@ import { useState, useEffect, useCallback, Fragment } from 'react';
 import { bookingApi } from '../api/booking';
 import { useAuth } from '../contexts/AuthContext';
 import AgreementPanel from '../components/AgreementPanel';
+import { bookingStatusLabel } from '../config/bookingStatus';
 import './SharedPageShell.css';
 
 const ALL_TABS = ['pending', 'confirmed', 'checked_in', 'checked_out', 'cancelled'];
 const TAB_LABELS = { pending: 'Applications', confirmed: 'Approved', checked_in: 'Active', checked_out: 'Completed', cancelled: 'Closed' };
+const STAGE_LABEL = {
+  SUBMITTED: 'Submitted', UNDER_REVIEW: 'Under Review', NEEDS_INFORMATION: 'Needs Information',
+  APPROVED: 'Approved', REJECTED: 'Rejected', WITHDRAWN: 'Withdrawn', EXPIRED: 'Expired',
+};
 
 function formatAmount(amount) {
   const value = Number(amount);
@@ -94,8 +99,8 @@ export default function AgentBookings() {
                     <td>{formatDate(b.start_date)}</td>
                     <td>{formatDate(b.end_date)}</td>
                     <td>
-                      <span className={`shell-status-badge status-${(b.status || '').toLowerCase()}`}>{b.status}</span>
-                      {b.application_stage && <span className="lb-stage-chip" style={{ marginLeft: 6 }}>{b.application_stage}</span>}
+                      <span className={`shell-status-badge status-${(b.status || '').toLowerCase()}`}>{bookingStatusLabel(b.status)}</span>
+                      {b.application_stage && <span className="lb-stage-chip" style={{ marginLeft: 6 }}>{STAGE_LABEL[b.application_stage] || b.application_stage}</span>}
                     </td>
                     <td>{formatAmount(b.totalAmount)}</td>
                     <td>

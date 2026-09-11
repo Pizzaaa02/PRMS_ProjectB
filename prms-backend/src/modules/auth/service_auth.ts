@@ -134,13 +134,21 @@ export async function updateUserProfile(
   userId: string,
   data: { full_name?: string; phone?: string; profile_img_url?: string; role?: string }
 ) {
-  // If role is provided, update the UserRole association
+  // If role is provided, replace any existing self-service role with it —
+  // a user has exactly one of Tenant/Landlord/Agent at a time. Upserting
+  // the new role without removing the old one left both rows in place
+  // (e.g. the Tenant row every Google sign-up starts with), and every
+  // reader of UserRole[0] elsewhere in the app has no guaranteed order to
+  // rely on to know which one is "current".
   if (data.role) {
     if (!SELF_SERVICE_ROLES.includes(data.role)) {
       throw new Error(`Role ${data.role} cannot be self-assigned`);
     }
     const role = await prisma.role.findUnique({ where: { name: data.role } });
     if (!role) throw new Error(`Role ${data.role} not found`);
+    await prisma.userRole.deleteMany({
+      where: { userId, role: { name: { in: SELF_SERVICE_ROLES } }, roleId: { not: role.id } },
+    });
     await prisma.userRole.upsert({
       where: { userId_roleId: { userId, roleId: role.id } },
       update: {},
@@ -152,16 +160,20 @@ export async function updateUserProfile(
   }
 
   const { role, ...userFields } = data;
-  return prisma.user.update({
+  const updated = await prisma.user.update({
     where: { id: userId },
     data: userFields,
-    // passwordHash/refreshToken must never leave the API — select instead of include.
     select: {
       id: true, email: true, full_name: true, phone: true,
       profile_img_url: true, firebase_uid: true, is_active: true, created_at: true,
+      passwordHash: true,
       UserRole: { include: { role: true } },
     },
   });
+  // passwordHash must never leave the API as a raw value — only the derived
+  // hasPassword boolean the response layer needs.
+  const { passwordHash, ...safe } = updated;
+  return { ...safe, hasPassword: !!passwordHash };
 }
 
 export async function logoutUser(userId: string) {

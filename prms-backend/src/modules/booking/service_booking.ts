@@ -48,7 +48,7 @@ export async function getAgentBookings(userId: string, page = 1, limit = 10, sta
 }
 
 export async function getBookingById(id: string) {
-  return prisma.booking.findUnique({ where: { id }, include: { user: true, property: true } });
+  return prisma.booking.findUnique({ where: { id }, include: { user: { select: { id: true, full_name: true, email: true } }, property: true } });
 }
 
 export async function createBooking(data: {
@@ -107,7 +107,7 @@ export async function createBooking(data: {
       acknowledgement: !!data.acknowledgement,
       application_stage: 'SUBMITTED',
     },
-    include: { user: true, property: true },
+    include: { user: { select: { id: true, full_name: true, email: true } }, property: true },
   });
 }
 
@@ -122,7 +122,7 @@ export async function setUnderReview(id: string, reviewerNotes?: string) {
   return prisma.booking.update({
     where: { id },
     data: { application_stage: 'UNDER_REVIEW', reviewer_notes: reviewerNotes },
-    include: { user: true, property: true },
+    include: { user: { select: { id: true, full_name: true, email: true } }, property: true },
   });
 }
 
@@ -134,7 +134,7 @@ export async function requestInformation(id: string, reviewerNotes: string) {
   return prisma.booking.update({
     where: { id },
     data: { application_stage: 'NEEDS_INFORMATION', reviewer_notes: reviewerNotes },
-    include: { user: true, property: true },
+    include: { user: { select: { id: true, full_name: true, email: true } }, property: true },
   });
 }
 
@@ -162,7 +162,7 @@ export async function approveApplication(id: string, data: {
     rejection_reason: null,
   };
   if (data.monthlyRent) updateData.totalAmount = data.monthlyRent;
-  return prisma.booking.update({ where: { id }, data: updateData, include: { user: true, property: true } });
+  return prisma.booking.update({ where: { id }, data: updateData, include: { user: { select: { id: true, full_name: true, email: true } }, property: true } });
 }
 
 export async function rejectApplication(id: string, reason: string) {
@@ -173,7 +173,7 @@ export async function rejectApplication(id: string, reason: string) {
   return prisma.booking.update({
     where: { id },
     data: { status: 'CANCELLED', application_stage: 'REJECTED', rejection_reason: reason },
-    include: { user: true, property: true },
+    include: { user: { select: { id: true, full_name: true, email: true } }, property: true },
   });
 }
 
@@ -185,7 +185,7 @@ export async function withdrawApplication(id: string, userId: string) {
   return prisma.booking.update({
     where: { id },
     data: { status: 'CANCELLED', application_stage: 'WITHDRAWN' },
-    include: { user: true, property: true },
+    include: { user: { select: { id: true, full_name: true, email: true } }, property: true },
   });
 }
 
@@ -210,7 +210,7 @@ export async function confirmMoveIn(id: string, data: { conditionReport?: string
       moveInConditionReport: data.conditionReport,
       keyHandoverConfirmedAt: data.keyHandover ? now : undefined,
     },
-    include: { user: true, property: true },
+    include: { user: { select: { id: true, full_name: true, email: true } }, property: true },
   });
   await prisma.property.update({ where: { id: booking.propertyId }, data: { status: 'RENTED' } });
   return updated;
@@ -223,7 +223,7 @@ export async function submitNotice(id: string, userId: string) {
   return prisma.booking.update({
     where: { id },
     data: { noticeSubmittedAt: new Date(), noticeSubmittedById: userId },
-    include: { user: true, property: true },
+    include: { user: { select: { id: true, full_name: true, email: true } }, property: true },
   });
 }
 
@@ -235,7 +235,7 @@ export async function confirmMoveOut(id: string, data: { conditionReport?: strin
   const updated = await prisma.booking.update({
     where: { id },
     data: { status: 'CHECKED_OUT', moveOutInspectionAt: now, moveOutConditionReport: data.conditionReport, closedAt: now },
-    include: { user: true, property: true },
+    include: { user: { select: { id: true, full_name: true, email: true } }, property: true },
   });
   // The property only returns to AVAILABLE when nothing else keeps it
   // occupied or restricted — a maintenance hold takes precedence, and
@@ -252,7 +252,7 @@ export async function confirmMoveOut(id: string, data: { conditionReport?: strin
 }
 
 export async function updateBooking(id: string, data: { status?: 'PENDING' | 'CONFIRMED' | 'CHECKED_IN' | 'CHECKED_OUT' | 'CANCELLED'; totalAmount?: number; }) {
-  return prisma.booking.update({ where: { id }, data, include: { user: true, property: true } });
+  return prisma.booking.update({ where: { id }, data, include: { user: { select: { id: true, full_name: true, email: true } }, property: true } });
 }
 
 export async function cancelBooking(id: string) {

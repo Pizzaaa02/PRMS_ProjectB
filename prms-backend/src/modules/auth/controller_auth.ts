@@ -114,7 +114,18 @@ export class AuthController {
     try {
       const user = await authService.updateUserProfile(req.user!.id, req.body);
       HELPERS(req).log({ userId: req.user!.id, username: req.user!.email, userRole: req.user!.role, action: 'PROFILE_UPDATE', entity: 'User', entityId: req.user!.id, description: 'User profile updated', status: 'Success', level: 'info' });
-      res.json(successResponse(user, 'Profile updated'));
+      // Flatten to the same shape getMe returns — normalizeUser on the
+      // frontend reads a flat `role` string, not the raw UserRole[] relation.
+      res.json(successResponse({
+        id: user.id,
+        email: user.email,
+        full_name: user.full_name,
+        phone: user.phone,
+        profile_img_url: user.profile_img_url,
+        firebase_uid: user.firebase_uid,
+        role: user.UserRole[0]?.role.name || 'Tenant',
+        hasPassword: user.hasPassword,
+      }, 'Profile updated'));
     } catch (error: any) {
       HELPERS(req).log({ userId: req.user?.id, username: req.user?.email, action: 'PROFILE_UPDATE', entity: 'User', description: `Profile update failed: ${error.message}`, status: 'Failed', level: 'error', errorMessage: error.message });
       res.status(400).json({ success: false, error: { message: error.message } });
