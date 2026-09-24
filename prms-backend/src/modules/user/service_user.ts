@@ -30,6 +30,34 @@ export async function getAllUsers(page = 1, limit = 10, search?: string, role?: 
   return { users, total };
 }
 
+// Real bug found live (Adrian's teammate flagged it, verified against the
+// actual code before fixing): the Dashboard's "Active Users" card showed
+// stats.totalUsers (ALL 29 accounts, including suspended) mislabeled as
+// active, while User Management's own Tenant/Landlord summary cards were
+// computed by filtering the currently-loaded PAGE of results client-side,
+// not the real database totals. One shared summary, computed directly
+// from the DB with no pagination/filter dependency, so Dashboard and User
+// Management can never show mismatched numbers again.
+export async function getUserSummaryStats() {
+  const [total, active, tenants, landlords, agents, admins] = await Promise.all([
+    prisma.user.count(),
+    prisma.user.count({ where: { is_active: true } }),
+    prisma.user.count({ where: { UserRole: { some: { role: { name: 'Tenant' } } } } }),
+    prisma.user.count({ where: { UserRole: { some: { role: { name: 'Landlord' } } } } }),
+    prisma.user.count({ where: { UserRole: { some: { role: { name: 'Agent' } } } } }),
+    prisma.user.count({ where: { UserRole: { some: { role: { name: 'Admin' } } } } }),
+  ]);
+  return {
+    total,
+    active,
+    suspended: total - active,
+    tenants,
+    landlords,
+    agents,
+    admins,
+  };
+}
+
 export async function getUserById(id: string) {
   return prisma.user.findUnique({
     where: { id },

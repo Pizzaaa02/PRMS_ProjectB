@@ -36,7 +36,10 @@ router.delete('/my-media/images/:imageId', async (req, res) => {
 
 // Admin-only user management (controller/service already existed but were
 // never mounted, so the whole User Management admin page 404'd).
+// /summary MUST come before /:id - same ordering rule as the /files routes
+// above, otherwise Express would match "summary" as an :id param.
 router.get('/', adminOnly, userQuery, ctrl.list);
+router.get('/summary', adminOnly, ctrl.summary);
 router.get('/:id', adminOnly, userIdParam, ctrl.getById);
 router.post('/', adminOnly, createUserBody, ctrl.create);
 router.put('/:id', adminOnly, userIdParam, updateUserBody, ctrl.update);

@@ -129,8 +129,13 @@ function AdminDashboard() {
         icon: Activity,
         iconBg: 'icon-emerald',
         label: 'Active Users',
-        value: formatCompact(stats.totalUsers),
-        sublabel: `${stats.totalProperties} properties listed`,
+        // Real bug found live: this used to show stats.totalUsers (ALL
+        // accounts, including suspended) mislabeled "Active Users" - the
+        // backend now returns activeUsers/totalUsers separately (see
+        // getUserSummaryStats), same source User Management uses, so the
+        // two pages can't show mismatched numbers again.
+        value: formatCompact(stats.activeUsers),
+        sublabel: `${stats.totalUsers} total accounts`,
         // No historical snapshot exists yet to compute a real change-over-time
         // trend, so we don't show a fake "+N" pill that just repeats the total.
       },

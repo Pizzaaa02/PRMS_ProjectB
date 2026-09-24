@@ -4,6 +4,13 @@ export const userApi = {
   list(params) {
     return apiClient.get('/users', { params });
   },
+  // Real database-wide totals (total/active/suspended/per-role), independent
+  // of the current search/filter/pagination - see service_user.ts's
+  // getUserSummaryStats. Used by both AdminDashboard and UserManagement's
+  // summary cards so they can't show mismatched numbers again.
+  summary() {
+    return apiClient.get('/users/summary');
+  },
   getById(id) {
     return apiClient.get(`/users/${id}`);
   },
