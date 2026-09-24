@@ -93,15 +93,27 @@ export async function suspendUser(id: string) {
   return prisma.user.update({ where: { id }, data: { is_active: false }, select: safeUserSelect });
 }
 
+// Real bug found live ("Theres switch role bug under admin user
+// management"): this used to delete the user's existing role(s) FIRST,
+// then look up the new role - if that lookup failed (typo, role renamed/
+// removed, anything), the user was left with ZERO roles, already
+// unrecoverable, since the delete had already committed. Look up and
+// validate the new role BEFORE touching the old one, and wrap the actual
+// delete+create in a transaction so a failure partway through can never
+// leave the user role-less.
 export async function changeUserRole(id: string, roleName: string) {
   const user = await prisma.user.findUnique({ where: { id }, include: { UserRole: true } });
   if (!user) throw new Error('User not found');
-  for (const ur of user.UserRole) {
-    await prisma.userRole.delete({ where: { userId_roleId: { userId: ur.userId, roleId: ur.roleId } } });
-  }
   const role = await prisma.role.findUnique({ where: { name: roleName } });
   if (!role) throw new Error('Role not found');
-  const result = await prisma.userRole.create({ data: { userId: id, roleId: role.id } });
+
+  const result = await prisma.$transaction(async (tx) => {
+    for (const ur of user.UserRole) {
+      await tx.userRole.delete({ where: { userId_roleId: { userId: ur.userId, roleId: ur.roleId } } });
+    }
+    return tx.userRole.create({ data: { userId: id, roleId: role.id } });
+  });
+
   if (roleName === 'Agent') {
     // Agent-role users are looked up through a separate Agent record, not
     // the User row directly — without this, assigning the Agent role here

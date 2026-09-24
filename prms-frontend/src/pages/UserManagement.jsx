@@ -254,14 +254,28 @@ export default function UserManagement() {
     }
   }
 
-  async function handleChangeRole(user, newRole) {
-    if (!confirm(`Change role to ${newRole}?`)) return
+  // Real bug found live ("Theres switch role bug under admin user
+  // management"): this <select> is a controlled component (value={u.role}),
+  // but confirm() is a BLOCKING dialog - clicking Cancel, or the save
+  // failing, returns early with no state update, so React never gets a
+  // render to snap the dropdown back to the real value. The browser's own
+  // native select keeps showing whatever was just clicked, so the admin
+  // sees the role appear to change even though nothing was saved. Fixed by
+  // explicitly resetting the DOM element's value back to the real role on
+  // both the cancel and the failure path - the standard fix for a
+  // controlled <select> that received a raw native change event.
+  async function handleChangeRole(user, newRole, selectEl) {
+    if (!confirm(`Change role to ${newRole}?`)) {
+      if (selectEl) selectEl.value = user.role
+      return
+    }
     try {
       await userApi.changeRole(user.id, { role: newRole })
       showToast(`Role changed to ${newRole}`)
       loadUsers(pagination.page)
       loadSummary()
     } catch (e) {
+      if (selectEl) selectEl.value = user.role
       showToast(e.message || 'Role change failed', 'error')
     }
   }
@@ -422,7 +436,7 @@ export default function UserManagement() {
                   <select
                     className="role-select"
                     value={u.role}
-                    onChange={(e) => handleChangeRole(u, e.target.value)}
+                    onChange={(e) => handleChangeRole(u, e.target.value, e.target)}
                     title="Change role"
                   >
                     {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
