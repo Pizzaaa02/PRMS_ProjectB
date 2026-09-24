@@ -8,11 +8,10 @@ export class NotificationController {
     try {
       const userId = (req as AuthRequest).user?.id;
       if (!userId) return res.status(401).json({ success: false, error: { message: 'User required' } });
-      const { isRead, archived } = req.query;
+      const { isRead } = req.query;
       const data = await notificationService.getNotifications(
         userId,
         isRead === 'true' ? true : isRead === 'false' ? false : undefined,
-        archived === 'true' ? true : archived === 'false' ? false : undefined,
       );
       res.json(successResponse(data));
     } catch (error: any) { res.status(500).json({ success: false, error: { message: error.message } }); }
@@ -22,9 +21,12 @@ export class NotificationController {
     try {
       const userId = (req as AuthRequest).user?.id;
       if (!userId) return res.status(401).json({ success: false, error: { message: 'User required' } });
-      const data = await notificationService.markRead(String(req.params.id));
+      const data = await notificationService.markRead(String(req.params.id), userId);
       res.json(successResponse(data));
-    } catch (error: any) { res.status(500).json({ success: false, error: { message: error.message } }); }
+    } catch (error: any) {
+      const status = error.message === 'Notification not found' ? 404 : 500;
+      res.status(status).json({ success: false, error: { message: error.message } });
+    }
   };
 
   markAllRead = async (req: Request, res: Response) => {
@@ -40,9 +42,12 @@ export class NotificationController {
     try {
       const userId = (req as AuthRequest).user?.id;
       if (!userId) return res.status(401).json({ success: false, error: { message: 'User required' } });
-      await notificationService.deleteNotification(String(req.params.id));
+      await notificationService.deleteNotification(String(req.params.id), userId);
       res.json(successResponse(null, 'Notification deleted'));
-    } catch (error: any) { res.status(500).json({ success: false, error: { message: error.message } }); }
+    } catch (error: any) {
+      const status = error.message === 'Notification not found' ? 404 : 500;
+      res.status(status).json({ success: false, error: { message: error.message } });
+    }
   };
 
   create = async (req: Request, res: Response) => {
