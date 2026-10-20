@@ -7,8 +7,6 @@ import {
   CreditCard,
   CalendarDays,
   Filter,
-  ChevronLeft,
-  ChevronRight,
   Download,
 } from 'lucide-react';
 import './FinanceDashboard.css';
@@ -73,7 +71,7 @@ function FinanceDashboard() {
     <div className="finance-dashboard">
       {error && <div className="alert alert-danger">{error} <button className="btn btn-sm" onClick={load}>Retry</button></div>}
       <div className="finance-header">
-        <h1>Finance Overview</h1>
+        <h1>Finance &amp; Reports</h1>
         <button className="finance-export-btn" title="Export" onClick={exportCsv}>
           <Download size={16} /> Export
         </button>
@@ -170,7 +168,7 @@ function FinanceDashboard() {
               <option value="">All Statuses</option>
               <option value="PENDING">Pending</option>
               <option value="PAID">Paid</option>
-              <option value="OVERDUE">Overdue</option>
+              <option value="UNPAID">Unpaid</option>
             </select>
           </div>
         </div>

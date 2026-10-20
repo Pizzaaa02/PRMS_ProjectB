@@ -11,7 +11,6 @@ import {
   X,
   Eye,
   Edit2,
-  Trash2,
   Loader2,
   AlertCircle,
   CheckCircle2,
@@ -51,30 +50,8 @@ export default function UserManagement() {
   const [statusFilter, setStatusFilter] = useState('true')
   const [debouncedSearch, setDebouncedSearch] = useState('')
 
-  /* Cards - real database-wide totals, independent of search/filter/pagination
-     (see userApi.summary / getUserSummaryStats). Loaded once on mount, not
-     re-fetched on every filter change like the table itself - the summary
-     cards should always reflect the whole database, never "whatever's on
-     the current filtered page". */
+  /* Cards */
   const [cards, setCards] = useState([])
-
-  const loadSummary = useCallback(async () => {
-    try {
-      const { data } = await userApi.summary()
-      const s = data?.data ?? {}
-      setCards([
-        { label: 'Total Accounts', value: s.total ?? 0, color: '#6366f1' },
-        { label: 'Active', value: s.active ?? 0, color: '#166534' },
-        { label: 'Suspended', value: s.suspended ?? 0, color: '#b91c1c' },
-        { label: 'Tenants', value: s.tenants ?? 0, color: '#10b981' },
-        { label: 'Landlords', value: s.landlords ?? 0, color: '#f59e0b' },
-        { label: 'Agents', value: s.agents ?? 0, color: '#8b5cf6' },
-        { label: 'Admins', value: s.admins ?? 0, color: '#6366f1' },
-      ])
-    } catch (e) {
-      // Best-effort - a failed summary shouldn't block the table itself from loading.
-    }
-  }, [])
 
   /* Toast */
   const [toast, setToast] = useState(null)
@@ -132,6 +109,14 @@ export default function UserManagement() {
         total: pag.total ?? items.length,
         totalPages: pag.totalPages ?? Math.ceil(items.length / 20),
       })
+
+      // Cards
+      setCards([
+        { label: 'Total Users', value: pag.total ?? items.length, color: '#6366f1' },
+        { label: 'Tenants', value: flat.filter((u) => u.role === 'Tenant').length, color: '#10b981' },
+        { label: 'Landlords', value: flat.filter((u) => u.role === 'Landlord').length, color: '#f59e0b' },
+        { label: 'Active', value: flat.filter((u) => u.is_active).length, color: '#166534' },
+      ])
     } catch (e) {
       showToast(e.message || 'Failed to load users', 'error')
     } finally {
@@ -142,13 +127,6 @@ export default function UserManagement() {
   useEffect(() => {
     loadUsers(1)
   }, [debouncedSearch, roleFilter, statusFilter])
-
-  // Summary cards load once on mount only - search/role/status filters
-  // change the table below, they must never change these whole-database
-  // totals (see loadSummary's own comment above).
-  useEffect(() => {
-    loadSummary()
-  }, [loadSummary])
 
   /* ── Modal openers ── */
   function openEdit(user) {
@@ -215,7 +193,6 @@ export default function UserManagement() {
       }
       closeModal()
       loadUsers(pagination.page)
-      loadSummary()
     } catch (e) {
       const msg = e.response?.data?.error?.message || e.message || 'Operation failed'
       setFormError(msg)
@@ -236,46 +213,18 @@ export default function UserManagement() {
         showToast('User activated')
       }
       loadUsers(pagination.page)
-      loadSummary()
     } catch (e) {
       showToast(e.message || 'Action failed', 'error')
     }
   }
 
-  async function handleDelete(user) {
-    if (!confirm(`Delete user "${user.full_name || user.email}"? This will deactivate their account.`)) return
-    try {
-      await userApi.remove(user.id)
-      showToast('User deactivated')
-      loadUsers(pagination.page)
-      loadSummary()
-    } catch (e) {
-      showToast(e.message || 'Delete failed', 'error')
-    }
-  }
-
-  // Real bug found live ("Theres switch role bug under admin user
-  // management"): this <select> is a controlled component (value={u.role}),
-  // but confirm() is a BLOCKING dialog - clicking Cancel, or the save
-  // failing, returns early with no state update, so React never gets a
-  // render to snap the dropdown back to the real value. The browser's own
-  // native select keeps showing whatever was just clicked, so the admin
-  // sees the role appear to change even though nothing was saved. Fixed by
-  // explicitly resetting the DOM element's value back to the real role on
-  // both the cancel and the failure path - the standard fix for a
-  // controlled <select> that received a raw native change event.
-  async function handleChangeRole(user, newRole, selectEl) {
-    if (!confirm(`Change role to ${newRole}?`)) {
-      if (selectEl) selectEl.value = user.role
-      return
-    }
+  async function handleChangeRole(user, newRole) {
+    if (!confirm(`Change role to ${newRole}?`)) return
     try {
       await userApi.changeRole(user.id, { role: newRole })
       showToast(`Role changed to ${newRole}`)
       loadUsers(pagination.page)
-      loadSummary()
     } catch (e) {
-      if (selectEl) selectEl.value = user.role
       showToast(e.message || 'Role change failed', 'error')
     }
   }
@@ -429,14 +378,11 @@ export default function UserManagement() {
                   <button title={u.is_active ? 'Suspend' : 'Activate'} onClick={() => handleToggleActive(u)}>
                     {u.is_active ? <UserX size={15} /> : <UserCheck size={15} />}
                   </button>
-                  <button title="Delete" onClick={() => handleDelete(u)} className="danger">
-                    <Trash2 size={15} />
-                  </button>
                   {/* Role changer dropdown */}
                   <select
                     className="role-select"
                     value={u.role}
-                    onChange={(e) => handleChangeRole(u, e.target.value, e.target)}
+                    onChange={(e) => handleChangeRole(u, e.target.value)}
                     title="Change role"
                   >
                     {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}

@@ -22,12 +22,56 @@ function LandlordHeatmap() {
   async function load() {
     setError('');
     try {
-      const [bRes, pRes] = await Promise.all([
-        bookingApi.myBookings(),
-        propertyApi.list({ limit: 100 }),
-      ]);
-      setBookings(bRes.data?.data ?? []);
-      setProperties(pRes.data?.data?.properties ?? []);
+      // Fetch properties: try landlord's own properties first, or fall back to propertyApi.list
+      let propList = [];
+      try {
+        const pRes = await propertyApi.myProperties();
+        const pData = pRes.data?.data;
+        propList = Array.isArray(pData) ? pData : (pData?.properties ?? []);
+      } catch (_) {}
+
+      // If landlord has no own properties yet, load market properties
+      if (!propList || propList.length === 0) {
+        try {
+          const pRes = await propertyApi.list({ limit: 100 });
+          const pData = pRes.data?.data;
+          propList = Array.isArray(pData) ? pData : (pData?.properties ?? []);
+        } catch (_) {}
+      }
+
+      // Fetch bookings: try landlordBookings first, then list, then myBookings
+      let bookingList = [];
+      try {
+        const bRes = await bookingApi.landlordBookings({ limit: 100 });
+        const bData = bRes.data?.data;
+        bookingList = Array.isArray(bData) ? bData : [];
+      } catch (_) {
+        try {
+          const bRes = await bookingApi.list({ limit: 100 });
+          const bData = bRes.data?.data;
+          bookingList = Array.isArray(bData) ? bData : [];
+        } catch (_) {
+          try {
+            const bRes = await bookingApi.myBookings();
+            const bData = bRes.data?.data;
+            bookingList = Array.isArray(bData) ? bData : [];
+          } catch (_) {}
+        }
+      }
+
+      // If no landlord bookings found, also load bookings from bookingApi.list so market properties have occupancy data
+      if (bookingList.length === 0) {
+        try {
+          const bRes = await bookingApi.list({ limit: 100 });
+          const bData = bRes.data?.data;
+          if (Array.isArray(bData) && bData.length > 0) {
+            bookingList = bData;
+          }
+        } catch (_) {}
+      }
+
+      setProperties(propList || []);
+      setBookings(bookingList || []);
     } catch (e) {
       setError(e.message || 'Failed to load heatmap data');
       console.error(e);
@@ -62,16 +106,27 @@ function LandlordHeatmap() {
   }, [currentDate]);
 
   function isBooked(propId, day) {
-    const dayStr = day.toISOString().split('T')[0];
+    const targetY = day.getFullYear();
+    const targetM = day.getMonth();
+    const targetD = day.getDate();
+    const targetTime = new Date(targetY, targetM, targetD).getTime();
+
     return bookings.some((b) => {
-      if (b.propertyId !== propId && b.property?.id !== propId) return false;
-      const s = new Date(b.startDate || b.start_date);
-      const e = new Date(b.endDate || b.end_date);
-      return day >= s && day <= e && b.status !== 'CANCELLED';
+      const pId = b.propertyId || b.property?.id;
+      if (pId !== propId) return false;
+      const sRaw = b.start_date || b.startDate;
+      const eRaw = b.end_date || b.endDate;
+      if (!sRaw || !eRaw) return false;
+
+      const s = new Date(sRaw);
+      const e = new Date(eRaw);
+      const sTime = new Date(s.getFullYear(), s.getMonth(), s.getDate()).getTime();
+      const eTime = new Date(e.getFullYear(), e.getMonth(), e.getDate()).getTime();
+      return targetTime >= sTime && targetTime <= eTime && b.status !== 'CANCELLED';
     });
   }
 
-  const displayProps = properties.slice(0, 5);
+  const displayProps = properties.slice(0, 10);
 
   if (loading) return <div className="heatmap-loading">Loading heatmap...</div>;
 

@@ -1,14 +1,11 @@
-import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useSettings } from '../contexts/SettingsContext'
 import { useAuth } from '../contexts/AuthContext'
 import { ROUTES } from '../config/routes'
-import ChangePasswordModal from '../components/ChangePasswordModal'
+
 import {
   Bell,
   Building2,
   Settings as SettingsIcon,
-  ShieldCheck,
   Lock,
 } from 'lucide-react'
 import './Settings.css'
@@ -56,12 +53,22 @@ function getPrivacyPath(role) {
 function Settings() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const [securityOpen, setSecurityOpen] = useState(false)
 
   const profilePath = getProfilePath(user?.role)
   const notificationsPath = getNotificationsPath(user?.role)
   const customizerPath = getCustomizerPath(user?.role)
   const privacyPath = getPrivacyPath(user?.role)
+  const role = (user?.role || '').toLowerCase()
+  const preferencesTitle = role.includes('admin')
+    ? 'Platform Defaults'
+    : role.includes('landlord')
+      ? 'Company Branding & Appearance'
+      : 'Appearance Preferences'
+  const preferencesDescription = role.includes('admin')
+    ? 'Set default branding and colors for accounts that have not chosen personal preferences.'
+    : role.includes('landlord')
+      ? 'Personalize your company name, logo, and account colors.'
+      : 'Personalize the colors used in your own account.'
 
   return (
     <div className="admin-content" data-customize-id="global.content">
@@ -96,23 +103,12 @@ function Settings() {
         </div>
 
         <div className="settings-card">
-          <div className="settings-card-icon red">
-            <ShieldCheck size={28} />
-          </div>
-
-          <h2>Security Settings</h2>
-          <p>Change your password to keep your account secure.</p>
-
-          <button type="button" onClick={() => setSecurityOpen(true)}>Manage Security</button>
-        </div>
-
-        <div className="settings-card">
           <div className="settings-card-icon green">
             <Building2 size={28} />
           </div>
 
-          <h2>System Preferences</h2>
-          <p>Personalize your own colors, logo, and company name.</p>
+          <h2>{preferencesTitle}</h2>
+          <p>{preferencesDescription}</p>
 
           <button type="button" onClick={() => navigate(customizerPath)}>Manage Preferences</button>
         </div>
@@ -128,8 +124,6 @@ function Settings() {
           <button type="button" onClick={() => navigate(privacyPath)}>Manage Privacy</button>
         </div>
       </section>
-
-      <ChangePasswordModal isOpen={securityOpen} onClose={() => setSecurityOpen(false)} />
     </div>
   )
 }

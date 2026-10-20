@@ -1,5 +1,23 @@
 import { prisma } from '../../db';
 
+const includeTicket = {
+  user: { select: { id: true, full_name: true, email: true, phone: true } },
+  attachments: { orderBy: { created_at: 'desc' as const } },
+};
+
+export async function getPropertyMaintenanceRecipients(propertyId: string, tenantId?: string) {
+  const property = await prisma.property.findUnique({ where: { id: propertyId }, select: { ownerId: true } });
+  const assignments = await prisma.agentProperty.findMany({
+    where: { propertyId },
+    select: { agent: { select: { userId: true } } },
+  });
+  return Array.from(new Set([
+    tenantId,
+    property?.ownerId,
+    ...assignments.map((item) => item.agent.userId),
+  ].filter((id): id is string => !!id)));
+}
+
 export async function getTickets(page = 1, limit = 10, userId?: string, status?: string) {
   const where: any = {};
   if (userId) where.userId = userId;
@@ -11,7 +29,7 @@ export async function getTickets(page = 1, limit = 10, userId?: string, status?:
       // can't include it without a schema change, so ticket.property stays
       // unavailable from this endpoint for now.
       where, skip: (page - 1) * limit, take: limit, orderBy: { id: 'desc' },
-      include: { user: { select: { id: true, full_name: true, email: true } } },
+      include: includeTicket,
     }),
     prisma.maintenanceTicket.count({ where }),
   ]);
@@ -29,7 +47,7 @@ export async function getLandlordTickets(userId: string, page = 1, limit = 10, s
   const [tickets, total] = await Promise.all([
     prisma.maintenanceTicket.findMany({
       where, skip: (page - 1) * limit, take: limit, orderBy: { id: 'desc' },
-      include: { user: { select: { id: true, full_name: true, email: true } } },
+      include: includeTicket,
     }),
     prisma.maintenanceTicket.count({ where }),
   ]);
@@ -50,7 +68,7 @@ export async function getAgentTickets(userId: string, page = 1, limit = 10, stat
   const [tickets, total] = await Promise.all([
     prisma.maintenanceTicket.findMany({
       where, skip: (page - 1) * limit, take: limit, orderBy: { id: 'desc' },
-      include: { user: { select: { id: true, full_name: true, email: true } } },
+      include: includeTicket,
     }),
     prisma.maintenanceTicket.count({ where }),
   ]);
@@ -58,25 +76,67 @@ export async function getAgentTickets(userId: string, page = 1, limit = 10, stat
 }
 
 export async function getTicketById(id: string) {
-  return prisma.maintenanceTicket.findUnique({ where: { id }, include: { user: { select: { id: true, full_name: true, email: true, phone: true } } } });
+  return prisma.maintenanceTicket.findUnique({ where: { id }, include: includeTicket });
 }
 
-export async function createTicket(data: { title: string; description: string; priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'; }, userId: string) {
+export async function createTicket(data: { propertyId?: string; title: string; description: string; priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'; }, userId: string) {
+  if (!data.title?.trim() || !data.description?.trim() || !data.propertyId) throw new Error('Property, title and description are required');
   return prisma.maintenanceTicket.create({
-    data: { ...data, user: { connect: { id: userId } } },
-    include: { user: { select: { id: true, full_name: true, email: true, phone: true } } },
+    data: {
+      propertyId: data.propertyId,
+      title: data.title.trim(),
+      description: data.description.trim(),
+      priority: data.priority,
+      user: { connect: { id: userId } },
+    },
+    include: includeTicket,
   });
 }
 
-export async function updateTicket(id: string, data: { status?: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED'; assignedTo?: string; }) {
+export async function updateTicket(id: string, data: {
+  status?: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
+  priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+  assignedTo?: string;
+  inspectionNotes?: string;
+}, actorRole: string) {
+  const current = await prisma.maintenanceTicket.findUnique({ where: { id } });
+  if (!current) throw new Error('Ticket not found');
+
+  const role = actorRole.toLowerCase();
+  const transitions: Record<string, string[]> = {
+    OPEN: ['IN_PROGRESS', 'RESOLVED'],
+    IN_PROGRESS: ['RESOLVED'],
+    RESOLVED: ['IN_PROGRESS', 'CLOSED'],
+    CLOSED: ['IN_PROGRESS'],
+  };
+  if (data.status && data.status !== current.status) {
+    if (!transitions[current.status]?.includes(data.status)) throw new Error(`Invalid maintenance status transition from ${current.status} to ${data.status}`);
+    if (data.status === 'CLOSED' && !['admin', 'landlord'].includes(role)) throw new Error('Only the property owner or an administrator can close a maintenance ticket');
+  }
+
+  // Only the basic ticket fields used consistently by the role pages are
+  // accepted. Unknown request fields never pass through to Prisma.
+  const updateData: any = {};
+  if (data.status !== undefined) updateData.status = data.status;
+  if (data.priority !== undefined) updateData.priority = data.priority;
+  if (data.assignedTo !== undefined) updateData.assignedTo = data.assignedTo;
+  if (data.inspectionNotes !== undefined) updateData.inspectionNotes = data.inspectionNotes?.trim() || null;
+  if (data.status === 'RESOLVED') updateData.resolved_at = new Date();
+  if (data.status === 'IN_PROGRESS') updateData.resolved_at = null;
+
   return prisma.maintenanceTicket.update({
-    where: { id }, data,
-    include: { user: { select: { id: true, full_name: true, email: true, phone: true } } },
+    where: { id },
+    data: updateData,
+    include: includeTicket,
   });
 }
 
-export async function resolveTicket(id: string) {
-  return prisma.maintenanceTicket.update({
-    where: { id }, data: { status: 'RESOLVED', resolved_at: new Date() },
-  });
+export async function addAttachments(id: string, actorId: string, files: Array<{ filename: string; originalname: string }>) {
+  if (!files.length) throw new Error('At least one photograph is required');
+  await prisma.$transaction(
+    files.map((file) => prisma.maintenanceAttachment.create({
+      data: { ticketId: id, uploadedById: actorId, originalName: file.originalname, url: `/uploads/maintenance/${file.filename}` },
+    })),
+  );
+  return getTicketById(id);
 }

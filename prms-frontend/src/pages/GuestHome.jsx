@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useSettings } from '../contexts/SettingsContext'
 import { useBranding } from '../contexts/BrandingContext'
+import { useAuth } from '../contexts/AuthContext'
 import ThemeSwitcher from '../components/ThemeSwitcher'
 import {
   ArrowRight,
@@ -66,23 +67,34 @@ function GuestHome() {
   const heroAlignment = settings?.homepage_hero_text_alignment || 'left'
 
   /* Header / Footer background colors.
-     The Website Customizer is per-account now - a real config row (with a
-     real `id`) only exists once someone is logged in and has viewed/saved
-     it. An anonymous visitor gets back the plain guest defaults (id:
-     null) from BrandingContext, which always has *some* color in every
-     field - so checking those fields for truthiness can never actually
-     detect "unconfigured" anymore. Gate on `colors?.id` instead: only a
-     genuinely-customized account's colors get applied here; a guest
-     always falls through to the navbar's own default CSS background
-     (var(--navbar-bg-glass)), which is designed to read correctly in
-     both light and dark mode regardless of what any account's own
-     customizer happens to be set to. */
-  const hasRealCustomization = !!branding.colors?.id
+     The Website Customizer is per-account now - only an authenticated user
+     with an explicitly saved config should override the public landing page.
+     An anonymous visitor always falls through to the navbar's own default
+     CSS glass background (var(--navbar-bg-glass)), which is designed to
+     read correctly in both light and dark mode. */
+  const { user } = useAuth()
+  const hasRealCustomization = !!user && !!branding.colors?.id && branding.colors?.userId === user.id
   const headerBg = !hasRealCustomization
     ? null
     : theme === 'dark'
       ? (branding.colors?.dark_header_bg || null)
       : (branding.colors?.light_header_bg || settings?.header_background_color || null)
+
+  function isDarkBg(color) {
+    if (!color) return false
+    const hex = color.replace('#', '')
+    if (hex.length === 6) {
+      const num = parseInt(hex, 16)
+      const r = (num >> 16) & 255
+      const g = (num >> 8) & 255
+      const b = num & 255
+      return (r * 299 + g * 587 + b * 114) / 1000 < 140
+    }
+    return false
+  }
+
+  const isNavDark = headerBg ? isDarkBg(headerBg) : theme === 'dark'
+
   const footerBg = !hasRealCustomization
     ? '#0f172a'
     : theme === 'dark'
@@ -157,7 +169,7 @@ function GuestHome() {
 
   return (
     <main className="guest-page">
-      <header className="guest-navbar" data-customize-id="global.header" style={headerBg ? { backgroundColor: headerBg } : undefined}>
+      <header className={`guest-navbar ${isNavDark ? 'is-dark-nav' : 'is-light-nav'}`} data-customize-id="global.header" style={headerBg ? { backgroundColor: headerBg } : undefined}>
         <Link to="/" className="guest-logo">
           {brandLogo ? (
             <img src={branding.logoUrl ? brandLogo : getImageUrl(brandLogo)} alt="Logo" className="guest-logo-img" />

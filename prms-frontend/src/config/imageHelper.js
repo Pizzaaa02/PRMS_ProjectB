@@ -1,12 +1,13 @@
 import { propertyApi } from '../api';
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL || window.location.origin || 'http://localhost:3500';
+import { getApiBaseUrl } from './apiBaseUrl';
 
 export function getImageUrl(url) {
   if (!url) return '';
   if (typeof url !== 'string') return '';
-  if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  return `${API_BASE}${url}`;
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) return url;
+  const base = getApiBaseUrl().replace(/\/+$/, '');
+  const path = url.startsWith('/') ? url : `/${url}`;
+  return `${base}${path}`;
 }
 
 export async function loadFirstImageUrl(propertyId) {

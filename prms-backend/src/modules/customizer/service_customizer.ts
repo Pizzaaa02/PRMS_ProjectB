@@ -31,34 +31,64 @@ const DEFAULT_CONFIG = {
 
 export class CustomizerService {
   /**
-   * Each user has their own independent branding - an Admin's colors only
-   * ever paint that Admin's own session, never another Admin's or any
-   * other role's. A guest (no userId - not logged in yet) gets the plain
-   * defaults rather than any particular user's config, since there's no
-   * "site-wide" owner anymore.
+   * The administrator's customizer is the system default. Guests and users
+   * who have not saved personal preferences yet see this configuration.
    */
-  async getConfig(userId?: string) {
-    if (!userId) return { id: null, userId: null, ...DEFAULT_CONFIG };
-
-    let config = await (prisma as any).websiteCustomizer.findUnique({ where: { userId } });
-    if (!config) {
-      config = await (prisma as any).websiteCustomizer.create({
-        data: { userId, ...DEFAULT_CONFIG },
-      });
-    }
-    return config;
+  private async getAdminConfig() {
+    return (prisma as any).websiteCustomizer.findFirst({
+      where: {
+        user: {
+          UserRole: { some: { role: { name: 'Admin' } } },
+        },
+      },
+      orderBy: { created_at: 'asc' },
+    });
   }
 
+  async getConfig(userId?: string, inheritAdminBranding = false) {
+    if (userId) {
+      const personalConfig = await (prisma as any).websiteCustomizer.findUnique({
+        where: { userId },
+      });
+      if (personalConfig) {
+        if (!inheritAdminBranding) return personalConfig;
+
+        const adminConfig = await this.getAdminConfig();
+        return {
+          ...personalConfig,
+          company_name: adminConfig?.company_name ?? DEFAULT_CONFIG.company_name,
+          logo_url: adminConfig?.logo_url ?? DEFAULT_CONFIG.logo_url,
+          logo_thumb_url: adminConfig?.logo_thumb_url ?? DEFAULT_CONFIG.logo_thumb_url,
+        };
+      }
+    }
+
+    return (await this.getAdminConfig()) ?? { ...DEFAULT_CONFIG };
+  }
+
+  /**
+   * Save an independent config for the current account. On the first save,
+   * begin with the administrator's defaults so unspecified fields are kept.
+   */
   async updateConfig(userId: string, data: Record<string, string | null>) {
-    await this.getConfig(userId); // ensures a row exists to update
-    return (prisma as any).websiteCustomizer.update({
+    const inheritedConfig = (await this.getAdminConfig()) ?? DEFAULT_CONFIG;
+    const baseConfig = Object.fromEntries(
+      Object.keys(DEFAULT_CONFIG).map((key) => [key, inheritedConfig[key] ?? DEFAULT_CONFIG[key as keyof typeof DEFAULT_CONFIG]]),
+    );
+
+    return (prisma as any).websiteCustomizer.upsert({
       where: { userId },
-      data,
+      update: data,
+      create: { ...baseConfig, ...data, userId },
     });
   }
 
   async uploadLogo(userId: string, buffer: Buffer, originalname: string) {
-    const config = await this.getConfig(userId);
+    // Only delete files owned by this account. A first-time landlord may be
+    // viewing the inherited admin logo, which must never be deleted here.
+    const config = await (prisma as any).websiteCustomizer.findUnique({
+      where: { userId },
+    });
 
     // Delete old files
     const safeDel = (url: string | null) => {
@@ -67,8 +97,8 @@ export class CustomizerService {
         if (fs.existsSync(p)) fs.unlinkSync(p);
       }
     };
-    safeDel(config.logo_url);
-    safeDel(config.logo_thumb_url);
+    safeDel(config?.logo_url?.includes(userId) ? config.logo_url : null);
+    safeDel(config?.logo_thumb_url?.includes(userId) ? config.logo_thumb_url : null);
 
     const ext = path.extname(originalname).toLowerCase();
     const safeExt = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'].includes(ext) ? ext : '.png';
@@ -95,18 +125,41 @@ export class CustomizerService {
   }
 
   async removeLogo(userId: string) {
-    const config = await this.getConfig(userId);
+    const config = await (prisma as any).websiteCustomizer.findUnique({
+      where: { userId },
+    });
     const safeDel = (url: string | null) => {
       if (url) {
         const p = path.join(LOGOS_DIR, path.basename(url));
         if (fs.existsSync(p)) fs.unlinkSync(p);
       }
     };
-    safeDel(config.logo_url);
-    safeDel(config.logo_thumb_url);
+    safeDel(config?.logo_url?.includes(userId) ? config.logo_url : null);
+    safeDel(config?.logo_thumb_url?.includes(userId) ? config.logo_thumb_url : null);
     return this.updateConfig(userId, {
       logo_url: null,
       logo_thumb_url: null,
     });
+  }
+
+  /** Remove only this account's override; the next read inherits defaults. */
+  async resetConfig(userId: string) {
+    const config = await (prisma as any).websiteCustomizer.findUnique({
+      where: { userId },
+    });
+    if (!config) return;
+
+    const safeDel = (url: string | null) => {
+      if (url) {
+        const filename = path.basename(url);
+        if (!filename.includes(userId)) return;
+        const p = path.join(LOGOS_DIR, filename);
+        if (fs.existsSync(p)) fs.unlinkSync(p);
+      }
+    };
+    safeDel(config.logo_url);
+    safeDel(config.logo_thumb_url);
+
+    await (prisma as any).websiteCustomizer.delete({ where: { userId } });
   }
 }

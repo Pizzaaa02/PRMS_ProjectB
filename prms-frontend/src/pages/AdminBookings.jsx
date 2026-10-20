@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { CalendarDays, Search, Trash2 } from 'lucide-react';
+import { CalendarDays, Search } from 'lucide-react';
 import { bookingApi } from '../api/booking';
 import './AdminSimplePage.css';
 import './AdminBookings.css';
@@ -48,7 +48,9 @@ export default function AdminBookings() {
     }
   }, [tab]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    Promise.resolve().then(load);
+  }, [load]);
 
   const cancelBooking = async (id) => {
     if (!confirm('Cancel this booking?')) return;
@@ -57,16 +59,6 @@ export default function AdminBookings() {
       load();
     } catch (e) {
       setError(e.message || 'Failed to cancel booking');
-    }
-  };
-
-  const deleteBooking = async (id) => {
-    if (!confirm('Permanently remove this booking? This cannot be undone.')) return;
-    try {
-      await bookingApi.remove(id);
-      load();
-    } catch (e) {
-      setError(e.response?.data?.error?.message || e.message || 'Failed to delete booking');
     }
   };
 
@@ -213,14 +205,6 @@ export default function AdminBookings() {
                     onClick={() => cancelBooking(b.id)}
                   >
                     Cancel
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-danger"
-                    title="Permanently remove this booking"
-                    onClick={() => deleteBooking(b.id)}
-                  >
-                    <Trash2 size={14} />
                   </button>
                 </div>
               </div>

@@ -49,9 +49,11 @@ export default function AgreementPanel({ bookingId, booking, role, userId }) {
 
   const isTenant = role === 'tenant' && booking?.userId === userId;
   const isLandlordOrAdmin = role === 'admin' || (role === 'landlord' && booking?.property?.ownerId === userId);
-  // An assigned Agent may view and help correct a draft's terms, but never
-  // sign for either party — that stays reserved to isLandlordOrAdmin below.
-  const canEditDraft = isLandlordOrAdmin || role === 'agent';
+  const isAssignedAgent = role === 'agent';
+  // This panel is only shown to an Agent after the backend has scoped the
+  // booking to one of their assigned properties.
+  const canManageAgreement = isLandlordOrAdmin || isAssignedAgent;
+  const canEditDraft = canManageAgreement;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -66,31 +68,37 @@ export default function AgreementPanel({ bookingId, booking, role, userId }) {
     }
   }, [bookingId]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    Promise.resolve().then(load);
+  }, [load]);
 
   const latest = agreements[0] || null;
 
   useEffect(() => {
     if (latest && latest.status === 'DRAFT') {
-      setDraftForm({
-        monthlyRent: latest.monthlyRent,
-        securityDeposit: latest.securityDeposit,
-        utilityDeposit: latest.utilityDeposit,
-        leaseStartDate: latest.leaseStartDate?.slice(0, 10),
-        leaseEndDate: latest.leaseEndDate?.slice(0, 10),
-        terms: latest.terms || '',
+      Promise.resolve().then(() => {
+        setDraftForm({
+          monthlyRent: latest.monthlyRent,
+          securityDeposit: latest.securityDeposit,
+          utilityDeposit: latest.utilityDeposit,
+          leaseStartDate: latest.leaseStartDate?.slice(0, 10),
+          leaseEndDate: latest.leaseEndDate?.slice(0, 10),
+          terms: latest.terms || '',
+        });
       });
     }
-  }, [latest?.id, latest?.status]);
+  }, [latest]);
 
   // Deliberately keyed on id only, not status: consenting moves the
   // agreement from DRAFT to AWAITING_TENANT_SIGNATURE in the same flow,
   // and resetting on every status change would wipe the just-issued
   // simulated OTP before the tenant had a chance to read and enter it.
   useEffect(() => {
-    setOtpStep(false);
-    setOtpValue('');
-    setSimulatedOtp('');
+    Promise.resolve().then(() => {
+      setOtpStep(false);
+      setOtpValue('');
+      setSimulatedOtp('');
+    });
   }, [latest?.id]);
 
   async function handleGenerate() {
@@ -189,7 +197,7 @@ export default function AgreementPanel({ bookingId, booking, role, userId }) {
       {!latest && (
         <div className="agreement-panel-empty">
           <p>No tenancy agreement has been generated yet.</p>
-          {isLandlordOrAdmin && booking?.status === 'CONFIRMED' && (
+          {canManageAgreement && booking?.status === 'CONFIRMED' && (
             <button className="btn btn-primary btn-sm" onClick={handleGenerate} disabled={busy}>Generate Agreement</button>
           )}
         </div>
@@ -206,7 +214,7 @@ export default function AgreementPanel({ bookingId, booking, role, userId }) {
             </div>
           </div>
 
-          {/* ── DRAFT: editable terms (landlord/admin/agent) ── */}
+          {/* ── DRAFT: editable terms (landlord/admin/assigned agent) ── */}
           {latest.status === 'DRAFT' && draftForm && (
             <div className="agreement-panel-terms">
               {canEditDraft ? (
@@ -316,7 +324,7 @@ export default function AgreementPanel({ bookingId, booking, role, userId }) {
             <div className="agreement-panel-terms">
               <AgreementSummary a={latest} />
               <a href={`http://localhost:3500${latest.physicalCopyUrl}`} target="_blank" rel="noopener noreferrer" className="agreement-doc-link">View Uploaded Copy</a>
-              {isLandlordOrAdmin && (
+              {canManageAgreement && (
                 <button className="btn btn-sm btn-primary" onClick={handleVerifyPhysical} disabled={busy}>Verify Physical Copy</button>
               )}
             </div>

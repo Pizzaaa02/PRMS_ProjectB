@@ -9,6 +9,10 @@ function formatDateTime(d) {
   return new Date(d).toLocaleString('en-MY', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
+function scheduledTime(viewing) {
+  return new Date(viewing.proposedTime && viewing.status === 'PROPOSED_ALTERNATE' ? viewing.proposedTime : viewing.preferredTime).getTime();
+}
+
 const STATUS_LABEL = {
   REQUESTED: 'Requested', ACCEPTED: 'Accepted', PROPOSED_ALTERNATE: 'Alternate Proposed',
   CONFIRMED: 'Confirmed', COMPLETED: 'Completed', NO_SHOW: 'No-show', CANCELLED: 'Cancelled',
@@ -60,7 +64,8 @@ export default function Viewings() {
 
       <div className="card-table">
         {loading ? <p>Loading...</p> : (
-          <table className="table">
+          <div className="viewings-table-scroll">
+            <table className="table viewings-table">
             <thead>
               <tr>
                 <th>Property</th>
@@ -68,7 +73,7 @@ export default function Viewings() {
                 <th>Preferred</th>
                 <th>Alternative</th>
                 <th>Status</th>
-                <th>Actions</th>
+                <th className="viewings-actions-heading">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -79,7 +84,8 @@ export default function Viewings() {
                   <td>{formatDateTime(v.proposedTime && v.status === 'PROPOSED_ALTERNATE' ? v.proposedTime : v.preferredTime)}</td>
                   <td>{formatDateTime(v.alternativeTime)}</td>
                   <td><span className={`shell-status-badge status-${v.status.toLowerCase()}`}>{STATUS_LABEL[v.status] || v.status}</span></td>
-                  <td className="viewings-actions">
+                  <td className="viewings-actions-cell">
+                    <div className="viewings-actions">
                     {isManager && v.status === 'REQUESTED' && (
                       <>
                         <button className="btn btn-sm btn-primary" onClick={() => run(() => viewingApi.accept(v.id))}>Accept</button>
@@ -89,14 +95,18 @@ export default function Viewings() {
                     )}
                     {isManager && v.status === 'CONFIRMED' && (
                       <>
-                        <button className="btn btn-sm btn-primary" onClick={() => run(() => viewingApi.markCompleted(v.id))}>Mark Completed</button>
-                        <button className="btn btn-sm btn-outline" onClick={() => run(() => viewingApi.markNoShow(v.id))}>No-show</button>
+                        <button className="btn btn-sm btn-primary" disabled={scheduledTime(v) > Date.now()} title={scheduledTime(v) > Date.now() ? 'Available after the scheduled time' : ''} onClick={() => run(() => viewingApi.markCompleted(v.id))}>Mark Completed</button>
+                        <button className="btn btn-sm btn-outline" disabled={scheduledTime(v) + 15 * 60 * 1000 > Date.now()} title={scheduledTime(v) + 15 * 60 * 1000 > Date.now() ? 'Available 15 minutes after the scheduled time' : ''} onClick={() => run(() => viewingApi.markNoShow(v.id))}>No-show</button>
+                        <button className="btn btn-sm btn-danger" onClick={() => run(() => viewingApi.cancel(v.id))}>Cancel</button>
                       </>
+                    )}
+                    {isManager && ['ACCEPTED', 'PROPOSED_ALTERNATE'].includes(v.status) && (
+                      <button className="btn btn-sm btn-danger" onClick={() => run(() => viewingApi.cancel(v.id))}>Cancel</button>
                     )}
                     {!isManager && ['ACCEPTED', 'PROPOSED_ALTERNATE'].includes(v.status) && (
                       <button className="btn btn-sm btn-primary" onClick={() => run(() => viewingApi.confirmAttendance(v.id))}>Confirm Attendance</button>
                     )}
-                    {!isManager && ['REQUESTED', 'ACCEPTED', 'PROPOSED_ALTERNATE'].includes(v.status) && (
+                    {!isManager && ['REQUESTED', 'ACCEPTED', 'PROPOSED_ALTERNATE', 'CONFIRMED'].includes(v.status) && (
                       <>
                         <button className="btn btn-sm btn-outline" onClick={() => setRescheduleFor(v.id)}>Reschedule</button>
                         <button className="btn btn-sm btn-danger" onClick={() => run(() => viewingApi.cancel(v.id))}>Cancel</button>
@@ -115,12 +125,14 @@ export default function Viewings() {
                         <button className="btn btn-sm btn-primary" onClick={() => run(() => viewingApi.reschedule(v.id, { preferredTime: rescheduleTime })).then(() => setRescheduleFor(null))}>Save</button>
                       </div>
                     )}
+                    </div>
                   </td>
                 </tr>
               ))}
               {!viewings.length && <tr><td colSpan={isManager ? 6 : 5}>No viewing appointments.</td></tr>}
             </tbody>
-          </table>
+            </table>
+          </div>
         )}
       </div>
     </div>

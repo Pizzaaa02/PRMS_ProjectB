@@ -5,6 +5,8 @@ import {
   ArrowDown,
   ArrowUp,
   Bell,
+  Building2,
+  ChevronRight,
   Download,
   Loader,
   Plus,
@@ -17,32 +19,57 @@ import {
 import { bookingApi } from '../api/booking'
 import { maintenanceApi } from '../api/maintenance'
 import { propertyApi } from '../api/property'
-import { adminApi } from '../api/admin'
+import { getImageUrl } from '../config/imageHelper'
+import { propertyStatusInfo } from '../config/propertyStatus'
 import './LandlordDashboard.css'
+
+function KpiCard({ icon: Icon, iconBg, label, value, sublabel, trend, trendDir }) {
+  const TrendIcon =
+    trendDir === 'up' ? (
+      <ArrowUp size={14} className="text-status-success" />
+    ) : trendDir === 'down' ? (
+      <ArrowDown size={14} className="text-status-error" />
+    ) : (
+      <Minus size={14} className="text-text-secondary" />
+    )
+
+  return (
+    <div className="kpi-card">
+      <div className="kpi-card-top">
+        <div className={`kpi-icon-wrap ${iconBg}`}>
+          <Icon size={20} />
+        </div>
+        {trend && (
+          <span className={`trend-pill ${trendDir === 'up' ? 'positive' : trendDir === 'down' ? 'negative' : 'neutral'}`}>
+            {TrendIcon}
+            {trend}
+          </span>
+        )}
+      </div>
+      <div className="kpi-card-body">
+        <span className="kpi-label">{label}</span>
+        <div className="kpi-value">{value}</div>
+        {sublabel && <span className="kpi-sublabel">{sublabel}</span>}
+      </div>
+    </div>
+  )
+}
 
 function LandlordDashboard() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [errors, setErrors] = useState(0)
   const [stats, setStats] = useState({
-    totalRevenue: 0,
     occupancyRate: 0,
     totalProperties: 0,
     activeProperties: 0,
     pendingBookings: 0,
     approvedBookings: 0,
-    rejectedBookings: 0,
-    cancelledBookings: 0,
     openTickets: 0,
     urgentTickets: 0,
   })
   const [approvals, setApprovals] = useState([])
   const [propertiesList, setPropertiesList] = useState([])
-  const [revenueBars, setRevenueBars] = useState([])
-
-  useEffect(() => {
-    loadDashboard()
-  }, [])
 
   async function loadDashboard() {
     setLoading(true)
@@ -55,8 +82,7 @@ function LandlordDashboard() {
         const bookings = res?.data?.data ?? []
         const pending = bookings.filter((b) => b.status === 'PENDING').length
         const confirmed = bookings.filter((b) => b.status === 'CONFIRMED').length
-        const cancelled = bookings.filter((b) => b.status === 'CANCELLED').length
-        setStats((s) => ({ ...s, pendingBookings: pending, approvedBookings: confirmed, rejectedBookings: 0, cancelledBookings: cancelled }))
+        setStats((s) => ({ ...s, pendingBookings: pending, approvedBookings: confirmed }))
 
         /* Pending bookings become the approval queue */
         const pendingArr = bookings.filter((b) => b.status === 'PENDING').slice(0, 4)
@@ -78,15 +104,17 @@ function LandlordDashboard() {
 
       /* ---- Property stats (occupancy, total/active) ---- */
       try {
-        const propsRes = await propertyApi.list({ limit: 100 })
+        const propsRes = await propertyApi.myProperties()
         const props = propsRes?.data?.data ?? []
         const total = props.length
-        const active = props.filter((p) => p.status === 'Active' || p.status === 'AVAILABLE').length
-        const rate = total > 0 ? Math.round((active / total) * 100) : 0
-        setStats((s) => ({ ...s, totalProperties: total, activeProperties: active, occupancyRate: rate }))
+        const occupied = props.filter((p) => p.status === 'RENTED').length
+        const rate = total > 0 ? Math.round((occupied / total) * 100) : 0
+        setStats((s) => ({ ...s, totalProperties: total, activeProperties: occupied, occupancyRate: rate }))
 
-        /* Property summary — top 3 by revenue */
-        const top3 = props.filter((p) => p.status === 'Active' || p.status === 'AVAILABLE').slice(0, 3)
+        /* Property summary — the landlord's three most recently updated properties */
+        const top3 = [...props]
+          .sort((a, b) => new Date(b.updated_at || b.created_at || 0) - new Date(a.updated_at || a.created_at || 0))
+          .slice(0, 3)
         setPropertiesList(top3)
       } catch {
         errCount++
@@ -97,35 +125,23 @@ function LandlordDashboard() {
         const maintRes = await maintenanceApi.list({ limit: 100 })
         const tickets = maintRes?.data?.data ?? []
         const open = tickets.filter((m) => m.status === 'OPEN' || m.status === 'IN_PROGRESS').length
-        const urgent = tickets.filter((m) => m.priority === 'HIGH').length
+        const urgent = tickets.filter(
+          (m) => ['OPEN', 'IN_PROGRESS'].includes(m.status) && ['HIGH', 'URGENT'].includes(m.priority)
+        ).length
         setStats((s) => ({ ...s, openTickets: open, urgentTickets: urgent }))
       } catch {
         errCount++
       }
 
-      /* ---- Revenue stats (dashboard endpoint) ---- */
-      try {
-        const dashRes = await adminApi.getDashboardStats()
-        const dashboardData = dashRes?.data?.data ?? dashRes?.data
-        if (dashboardData) {
-          setStats((s) => ({ ...s, totalRevenue: dashboardData.totalRevenue ?? 0 }))
-
-          /* Revenue bars from reporting endpoint */
-          const revRes = await adminApi.getRevenueReport()
-          const revData = revRes?.data?.data ?? revRes?.data
-          if (revData && revData.payments) {
-            const byMonth = computeRevenueByMonth(revData.payments)
-            setRevenueBars(byMonth.slice(0, 9))
-          }
-        }
-      } catch {
-        errCount++
-      }
     } finally {
       setErrors(errCount)
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    Promise.resolve().then(loadDashboard)
+  }, [])
 
   async function handleApprove(bookingId, status) {
     // Approving now requires offer terms (deposits + expiry) that can't be
@@ -173,39 +189,6 @@ function LandlordDashboard() {
     }
   }
 
-  /* ---- KPI Card helper ---- */
-  function KpiCard({ icon: Icon, iconBg, label, value, sublabel, trend, trendDir }) {
-    const TrendIcon =
-      trendDir === 'up' ? (
-        <ArrowUp size={14} className="text-status-success" />
-      ) : trendDir === 'down' ? (
-        <ArrowDown size={14} className="text-status-error" />
-      ) : (
-        <Minus size={14} className="text-text-secondary" />
-      )
-
-    return (
-      <div className="kpi-card">
-        <div className="kpi-card-top">
-          <div className={`kpi-icon-wrap ${iconBg}`}>
-            <Icon size={20} />
-          </div>
-          {trend && (
-            <span className={`trend-pill ${trendDir === 'up' ? 'positive' : trendDir === 'down' ? 'negative' : 'neutral'}`}>
-              {TrendIcon}
-              {trend}
-            </span>
-          )}
-        </div>
-        <div className="kpi-card-body">
-          <span className="kpi-label">{label}</span>
-          <div className="kpi-value">{value}</div>
-          {sublabel && <span className="kpi-sublabel">{sublabel}</span>}
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="landlord-dashboard-page" data-customize-id="global.content">
       {/* Page title row */}
@@ -219,14 +202,14 @@ function LandlordDashboard() {
         </div>
 
         <div className="landlord-page-actions">
-          <button type="button" className="btn-outline">
+          <button type="button" className="btn-outline" disabled title="Export will be available with Sprint 6 finance reporting">
             <Download size={18} />
             Export
           </button>
           <button
             type="button"
             className="btn-primary-solid"
-            onClick={() => navigate(ROUTES.landlord.properties)}
+            onClick={() => navigate(ROUTES.landlord.propertyAdd)}
           >
             <Plus size={18} />
             New Listing
@@ -253,9 +236,8 @@ function LandlordDashboard() {
               icon={WalletCards}
               iconBg="icon-purple"
               label="Total Revenue"
-              value={`RM ${stats.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
-              trend="+12.5%"
-              trendDir="up"
+              value="—"
+              sublabel="Payment integration planned for Sprint 6"
             />
 
             {/* Occupancy */}
@@ -264,9 +246,9 @@ function LandlordDashboard() {
               iconBg="icon-blue"
               label="Occupancy"
               value={`${stats.occupancyRate}%`}
-              sublabel={`${stats.activeProperties} / ${stats.totalProperties} units`}
-              trend={stats.occupancyRate >= 80 ? '+steady' : '-8%'}
-              trendDir={stats.occupancyRate >= 80 ? 'up' : 'down'}
+              sublabel={`${stats.activeProperties} rented / ${stats.totalProperties} owned properties`}
+              trend={null}
+              trendDir="neutral"
             />
 
             {/* Pending bookings */}
@@ -276,8 +258,8 @@ function LandlordDashboard() {
               label="Pending Bookings"
               value={stats.pendingBookings}
               sublabel={`${stats.approvedBookings} confirmed`}
-              trend={stats.pendingBookings > 3 ? '+3 new' : '0 new'}
-              trendDir={stats.pendingBookings > 3 ? 'up' : 'neutral'}
+              trend={null}
+              trendDir="neutral"
             />
 
             {/* Tickets */}
@@ -303,7 +285,7 @@ function LandlordDashboard() {
               <h3 className="panel-title-text">Revenue Growth</h3>
               <p className="panel-subtitle">Monthly performance comparison</p>
             </div>
-            <button type="button" className="btn-ghost">
+            <button type="button" className="btn-ghost" disabled title="Revenue reporting is planned for Sprint 6">
               <TrendingUp size={16} />
               Last 6 Months
             </button>
@@ -317,21 +299,11 @@ function LandlordDashboard() {
                   <span>...</span>
                 </div>
               ))
-            ) : revenueBars.length === 0 ? (
+            ) : (
               <div className="chart-empty">
                 <TrendingUp size={32} className="text-text-secondary" />
-                <p>No revenue data available</p>
+                <p>Revenue reporting is planned for Sprint 6.</p>
               </div>
-            ) : (
-              revenueBars.map((bar) => (
-                <div className="bar-item" key={bar.label}>
-                  <div
-                    className={`bar ${bar.active ? 'bar-active' : 'bar-default'}`}
-                    style={{ height: `${bar.height}%` }}
-                  />
-                  <span className="bar-label">{bar.label}</span>
-                </div>
-              ))
             )}
           </div>
         </div>
@@ -389,31 +361,69 @@ function LandlordDashboard() {
       </section>
 
       {/* ---- Property summary from real data ---- */}
-      {propertiesList.length > 0 && (
-        <section className="property-summary">
-          <h3 className="property-summary-title">
-            <span className="material-symbols-outlined">apartment</span>
-            Asset Summary
-          </h3>
-          {propertiesList.map((p) => (
-            <div className="summary-card" key={p.id}>
-              <div className="summary-image" style={{
-                backgroundImage: `url(${p.main_image_url || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?q=80&w=900&auto=format&fit=crop'})`
-              }} />
-              <div className="summary-body">
-                <h4 className="summary-title">{p.title}</h4>
-                <p className="summary-detail">{p.city || p.address || '—'} · {p.status}</p>
-              </div>
-              <span className="summary-price">RM {(p.rent || 0).toLocaleString()}</span>
-            </div>
-          ))}
+      <section className="property-summary">
+        <div className="property-summary-header">
+          <div>
+            <h3 className="property-summary-title">
+              <span className="material-symbols-outlined">apartment</span>
+              Asset Summary
+            </h3>
+            <p>Your three most recently updated properties.</p>
+          </div>
+          <button type="button" className="property-summary-view-all" onClick={() => navigate(ROUTES.landlord.properties)}>
+            View all properties <ChevronRight size={16} />
+          </button>
+        </div>
+
+        {propertiesList.length > 0 ? (
+          <div className="property-summary-grid">
+            {propertiesList.map((p) => {
+              const status = propertyStatusInfo(p.status)
+              const imageUrl = p.images?.[0]?.url
+              return (
+                <div
+                  className="summary-card"
+                  key={p.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => navigate(ROUTES.landlord.propertyDetail(p.id))}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault()
+                      navigate(ROUTES.landlord.propertyDetail(p.id))
+                    }
+                  }}
+                >
+                  <div className={`summary-image ${imageUrl ? '' : 'summary-image-empty'}`} style={{
+                    backgroundImage: imageUrl ? `url(${getImageUrl(imageUrl)})` : 'none'
+                  }}>
+                    {!imageUrl && <Building2 size={28} />}
+                  </div>
+                  <div className="summary-body">
+                    <h4 className="summary-title">{p.title}</h4>
+                    <p className="summary-detail">{p.city || p.address || 'Location not provided'}</p>
+                    <span className={`summary-status status-${status.tone}`}>{status.label}</span>
+                  </div>
+                  <span className="summary-price">RM {Number(p.rent || 0).toLocaleString()}<small>/month</small></span>
+                </div>
+              )
+            })}
+          </div>
+        ) : !loading ? (
+          <div className="property-summary-empty">
+            <Building2 size={32} />
+            <p>No properties in your portfolio yet.</p>
+            <button type="button" className="btn-primary-solid" onClick={() => navigate(ROUTES.landlord.propertyAdd)}>
+              <Plus size={16} /> Add your first property
+            </button>
+          </div>
+        ) : null}
         </section>
-      )}
 
       {/* Error indicator */}
-      {errors > 1 && (
+      {errors > 0 && (
         <div className="dashboard-warn">
-          ⚠ Some dashboard data may be incomplete ({errors}/4 endpoints failed)
+          ⚠ Some dashboard data may be incomplete ({errors}/3 endpoints failed)
         </div>
       )}
     </div>
@@ -441,24 +451,6 @@ function timeAgo(dateStr) {
   if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
   if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
   return `${Math.floor(diff / 86400)}d ago`
-}
-
-function computeRevenueByMonth(payments) {
-  if (!payments || !payments.length) return []
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-  const map = {}
-  payments.forEach((p) => {
-    const d = new Date(p.paid_at || p.created_at || Date.now())
-    const key = months[d.getMonth()]
-    map[key] = (map[key] || 0) + (p.amount || 0)
-  })
-  const max = Math.max(...Object.values(map), 1)
-  return Object.entries(map).map(([label, value], idx) => ({
-    label,
-    value,
-    height: Math.max(10, Math.round((value / max) * 100)),
-    active: idx % 2 === 0,
-  }))
 }
 
 export default LandlordDashboard

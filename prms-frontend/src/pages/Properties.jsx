@@ -1,15 +1,13 @@
-import { useState, useEffect } from 'react'
-import { useNavigate, useSearchParams, Link as RouterLink } from 'react-router-dom'
+import { useState, useEffect, useCallback } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { motion } from 'framer-motion'
 import {
   Building2,
   MapPin,
-  DollarSign,
   Search,
   Filter,
   Plus,
-  RotateCw,
   Grid3x3,
   List,
   ChevronLeft,
@@ -17,8 +15,9 @@ import {
 } from 'lucide-react'
 import { getImageUrl } from '../config/imageHelper';
 import { propertyApi, getApiError } from '../api'
-import { ROUTES, getAddPropertyRoute, getPropertyDetailPath } from '../config/routes'
+import { getAddPropertyRoute, getPropertyDetailPath } from '../config/routes'
 import { PROPERTY_TYPES as CANONICAL_PROPERTY_TYPES, propertyTypeLabel } from '../config/propertyTypes'
+import { PROPERTY_STATUSES, propertyStatusInfo } from '../config/propertyStatus'
 import './Properties.css'
 
 const TYPE_FILTERS = [
@@ -28,10 +27,7 @@ const TYPE_FILTERS = [
 
 const STATUS_FILTERS = [
   { key: 'all', label: 'All' },
-  { key: 'available', label: 'Available' },
-  { key: 'occupied', label: 'Occupied' },
-  { key: 'maintenance', label: 'Maintenance' },
-  { key: 'inactive', label: 'Inactive' },
+  ...PROPERTY_STATUSES.map((status) => ({ key: status.value, label: status.label })),
 ]
 
 function Properties() {
@@ -51,17 +47,23 @@ function Properties() {
   const [currentPage, setCurrentPage] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
   const perPage = 12
+  const role = (user?.role || '').toLowerCase()
+  const isAdmin = role.includes('admin')
+  const isLandlord = role.includes('landlord')
 
-  async function fetchProperties() {
+  const fetchProperties = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const { data } = await propertyApi.list({
-        page: currentPage,
-        limit: perPage,
-        type: activeType === 'all' ? undefined : activeType,
-        search: debouncedSearch || undefined,
-      })
+      const { data } = isLandlord
+        ? await propertyApi.myProperties()
+        : await propertyApi.list({
+            page: currentPage,
+            limit: perPage,
+            type: activeType === 'all' ? undefined : activeType,
+            search: debouncedSearch || undefined,
+            status: activeStatus === 'all' ? undefined : activeStatus,
+          })
       const list = data?.data || data?.properties || data
       setProperties(Array.isArray(list) ? list : [])
 
@@ -69,7 +71,7 @@ function Properties() {
         data?.pagination?.total ??
           data?.totalCount ??
           data?.total ??
-          list.length
+          (Array.isArray(list) ? list.length : 0)
       )
     } catch (err) {
       setError(getApiError(err))
@@ -77,48 +79,58 @@ function Properties() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [activeStatus, activeType, currentPage, debouncedSearch, isLandlord])
 
   // Debounce the raw search input into `debouncedSearch`
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchTerm.trim())
+      setCurrentPage(1)
     }, 400)
     return () => clearTimeout(timer)
   }, [searchTerm])
 
-  // Any filter change goes back to page 1
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [activeType, debouncedSearch])
-
   // Fetch whenever the page, type filter, or committed search term changes
   useEffect(() => {
-    fetchProperties()
-  }, [currentPage, activeType, debouncedSearch])
+    Promise.resolve().then(fetchProperties)
+  }, [fetchProperties])
 
   function handleSearch(e) {
     if (e) e.preventDefault()
     setDebouncedSearch(searchTerm.trim())
+    setCurrentPage(1)
   }
-
-  const totalPages = Math.max(Math.ceil(totalCount / perPage), 1)
 
   function statusColor(status) {
-    const s = (status || '').toLowerCase()
-    if (s === 'available') return 'green'
-    if (s === 'pending') return 'yellow'
-    if (s === 'rented' || s === 'approved' || s === 'active') return 'blue'
-    if (s === 'rejected' || s === 'inactive') return 'red'
-    return 'gray'
+    return propertyStatusInfo(status).tone
   }
 
-  /* Client-side status filtering */
+  /*
+   * Landlords receive their complete ownership-scoped collection from the
+   * backend, then search/filter/page it locally. Other roles keep using the
+   * public paginated property catalogue.
+   */
   const filteredProperties = properties.filter((p) => {
-    if (activeStatus === 'all') return true
-    const pStatus = (p.status || '').toLowerCase()
-    return pStatus === activeStatus.toLowerCase()
+    if (activeStatus !== 'all' && propertyStatusInfo(p.status).value !== activeStatus) return false
+    if (!isLandlord) return true
+
+    if (activeType !== 'all' && (p.property_type || '').toLowerCase() !== activeType.toLowerCase()) return false
+    if (debouncedSearch) {
+      const searchable = [p.title, p.name, p.address, p.city, p.location]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+      if (!searchable.includes(debouncedSearch.toLowerCase())) return false
+    }
+    return true
   })
+  const totalPages = Math.max(
+    Math.ceil((isLandlord ? filteredProperties.length : totalCount) / perPage),
+    1
+  )
+  const displayedProperties = isLandlord
+    ? filteredProperties.slice((currentPage - 1) * perPage, currentPage * perPage)
+    : filteredProperties
 
   return (
     <div className="properties-page">
@@ -126,7 +138,13 @@ function Properties() {
       <div className="properties-titlebar">
         <div>
           <h1 className="page-title">Properties</h1>
-          <p className="page-subtitle">Browse and manage all property listings in your portfolio.</p>
+          <p className="page-subtitle">
+            {isAdmin
+              ? 'Review and manage property listings across the platform.'
+              : isLandlord
+                ? 'Browse and manage only the property listings in your portfolio.'
+                : 'Browse available property listings.'}
+          </p>
         </div>
         {getAddPropertyRoute(user?.role) && (
           <motion.button
@@ -234,7 +252,7 @@ function Properties() {
       {/* ── Properties grid / list ── */}
       {!loading && !error && (
         <>
-          {filteredProperties.length === 0 ? (
+          {displayedProperties.length === 0 ? (
             <div className="panel-card empty-state">
               <div className="empty-icon">
                 <Building2 size={56} />
@@ -258,13 +276,13 @@ function Properties() {
               {/* Filtered count when a filter is active */}
               {(activeStatus !== 'all' || activeType !== 'all' || searchTerm) && (
                 <div className="filter-count">
-                  Showing {filteredProperties.length} of {properties.length} properties
+                  Showing {displayedProperties.length} of {isLandlord ? filteredProperties.length : totalCount} properties
                 </div>
               )}
 
               {/* ── Grid / List ── */}
               <div className={`properties-${viewMode}`} role="list">
-                {filteredProperties.map((p, i) => {
+                {displayedProperties.map((p, i) => {
                   const pid = p._id || p.id || i
                   const stype = statusColor(p.status || 'available')
                   return (
@@ -286,7 +304,17 @@ function Properties() {
                           {(() => {
                             const imageUrl = p.images?.[0]?.url || p.image || p.thumbnail;
                             if (imageUrl) {
-                              return <img src={getImageUrl(imageUrl)} alt={p.name || p.title} />;
+                              return (
+                                <img
+                                  src={getImageUrl(imageUrl)}
+                                  alt={p.name || p.title}
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                    const fb = e.currentTarget.parentElement?.querySelector('.image-fallback-placeholder');
+                                    if (fb) fb.style.display = 'flex';
+                                  }}
+                                />
+                              );
                             }
                             return (
                               <div className="image-placeholder">
@@ -294,8 +322,11 @@ function Properties() {
                               </div>
                             );
                           })()}
+                          <div className="image-placeholder image-fallback-placeholder" style={{ display: 'none' }}>
+                            <Building2 size={40} />
+                          </div>
                           <span className={`status-badge status-${stype}`}>
-                            {p.status || 'Available'}
+                            {propertyStatusInfo(p.status).label}
                           </span>
                         </div>
 
@@ -311,9 +342,8 @@ function Properties() {
                           </span>
                           <div className="property-footer">
                             <div className="property-price">
-                              <DollarSign size={14} />
                               <span>
-                                {Number(p.price || p.rent || 0).toLocaleString()}{' '}
+                                RM {Number(p.price || p.rent || 0).toLocaleString()}{' '}
                                 /mo
                               </span>
                             </div>

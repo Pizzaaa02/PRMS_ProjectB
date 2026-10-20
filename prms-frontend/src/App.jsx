@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { RegistrationProvider } from './contexts/RegistrationContext';
 import { SettingsProvider } from './contexts/SettingsContext';
@@ -81,11 +81,13 @@ const AdminRetention = lazy(() => import('./pages/AdminRetention'));
 const AdminBreachRegister = lazy(() => import('./pages/AdminBreachRegister'));
 const AdminBookings = lazy(() => import('./pages/AdminBookings'));
 const TenantPayments = lazy(() => import('./pages/TenantPayments'));
+const MockPaymentCheckout = lazy(() => import('./pages/MockPaymentCheckout'));
 const TenantMaintenance = lazy(() => import('./pages/TenantMaintenance'));
 const LandlordMaintenance = lazy(() => import('./pages/LandlordMaintenance'));
 const AgentMaintenance = lazy(() => import('./pages/AgentMaintenance'));
 const AgentProperties = lazy(() => import('./pages/AgentProperties'));
 const AgentBookings = lazy(() => import('./pages/AgentBookings'));
+const AgentPropertyEdit = lazy(() => import('./pages/AgentPropertyEdit'));
 const AdminReports = lazy(() => import('./pages/AdminReports'));
 const AdminAuditLogs = lazy(() => import('./pages/AdminAuditLogs'));
 const NotificationCenter = lazy(() => import('./pages/NotificationCenter'));
@@ -226,7 +228,6 @@ function AppRoutes() {
             </SuspenseWrapper>
           }
         />
-        <Route path="properties/add" element={<AddProperty />} />
         <Route path="properties/edit" element={<PropertyEdit />} />
         <Route path="properties/edit/:id" element={<PropertyEdit />} />
         <Route
@@ -249,7 +250,7 @@ function AppRoutes() {
         />
         <Route path="maintenance" element={<AdminSimplePage type="maintenance" />} />
         <Route path="messages" element={<CommunicationHub />} />
-        <Route path="reports" element={<AdminReports />} />
+        <Route path="reports" element={<Navigate to="/admin/finance" replace />} />
         <Route path="audit-logs" element={<AdminAuditLogs />} />
         <Route
           path="categories"
@@ -268,7 +269,7 @@ function AppRoutes() {
             </SuspenseWrapper>
           }
         />
-        <Route path="help" element={<AdminSimplePage type="help" />} />
+        <Route path="help" element={<Navigate to="/admin/settings" replace />} />
       </Route>
 
       {/*  Landlord routes (AUTH-006: role-protected)  */}
@@ -305,6 +306,7 @@ function AppRoutes() {
         <Route path="properties/edit" element={<PropertyEdit />} />
         <Route path="properties/edit/:id" element={<PropertyEdit />} />
         <Route path="properties/:id" element={<PropertyDetail />} />
+        <Route path="properties/:id/edit" element={<AgentPropertyEdit />} />
         <Route path="bookings" element={<LandlordBookings />} />
         <Route path="viewings" element={<Viewings />} />
         <Route path="privacy" element={<PrivacyPersonalData />} />
@@ -374,6 +376,7 @@ function AppRoutes() {
         <Route path="viewings" element={<Viewings />} />
         <Route path="privacy" element={<PrivacyPersonalData />} />
         <Route path="payments" element={<TenantPayments />} />
+        <Route path="payments/:paymentId/checkout" element={<SuspenseWrapper><MockPaymentCheckout /></SuspenseWrapper>} />
         <Route path="payments/:id" element={<PaymentReceipt />} />
         <Route path="maintenance" element={<TenantMaintenance />} />
         <Route path="messages" element={<TenantSimplePage label="Messages"><CommunicationHub /></TenantSimplePage>} />
@@ -476,9 +479,9 @@ function App() {
     <BrowserRouter>
       <ErrorBoundary>
         <SettingsProvider>
-          <BrandingProvider>
-            <CustomizationProvider>
-              <AuthProvider>
+          <AuthProvider>
+            <BrandingProvider>
+              <CustomizationProvider>
                 <UserPreferencesProvider>
                   <FeatureFlagsProvider>
                     <RegistrationProvider>
@@ -486,9 +489,9 @@ function App() {
                     </RegistrationProvider>
                   </FeatureFlagsProvider>
                 </UserPreferencesProvider>
-              </AuthProvider>
-            </CustomizationProvider>
-          </BrandingProvider>
+              </CustomizationProvider>
+            </BrandingProvider>
+          </AuthProvider>
         </SettingsProvider>
       </ErrorBoundary>
     </BrowserRouter>

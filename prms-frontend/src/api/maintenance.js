@@ -22,6 +22,17 @@ export const maintenanceApi = {
   updateStatus(id, status) {
     return apiClient.put(`/maintenance/${id}`, { status });
   },
+  update(id, data) {
+    return apiClient.put(`/maintenance/${id}`, data);
+  },
+  resolve(id, inspectionNotes) {
+    return apiClient.patch(`/maintenance/${id}/resolve`, { inspectionNotes });
+  },
+  addPhotos(id, files) {
+    const form = new FormData();
+    Array.from(files || []).forEach((file) => form.append('photos', file));
+    return apiClient.post(`/maintenance/${id}/photos`, form);
+  },
   assignToAgent(ticketId, agentId) {
     return apiClient.put(`/maintenance/${ticketId}`, { assignedTo: agentId });
   },

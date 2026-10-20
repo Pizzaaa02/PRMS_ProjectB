@@ -24,12 +24,14 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { propertyApi, viewingApi } from '../api';
+import { agentApi } from '../api/agents';
 import { useAuth } from '../contexts/AuthContext';
 import TenantBookingModal from '../components/TenantBookingModal';
 import ImageGallery from '../components/ImageGallery';
 import Modal from '../components/Modal';
 import { VideoUploader, DocumentUploader } from '../components/MediaUploader';
 import { getPropertyRoute, getMessagesRoute } from '../config/routes';
+import { isPropertyAvailable, propertyStatusInfo } from '../config/propertyStatus';
 import './PropertyDetail.css';
 
 /* ================= AMENITY ICON MAP ================= */
@@ -51,10 +53,6 @@ function amenityIcon(name) {
 function BookingCard({ property, onBookClick }) {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [checkIn, setCheckIn] = useState('');
-  const [checkOut, setCheckOut] = useState('');
-  const [guests, setGuests] = useState(1);
-  const [showCalendar, setShowCalendar] = useState(false);
 
   const owner = property.owner;
   const isOwnProperty = !!(user && owner && (owner.id === user.id || property.ownerId === user.id));
@@ -99,95 +97,12 @@ function BookingCard({ property, onBookClick }) {
     });
   }
 
-  const today = new Date().toISOString().slice(0, 10);
-
-  const nightlyRate = property.rent || 0;
-  // checkOut can be momentarily empty right after clicking a calendar day
-  // to start a fresh range (before its checkout day is picked) — fall
-  // back to 1 night instead of showing "RM NaN" in the price breakdown.
-  const rawNights = checkIn && checkOut
-    ? Math.round((new Date(checkOut) - new Date(checkIn)) / (1000 * 60 * 60 * 24))
-    : 1;
-  const nights = Math.max(1, Number.isFinite(rawNights) ? rawNights : 1);
-  const subtotal = nightlyRate * nights;
-  const cleaningFee = Math.round(nightlyRate * 0.28);
-  const serviceFee = Math.round(nightlyRate * 0.33);
-  const total = subtotal + cleaningFee + serviceFee;
+  const monthlyRent = property.rent || 0;
 
   const formatRM = (n) =>
     new Intl.NumberFormat('ms-MY', {
       style: 'currency', currency: 'MYR', minimumFractionDigits: 0,
     }).format(n);
-
-  // Mini calendar — the viewed month is independent of checkIn/checkOut so
-  // browsing months with </> doesn't silently change the actual booking
-  // dates (it used to call setCheckIn on every month change).
-  const [viewDate, setViewDate] = useState(() => new Date());
-  useEffect(() => {
-    if (checkIn) setViewDate(new Date(checkIn + 'T00:00:00'));
-  }, [checkIn]);
-
-  const monthName = viewDate.toLocaleString('default', { month: 'long' });
-  const year = viewDate.getFullYear();
-  const month = viewDate.getMonth();
-  const firstDay = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-  const todayMidnight = new Date();
-  todayMidnight.setHours(0, 0, 0, 0);
-  const checkInDate = checkIn ? new Date(checkIn + 'T00:00:00') : null;
-  const checkOutDate = checkOut ? new Date(checkOut + 'T00:00:00') : null;
-
-  const toISODate = (d) => {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
-  };
-
-  // Compares full dates (year + month + day), not just the day-of-month
-  // number — comparing bare day numbers broke as soon as the calendar
-  // showed a month other than checkIn's (e.g. day 5 of next month was
-  // wrongly marked "past" just because 5 < today's day-of-month).
-  const getDayClass = (date, isPast) => {
-    if (isPast) return 'cal-past cal-disabled';
-    if (checkInDate && checkOutDate && date >= checkInDate && date < checkOutDate) return 'cal-selected';
-    if (checkInDate && date.getTime() === checkInDate.getTime()) return 'cal-boundary';
-    if (checkOutDate && date.getTime() === checkOutDate.getTime()) return 'cal-boundary';
-    return '';
-  };
-
-  function handleDayClick(date, isPast) {
-    if (isPast) return; // dates before today are unavailable
-    const iso = toISODate(date);
-    // First click (or restarting after a full range is already picked)
-    // sets check-in; the next click after that sets check-out, as long as
-    // it's a later date — otherwise it just moves check-in there instead.
-    if (!checkInDate || (checkOutDate && date >= checkOutDate) || date < checkInDate) {
-      setCheckIn(iso);
-      setCheckOut('');
-    } else {
-      setCheckOut(iso);
-    }
-  }
-
-  // Build calendar days as real Date objects spanning the full 6-week grid
-  // (leading days from the previous month, the current month, and trailing
-  // days from the next), so every cell carries an unambiguous date.
-  const calDays = [];
-  for (let i = firstDay; i > 0; i--) {
-    const d = new Date(year, month, 1 - i);
-    calDays.push({ date: d, current: false, isPast: d < todayMidnight });
-  }
-  for (let d = 1; d <= daysInMonth; d++) {
-    const date = new Date(year, month, d);
-    calDays.push({ date, current: true, isPast: date < todayMidnight });
-  }
-  while (calDays.length % 7 !== 0) {
-    const last = calDays[calDays.length - 1].date;
-    const d = new Date(last.getFullYear(), last.getMonth(), last.getDate() + 1);
-    calDays.push({ date: d, current: false, isPast: d < todayMidnight });
-  }
 
   return (
     <>
@@ -195,7 +110,7 @@ function BookingCard({ property, onBookClick }) {
         <div className="booking-card-header">
           <div>
             <div className="booking-price-line">
-              <span className="booking-price-amount">{formatRM(nightlyRate)} / {property.rent_period || 'month' || 'night'}</span>
+              <span className="booking-price-amount">{formatRM(monthlyRent)} / month</span>
               <span className="booking-rating">
                 <Star size={13} fill="#F59E0B" color="#F59E0B" />
                 {property.rating || '4.9'}{' '}
@@ -205,78 +120,11 @@ function BookingCard({ property, onBookClick }) {
           </div>
         </div>
 
-        {/* Dates / Guests */}
-        <div className="booking-inputs">
-          <div className="booking-input-row">
-            <div className="booking-input-col">
-              <span className="booking-input-label">PREFERRED MOVE-IN</span>
-              <input
-                type="date"
-                value={checkIn}
-                min={today}
-                onChange={(e) => setCheckIn(e.target.value)}
-                className="booking-date-input"
-              />
-            </div>
-            <div className="booking-input-col">
-              <span className="booking-input-label">EXPECTED END</span>
-              <input
-                type="date"
-                value={checkOut}
-                min={checkIn || today}
-                onChange={(e) => setCheckOut(e.target.value)}
-                className="booking-date-input"
-              />
-            </div>
-          </div>
-          <div className="booking-input-row">
-            <div className="booking-input-col">
-              <span className="booking-input-label">OCCUPANTS</span>
-              <input
-                type="number"
-                min={1}
-                max={property.capacity || 10}
-                value={guests}
-                onChange={(e) => setGuests(parseInt(e.target.value) || 1)}
-                className="booking-date-input"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Mini Calendar */}
-        <div className="booking-minical">
-          <div className="booking-minical-header">
-            <span
-              className="booking-minical-nav"
-              onClick={() => setViewDate(new Date(year, month - 1, 1))}
-            >
-              {'<'}
-            </span>
-            <span>{monthName} {year}</span>
-            <span
-              className="booking-minical-nav"
-              onClick={() => setViewDate(new Date(year, month + 1, 1))}
-            >
-              {'>'}
-            </span>
-          </div>
-          <div className="booking-minical-weekdays">
-            {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(d => (
-              <span key={d}>{d}</span>
-            ))}
-          </div>
-          <div className="booking-minical-days">
-            {calDays.map((d, i) => (
-              <span
-                key={i}
-                className={`booking-minical-day ${getDayClass(d.date, d.isPast)}${!d.current ? ' booking-minical-other' : ''}`}
-                onClick={() => handleDayClick(d.date, d.isPast)}
-              >
-                {d.date.getDate()}
-              </span>
-            ))}
-          </div>
+        <div className="booking-rental-summary">
+          <strong style={{ color: propertyStatusInfo(property.status).color }}>
+            {propertyStatusInfo(property.status).label}
+          </strong>
+          <span>Choose your move-in date, lease duration and occupants in the rental application.</span>
         </div>
 
         {/* Applying banner */}
@@ -288,37 +136,16 @@ function BookingCard({ property, onBookClick }) {
         <button
           className="book-now-btn"
           onClick={() => {
-            if (property.status === 'OCCUPIED' || property.status === 'MAINTENANCE') return;
+            if (!isPropertyAvailable(property.status)) return;
             onBookClick();
           }}
-          disabled={property.status === 'OCCUPIED' || property.status === 'MAINTENANCE'}
+          disabled={!isPropertyAvailable(property.status)}
         >
-          {property.status === 'OCCUPIED' ? 'Occupied' : property.status === 'MAINTENANCE' ? 'Maintenance' : 'Apply to Rent'}
+          {isPropertyAvailable(property.status) ? 'Apply to Rent' : propertyStatusInfo(property.status).label}
         </button>
 
-        {/* Approximate price */}
         <div className="booking-approximate">
-          You won't be charged yet
-        </div>
-
-        {/* Price breakdown */}
-        <div className="booking-breakdown">
-          <div className="breakdown-row">
-            <span>{formatRM(nightlyRate)} × {nights} {nights === 1 ? 'night' : 'nights'}</span>
-            <span>{formatRM(subtotal)}</span>
-          </div>
-          <div className="breakdown-row">
-            <span>Cleaning fee</span>
-            <span>{formatRM(cleaningFee)}</span>
-          </div>
-          <div className="breakdown-row">
-            <span>EstateSync service fee</span>
-            <span>{formatRM(serviceFee)}</span>
-          </div>
-          <div className="breakdown-total">
-            <span>Total before taxes</span>
-            <span>{formatRM(total)}</span>
-          </div>
+          Applying does not require payment.
         </div>
 
         {/* Request Viewing */}
@@ -408,6 +235,8 @@ function PropertyDetail() {
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterStatus, setNewsletterStatus] = useState(null); // null | 'success' | 'error'
+  const [agentAssigned, setAgentAssigned] = useState(false);
+  const canApplyToRent = !user || (user.role || '').toLowerCase() === 'tenant';
 
   function handleBack() {
     // Prefer real browser history (works from any properties list —
@@ -467,6 +296,10 @@ function PropertyDetail() {
           const propData = res.data.data;
           setProperty(propData);
           setImages(propData.images || []);
+          if ((user?.role || '').toLowerCase() === 'agent') {
+            const assignedRes = await agentApi.myProperties({ limit: 100 });
+            if (!cancelled) setAgentAssigned((assignedRes.data?.data || []).some((item) => item.id === id));
+          }
         }
         setLoading(false);
       } catch (err) {
@@ -478,7 +311,9 @@ function PropertyDetail() {
     }
     fetch();
     return () => { cancelled = true; };
-  }, [id]);
+  }, [id, user?.role]);
+
+  const canManageProperty = isPropertyOwner || agentAssigned;
 
   /* Owner info */
   const owner = property?.owner;
@@ -490,14 +325,7 @@ function PropertyDetail() {
   const rating = property?.rating || '4.9';
 
   /* Status badge */
-  const statusConfig =
-    {
-      AVAILABLE: { text: 'Available', color: '#22c55e' },
-      OCCUPIED: { text: 'Occupied', color: '#f59e0b' },
-      MAINTENANCE: { text: 'Maintenance', color: '#ef4444' },
-    }[property?.status];
-
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const statusConfig = propertyStatusInfo(property?.status);
 
   /* Amenities */
   const amenities = property?.amenities || [];
@@ -600,6 +428,7 @@ function PropertyDetail() {
           images={images.length > 0 ? images : property?.images}
           propertyId={id}
           userRole={user?.role}
+          canManage={canManageProperty}
           onImagesChange={(updatedImages) => {
             setImages(updatedImages);
             setProperty((prev) => (prev ? { ...prev, images: updatedImages } : prev));
@@ -608,7 +437,7 @@ function PropertyDetail() {
         />
 
         {/* ── Two-column layout ── */}
-        <div className="pd-body" data-customize-id="detail.body">
+        <div className={`pd-body ${canApplyToRent ? '' : 'pd-body-management'}`} data-customize-id="detail.body">
           {/* LEFT COLUMN */}
           <div className="pd-left" data-customize-id="detail.left">
             {/* Hosted by section */}
@@ -632,23 +461,25 @@ function PropertyDetail() {
                       <UserCircle size={48} />
                     </div>
                   )}
-                  {isPropertyOwner && (
+                  {canManageProperty && (
                     <motion.button
                       className="pd-edit-btn"
                       onClick={() => {
                         const lower = (user?.role || '').toLowerCase();
-                        const prefix = lower.includes('admin')
+                        const prefix = lower.includes('agent')
+                          ? `/agent/properties/${id}/edit`
+                          : lower.includes('admin')
                           ? '/admin/properties/edit'
                           : lower.includes('landlord')
                             ? '/landlord/properties/edit'
                             : '/properties/edit';
-                        navigate(`${prefix}/${id}`);
+                        navigate(lower.includes('agent') ? prefix : `${prefix}/${id}`);
                       }}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.97 }}
                     >
                       <Edit3 size={16} />
-                      Edit Property
+                      {(user?.role || '').toLowerCase().includes('agent') ? 'Manage Listing' : 'Edit Property'}
                     </motion.button>
                   )}
                 </div>
@@ -698,11 +529,11 @@ function PropertyDetail() {
               </div>
               {/* Status pill */}
               <div className="pd-status-pill" style={{
-                color: statusConfig?.color || '#22c55e',
-                borderColor: statusConfig?.color || '#22c55e',
+                color: statusConfig.color,
+                borderColor: statusConfig.color,
               }}>
                 <ShieldCheck size={14} />
-                {statusConfig?.text || 'Available'}
+                {statusConfig.label}
               </div>
             </div>
 
@@ -760,7 +591,7 @@ function PropertyDetail() {
             )}
 
             {/* Video & Document sections (visible when logged in and can edit) */}
-            {(user?.role === "Landlord" || user?.role === "Admin" || user?.role === "landlord" || user?.role === "admin") && (
+            {canManageProperty && (
               <>
                 <div className="pd-divider" />
                 <div className="pd-section">
@@ -853,12 +684,14 @@ function PropertyDetail() {
           </div>
 
           {/* RIGHT COLUMN — Sticky Booking Card */}
-          <div className="pd-right">
-            <BookingCard
-              property={property}
-              onBookClick={() => setShowBookingModal(true)}
-            />
-          </div>
+          {canApplyToRent && (
+            <div className="pd-right">
+              <BookingCard
+                property={property}
+                onBookClick={() => setShowBookingModal(true)}
+              />
+            </div>
+          )}
         </div>
       </motion.div>
 
@@ -868,7 +701,7 @@ function PropertyDetail() {
           <div className="pd-footer-inner">
             <div className="pd-footer-col">
               <h4>EstateSync</h4>
-              <p>The world's most trusted platform for luxury property management and short-term rentals.</p>
+              <p>A trusted platform for residential property management and long-term rentals.</p>
             </div>
             <div className="pd-footer-col">
               <h4>Support</h4>
@@ -930,11 +763,13 @@ function PropertyDetail() {
       </button>
 
       {/* Booking Modal */}
-      <TenantBookingModal
-        property={property}
-        isOpen={showBookingModal}
-        onClose={() => setShowBookingModal(false)}
-      />
+      {canApplyToRent && (
+        <TenantBookingModal
+          property={property}
+          isOpen={showBookingModal}
+          onClose={() => setShowBookingModal(false)}
+        />
+      )}
     </main>
   );
 }

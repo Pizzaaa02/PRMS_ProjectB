@@ -90,6 +90,8 @@ export default function TenantMaintenance() {
           <p>{selected.description}</p>
           <p><strong>Property:</strong> {propertyNames[selected.propertyId] || selected.propertyId || 'N/A'}</p>
           <p><strong>Priority:</strong> {selected.priority} | <strong>Status:</strong> {selected.status}</p>
+          {selected.inspectionNotes && <p><strong>Maintenance note:</strong> {selected.inspectionNotes}</p>}
+          {!!selected.attachments?.length && <div><strong>Photographs:</strong> {selected.attachments.map((photo) => <a key={photo.id} href={`http://localhost:3500${photo.url}`} target="_blank" rel="noreferrer" style={{ marginLeft: 8 }}>View</a>)}</div>}
           <div className="notes mt-2">
             <h4>Notes</h4>
             {selected.notes?.length ? (

@@ -63,6 +63,15 @@ export async function createBooking(data: {
   pdpa_consent?: boolean;
   acknowledgement?: boolean;
 }, userId: string) {
+  if (!data.propertyId) throw new Error('propertyId is required');
+  if (!data.start_date || Number.isNaN(Date.parse(data.start_date))) throw new Error('A valid start_date is required');
+  if (data.end_date && Number.isNaN(Date.parse(data.end_date))) throw new Error('end_date must be a valid date');
+  if (data.lease_duration_months !== undefined && (!Number.isInteger(data.lease_duration_months) || data.lease_duration_months < 1)) {
+    throw new Error('lease_duration_months must be a positive whole number');
+  }
+  if (data.occupants !== undefined && (!Number.isInteger(data.occupants) || data.occupants < 1)) {
+    throw new Error('occupants must be a positive whole number');
+  }
   // totalAmount is computed server-side (nights × the property's nightly
   // rent) rather than trusted from the client — the booking UI never sends
   // it at all (every booking was silently landing at 0), and even where a
@@ -83,6 +92,7 @@ export async function createBooking(data: {
   } else {
     throw new Error('end_date or lease_duration_months is required');
   }
+  if (end.getTime() <= start.getTime()) throw new Error('end_date must be after start_date');
   // A rental application's "amount" is the monthly rent basis (confirmed
   // properly during landlord review) — not nights × rate, which is a
   // leftover from the old short-stay model and produces an absurd total
@@ -92,22 +102,41 @@ export async function createBooking(data: {
     ? property.rent
     : Math.max(1, Math.round((end.getTime() - start.getTime()) / 86400000)) * property.rent;
 
-  return prisma.booking.create({
-    data: {
-      property: { connect: { id: data.propertyId } },
-      start_date: start,
-      end_date: end,
-      totalAmount,
-      user: { connect: { id: userId } },
-      alternative_start_date: data.alternative_start_date ? new Date(data.alternative_start_date) : undefined,
-      lease_duration_months: data.lease_duration_months,
-      occupants: data.occupants,
-      applicant_message: data.applicant_message,
-      pdpa_consent: !!data.pdpa_consent,
-      acknowledgement: !!data.acknowledgement,
-      application_stage: 'SUBMITTED',
-    },
-    include: { user: { select: { id: true, full_name: true, email: true } }, property: true },
+  return prisma.$transaction(async (tx) => {
+    // 1. Create the booking
+    const booking = await tx.booking.create({
+      data: {
+        property: { connect: { id: data.propertyId } },
+        start_date: start,
+        end_date: end,
+        totalAmount,
+        user: { connect: { id: userId } },
+        alternative_start_date: data.alternative_start_date ? new Date(data.alternative_start_date) : undefined,
+        lease_duration_months: data.lease_duration_months,
+        occupants: data.occupants,
+        applicant_message: data.applicant_message,
+        pdpa_consent: !!data.pdpa_consent,
+        acknowledgement: !!data.acknowledgement,
+        application_stage: 'SUBMITTED',
+      },
+      include: { user: { select: { id: true, full_name: true, email: true } }, property: true },
+    });
+
+    // 2. Auto-create an initial payment row for the booking so the tenant
+    //    has something to pay against immediately (no manual step needed).
+    await tx.payment.create({
+      data: {
+        bookingId: booking.id,
+        userId,
+        amount: totalAmount,
+        type: 'rent',
+        method: 'cash',
+        status: 'UNPAID',
+        due_date: start,
+      },
+    });
+
+    return booking;
   });
 }
 
@@ -118,7 +147,7 @@ export async function createBooking(data: {
 export async function setUnderReview(id: string, reviewerNotes?: string) {
   const booking = await prisma.booking.findUnique({ where: { id } });
   if (!booking) throw new Error('Application not found');
-  if (booking.status === 'CANCELLED') throw new Error('This application is closed and cannot be reviewed');
+  if (booking.status !== 'PENDING') throw new Error('Only a pending application can be reviewed');
   return prisma.booking.update({
     where: { id },
     data: { application_stage: 'UNDER_REVIEW', reviewer_notes: reviewerNotes },
@@ -130,10 +159,28 @@ export async function requestInformation(id: string, reviewerNotes: string) {
   if (!reviewerNotes || !reviewerNotes.trim()) throw new Error('A note explaining what information is needed is required');
   const booking = await prisma.booking.findUnique({ where: { id } });
   if (!booking) throw new Error('Application not found');
-  if (booking.status === 'CANCELLED') throw new Error('This application is closed');
+  if (booking.status !== 'PENDING') throw new Error('Information can only be requested for a pending application');
   return prisma.booking.update({
     where: { id },
     data: { application_stage: 'NEEDS_INFORMATION', reviewer_notes: reviewerNotes },
+    include: { user: { select: { id: true, full_name: true, email: true } }, property: true },
+  });
+}
+
+export async function recordAgentRecommendation(id: string, recommendation: string, reviewerNotes?: string) {
+  const decision = String(recommendation || '').toUpperCase();
+  if (!['APPROVE', 'REJECT'].includes(decision)) throw new Error('Recommendation must be APPROVE or REJECT');
+  if (decision === 'REJECT' && !reviewerNotes?.trim()) throw new Error('A reason is required when recommending rejection');
+
+  const booking = await prisma.booking.findUnique({ where: { id } });
+  if (!booking) throw new Error('Application not found');
+  if (booking.status !== 'PENDING') throw new Error('Only a pending application can receive a recommendation');
+
+  const label = decision === 'APPROVE' ? 'APPROVAL' : 'REJECTION';
+  const note = `[AGENT RECOMMENDATION: ${label}]${reviewerNotes?.trim() ? ` ${reviewerNotes.trim()}` : ''}`;
+  return prisma.booking.update({
+    where: { id },
+    data: { application_stage: 'UNDER_REVIEW', reviewer_notes: note },
     include: { user: { select: { id: true, full_name: true, email: true } }, property: true },
   });
 }
@@ -162,7 +209,22 @@ export async function approveApplication(id: string, data: {
     rejection_reason: null,
   };
   if (data.monthlyRent) updateData.totalAmount = data.monthlyRent;
-  return prisma.booking.update({ where: { id }, data: updateData, include: { user: { select: { id: true, full_name: true, email: true } }, property: true } });
+
+  const updated = await prisma.booking.update({
+    where: { id },
+    data: updateData,
+    include: { user: { select: { id: true, full_name: true, email: true } }, property: true },
+  });
+
+  // Sync the auto-created payment row to match any revised totalAmount
+  if (data.monthlyRent) {
+    await prisma.payment.updateMany({
+      where: { bookingId: id, status: { in: ['UNPAID', 'PENDING'] } },
+      data: { amount: data.monthlyRent },
+    });
+  }
+
+  return updated;
 }
 
 export async function rejectApplication(id: string, reason: string) {

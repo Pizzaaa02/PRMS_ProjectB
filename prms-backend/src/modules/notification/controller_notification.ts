@@ -21,10 +21,10 @@ export class NotificationController {
     try {
       const userId = (req as AuthRequest).user?.id;
       if (!userId) return res.status(401).json({ success: false, error: { message: 'User required' } });
-      const data = await notificationService.markRead(String(req.params.id), userId);
+      const data = await notificationService.markRead(userId, String(req.params.id));
       res.json(successResponse(data));
     } catch (error: any) {
-      const status = error.message === 'Notification not found' ? 404 : 500;
+      const status = error instanceof notificationService.NotificationNotFoundError ? 404 : 500;
       res.status(status).json({ success: false, error: { message: error.message } });
     }
   };
@@ -42,20 +42,22 @@ export class NotificationController {
     try {
       const userId = (req as AuthRequest).user?.id;
       if (!userId) return res.status(401).json({ success: false, error: { message: 'User required' } });
-      await notificationService.deleteNotification(String(req.params.id), userId);
+      await notificationService.deleteNotification(userId, String(req.params.id));
       res.json(successResponse(null, 'Notification deleted'));
     } catch (error: any) {
-      const status = error.message === 'Notification not found' ? 404 : 500;
+      const status = error instanceof notificationService.NotificationNotFoundError ? 404 : 500;
       res.status(status).json({ success: false, error: { message: error.message } });
     }
   };
 
   create = async (req: Request, res: Response) => {
     try {
-      const userId = (req as AuthRequest).user?.id;
-      const data = await notificationService.createNotification(userId, req.body);
+      const authenticatedUserId = (req as AuthRequest).user?.id;
+      if (!authenticatedUserId) return res.status(401).json({ success: false, error: { message: 'User required' } });
+      const targetUserId = req.body?.userId || authenticatedUserId;
+      const data = await notificationService.createNotification(targetUserId, req.body);
       res.status(201).json(successResponse(data, 'Notification created'));
-    } catch (error: any) { res.status(500).json({ success: false, error: { message: error.message } }); }
+    } catch (error: any) { res.status(400).json({ success: false, error: { message: error.message } }); }
   };
 }
 
