@@ -23,7 +23,7 @@ router.get('/landlord', authenticate, adminOrLandlord, ctrl.landlordBookings);
 router.get('/summary', authenticate, adminOrLandlord, ctrl.getSummary);
 router.get('/check-overlap', authenticate, ctrl.checkOverlap);
 router.get('/:id', authenticate, ctrl.getById);
-router.post('/', authenticate, tenantOnly, ctrl.create);
+router.post('/', authenticate, ctrl.create);
 router.put('/:id', authenticate, adminOrLandlord, ctrl.update);
 router.patch('/:id/confirm', authenticate, adminOrLandlord, ctrl.confirm);
 router.patch('/:id/reject', authenticate, adminOrLandlord, ctrl.reject);
@@ -36,7 +36,7 @@ router.patch('/:id/request-info', authenticate, adminOrLandlordOrAgent, ctrl.req
 router.patch('/:id/recommend', authenticate, agentOnly, ctrl.recommend);
 router.patch('/:id/approve', authenticate, adminOrLandlordOrAgent, ctrl.approve);
 router.patch('/:id/decline', authenticate, adminOrLandlordOrAgent, ctrl.decline);
-router.patch('/:id/withdraw', authenticate, tenantOnly, ctrl.withdraw);
+router.patch('/:id/withdraw', authenticate, ctrl.withdraw);
 
 // Tenancy lifecycle (Part 8)
 router.patch('/:id/move-in', authenticate, adminOrLandlordOrAgent, ctrl.moveIn);

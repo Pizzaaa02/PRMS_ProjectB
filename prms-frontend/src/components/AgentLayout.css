@@ -137,7 +137,7 @@
 .agent-layout-brand h2 {
   margin: 0;
   font-size: 28px;
-  color: var(--header-text-color, #ffffff);
+  color: var(--text-color);
   letter-spacing: -0.5px;
   white-space: nowrap;
   max-width: 380px;
@@ -156,8 +156,7 @@
   margin: 0;
   font-size: 21px;
   font-weight: 800;
-  color: var(--header-text-color, #ffffff);
-  opacity: 0.8;
+  color: var(--text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

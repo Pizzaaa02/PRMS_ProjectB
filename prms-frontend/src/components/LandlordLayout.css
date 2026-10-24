@@ -134,7 +134,7 @@
 .landlord-layout-brand h2 {
   margin: 0;
   font-size: 28px;
-  color: var(--header-text-color, #ffffff);
+  color: var(--text-color);
   letter-spacing: -0.6px;
   white-space: nowrap;
   max-width: 380px;
@@ -151,8 +151,7 @@
 
 .landlord-layout-brand p {
   margin: 0;
-  color: var(--header-text-color, #ffffff);
-  opacity: 0.8;
+  color: var(--text-secondary);
   font-size: 17px;
   font-weight: 800;
   overflow: hidden;

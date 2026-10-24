@@ -1,7 +1,6 @@
 import {
   useState,
   useEffect,
-  useCallback,
 } from 'react';
 
 import Modal from '../components/Modal';
@@ -11,13 +10,6 @@ import { bookingApi } from '../api/booking';
 // Matches the real MaintenancePriority enum (LOW/MEDIUM/HIGH/URGENT) -
 // 'critical' isn't a real value, submitting it would fail at the database.
 const PRIORITY_ORDER = ['urgent', 'high', 'medium', 'low'];
-
-const PRIORITY_MAP = {
-  urgent: { label: 'Urgent', color: '#ef4444' },
-  high: { label: 'High', color: '#f97316' },
-  medium: { label: 'Medium', color: '#eab308' },
-  low: { label: 'Low', color: '#22c55e' },
-};
 
 export default function MaintenanceForm({ onSuccess, onClose, initialData }) {
   const [step, setStep] = useState(0);
@@ -33,6 +25,7 @@ export default function MaintenanceForm({ onSuccess, onClose, initialData }) {
   );
   const [properties, setProperties] = useState([]);
   const [uploading, setUploading] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   useEffect(() => {
     loadProperties();
@@ -44,10 +37,15 @@ export default function MaintenanceForm({ onSuccess, onClose, initialData }) {
       const bookings = res.data?.data || [];
       const eligible = bookings.filter((booking) => ['CONFIRMED', 'CHECKED_IN'].includes(booking.status));
       setProperties(Array.from(new Map(eligible.filter((booking) => booking.property).map((booking) => [booking.property.id, booking.property])).values()));
-    } catch {}
+    } catch {
+      setProperties([]);
+    }
   };
 
-  const set = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
+  const set = (key, val) => {
+    setSubmitError('');
+    setForm(prev => ({ ...prev, [key]: val }));
+  };
 
   const valid = () => {
     if (step === 0) return !!form.title && !!form.description;
@@ -59,6 +57,7 @@ export default function MaintenanceForm({ onSuccess, onClose, initialData }) {
   const prev = () => setStep(step - 1);
 
   const submit = async () => {
+    setSubmitError('');
     setUploading(true);
     try {
       // contactMethod is deliberately NOT sent - there's no such column on
@@ -71,7 +70,13 @@ export default function MaintenanceForm({ onSuccess, onClose, initialData }) {
       if (ticket?.id && form.files.length) await maintenanceApi.addPhotos(ticket.id, form.files);
       onSuccess?.(ticket);
       onClose?.();
-    } catch (e) { alert(e.response?.data?.message || 'Failed to create ticket'); }
+    } catch (e) {
+      const message = e.response?.data?.error?.message
+        || e.response?.data?.message
+        || (e.request ? 'Unable to reach the server. Please check that the backend is running and try again.' : e.message)
+        || 'Failed to create ticket';
+      setSubmitError(message);
+    }
     finally { setUploading(false); }
   };
 
@@ -79,7 +84,6 @@ export default function MaintenanceForm({ onSuccess, onClose, initialData }) {
     set('files', Array.from(e.target.files));
   };
 
-  const statusOpts = ['submitted', 'assigned', 'in_progress', 'resolved', 'closed'];
   const steps = [
     { label: 'Details', icon: '📝' },
     { label: 'Photos', icon: '📷' },
@@ -150,6 +154,11 @@ export default function MaintenanceForm({ onSuccess, onClose, initialData }) {
           {step === 2 && <button className="btn btn-primary" disabled={!valid() || uploading} onClick={submit}>{uploading ? 'Submitting…' : 'Submit'}</button>}
         </div>
       </div>
+      {submitError && (
+        <div className="maintenance-form-error" role="alert">
+          {submitError}
+        </div>
+      )}
     </Modal>
   );
 }

@@ -116,6 +116,7 @@ model User {
   viewingAppointments ViewingAppointment[] @relation("TenantViewings")
   consentRecords      ConsentRecord[]
   privacyRequests     PrivacyRequest[]
+  recordArchives      RecordArchive[]
 
   @@index([email])
   @@map("users")
@@ -423,6 +424,17 @@ model Invoice {
   @@map("invoices")
 }
 
+model RecordArchive {
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind       String
+  recordId   String
+  archivedAt DateTime @default(now())
+
+  @@id([userId, kind, recordId])
+  @@map("record_archives")
+}
+
 model MaintenanceTicket {
   id               String                  @id @default(uuid())
   userId           String
@@ -501,12 +513,17 @@ model SystemSetting {
 }
 
 model UserPreference {
-  id         String   @id @default(uuid())
-  userId     String   @unique
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  appearance String   @default("system")
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  id                           String   @id @default(uuid())
+  userId                       String   @unique
+  user                         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  appearance                   String   @default("system")
+  notificationsEnabled         Boolean  @default(true)
+  viewingNotifications         Boolean  @default(true)
+  applicationNotifications     Boolean  @default(true)
+  maintenanceNotifications     Boolean  @default(true)
+  messageNotifications         Boolean  @default(true)
+  created_at                   DateTime @default(now())
+  updated_at                   DateTime @updatedAt
 
   @@map("user_preferences")
 }

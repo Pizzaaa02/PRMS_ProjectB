@@ -58,7 +58,6 @@ import AgentSimplePage from './pages/AgentSimplePage';
 
 /*  Shared  */
 import Profile from './pages/Profile';
-import LandlordHeatmap from './pages/LandlordHeatmap';
 import PaymentReceipt from './pages/PaymentReceipt';
 import CommunicationHub from './components/CommunicationHub';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -84,6 +83,7 @@ const TenantPayments = lazy(() => import('./pages/TenantPayments'));
 const MockPaymentCheckout = lazy(() => import('./pages/MockPaymentCheckout'));
 const TenantMaintenance = lazy(() => import('./pages/TenantMaintenance'));
 const LandlordMaintenance = lazy(() => import('./pages/LandlordMaintenance'));
+const LandlordAgents = lazy(() => import('./pages/LandlordAgents'));
 const AgentMaintenance = lazy(() => import('./pages/AgentMaintenance'));
 const AgentProperties = lazy(() => import('./pages/AgentProperties'));
 const AgentBookings = lazy(() => import('./pages/AgentBookings'));
@@ -306,7 +306,14 @@ function AppRoutes() {
         <Route path="properties/edit" element={<PropertyEdit />} />
         <Route path="properties/edit/:id" element={<PropertyEdit />} />
         <Route path="properties/:id" element={<PropertyDetail />} />
-        <Route path="properties/:id/edit" element={<AgentPropertyEdit />} />
+        <Route
+          path="agents"
+          element={
+            <SuspenseWrapper>
+              <LandlordAgents />
+            </SuspenseWrapper>
+          }
+        />
         <Route path="bookings" element={<LandlordBookings />} />
         <Route path="viewings" element={<Viewings />} />
         <Route path="privacy" element={<PrivacyPersonalData />} />
@@ -318,7 +325,6 @@ function AppRoutes() {
             </SuspenseWrapper>
           }
         />
-        <Route path="heatmap" element={<LandlordHeatmap />} />
         <Route path="categories" element={<LandlordCategories />} />
         <Route
           path="maintenance"
@@ -423,6 +429,14 @@ function AppRoutes() {
           }
         />
         <Route path="properties/:id" element={<PropertyDetail />} />
+        <Route
+          path="properties/:id/edit"
+          element={
+            <SuspenseWrapper>
+              <AgentPropertyEdit />
+            </SuspenseWrapper>
+          }
+        />
         <Route
           path="bookings"
           element={

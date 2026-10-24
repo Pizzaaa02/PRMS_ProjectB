@@ -1,37 +1,32 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
+import { useRecordList, ArchiveAction, ArchiveHint, RecordPagination } from '../components/RecordListControls';
+import { useAuth } from '../contexts/AuthContext';
 import Modal from '../components/Modal';
 import { maintenanceApi } from '../api/maintenance';
 import { propertyApi } from '../api/property';
+import { getFullUrl } from '../config/apiBaseUrl';
 import './SharedPageShell.css';
 
-const STATUS_TABS = ['all', 'in_progress', 'resolved', 'closed'];
+const STATUS_TABS = ['all', 'open', 'in_progress', 'resolved', 'closed', 'archived'];
 
-export default function LandlordMaintenance() {
+export default function LandlordMaintenance({ embedded = false }) {
+  const { user } = useAuth();
+  const isAdmin = user?.role?.toLowerCase() === 'admin';
   const [tab, setTab] = useState('all');
-  const [tickets, setTickets] = useState([]);
+  const list = useRecordList('maintenance', tab);
+  const { records: tickets, loading, load } = list;
   const [propertyNames, setPropertyNames] = useState({});
   const [selected, setSelected] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [note, setNote] = useState('');
 
   useEffect(() => {
-    propertyApi.myProperties().then((res) => {
+    (isAdmin ? propertyApi.list({ limit: 100 }) : propertyApi.myProperties()).then((res) => {
       const items = res.data?.data || [];
       setPropertyNames(Object.fromEntries(items.map((p) => [p.id, p.title])));
     }).catch(() => {});
-  }, []);
+  }, [isAdmin]);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await maintenanceApi.list({ status: tab === 'all' ? undefined : tab.toUpperCase(), scope: 'my-properties' });
-      setTickets(res.data?.data || []);
-    } catch (e) { console.error(e); }
-    finally { setLoading(false); }
-  }, [tab]);
-
-  useEffect(() => { load(); }, [load]);
 
   const verify = async (id, approved) => {
     try {
@@ -63,20 +58,23 @@ export default function LandlordMaintenance() {
   return (
     <div className="page-shell">
       <div className="page-header">
-        <h1 className="page-title">Maintenance Overview</h1>
-        <button className="btn btn-primary" onClick={exportReport}>Export Report</button>
+        {!embedded && <h1 className="page-title">{isAdmin ? 'Maintenance Center' : 'Maintenance Overview'}</h1>}
+        <button className="btn btn-primary" onClick={exportReport}>Export Current Page</button>
       </div>
       {error && <div className="alert alert-danger">{error}</div>}
 
       <div className="card-table">
         <div className="status-filter">
           {STATUS_TABS.map(t => (
-            <button key={t} className={tab === t ? 'active' : ''} onClick={() => setTab(t)}>
+            <button key={t} className={tab === t ? 'active' : ''} onClick={() => { setTab(t); list.setPage(1); }}>
               {t.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase())}
+              {t === 'archived' && ` (${list.archivedCount})`}
             </button>
           ))}
         </div>
 
+        <ArchiveHint archived={tab === 'archived'} />
+        {list.error && <div className="alert alert-danger" role="alert">{list.error}</div>}
         {loading ? <p>Loading...</p> : (
           <table className="table">
             <thead>
@@ -86,11 +84,11 @@ export default function LandlordMaintenance() {
               {tickets.map(t => (
                 <tr key={t._id || t.id}>
                   <td>{t.title}</td>
-                  <td>{propertyNames[t.propertyId] || t.propertyId || 'N/A'}</td>
+                  <td>{t.property?.title || propertyNames[t.propertyId] || t.propertyId || 'N/A'}</td>
                   <td><span className={`shell-status-badge status-${t.priority}`}>{t.priority}</span></td>
                   <td><span className={`shell-status-badge status-${(t.status||'').toLowerCase()}`}>{t.status}</span></td>
                   <td>{t.assignedTo?.full_name ?? t.assignedTo?.name ?? '—'}</td>
-                  <td><button className="btn btn-sm btn-outline" onClick={() => { setSelected(t); setNote(t.inspectionNotes || ''); }}>Detail</button></td>
+                  <td><button className="btn btn-sm btn-outline" onClick={() => { setSelected(t); setNote(t.inspectionNotes || ''); }}>Detail</button><ArchiveAction record={t} list={list} kind="maintenance" /></td>
                 </tr>
               ))}
               {!tickets.length && <tr><td colSpan={6}>No maintenance tickets.</td></tr>}
@@ -99,6 +97,7 @@ export default function LandlordMaintenance() {
         )}
       </div>
 
+      <RecordPagination list={list} />
       {selected && (
         <Modal isOpen={!!selected} onOpenChange={v => setSelected(v || null)} title="Resolution Review">
           <h3>{selected.title}</h3>
@@ -107,7 +106,7 @@ export default function LandlordMaintenance() {
           <label className="mt-2">Maintenance note
             <textarea className="input" rows={3} value={note} onChange={(e) => setNote(e.target.value)} />
           </label>
-          {!!selected.attachments?.length && <div className="mt-2"><strong>Photographs:</strong> {selected.attachments.map((photo) => <a key={photo.id} href={`http://localhost:3500${photo.url}`} target="_blank" rel="noreferrer" style={{ marginLeft: 8 }}>View</a>)}</div>}
+          {!!selected.attachments?.length && <div className="mt-2"><strong>Photographs:</strong> {selected.attachments.map((photo) => <a key={photo.id} href={getFullUrl(photo.url)} target="_blank" rel="noreferrer" style={{ marginLeft: 8 }}>View</a>)}</div>}
           <button className="btn btn-outline mt-2" onClick={() => saveNote(selected.id)}>Save Note</button>
           {selected.status === 'RESOLVED' && (
             <div className="flex gap-2 mt-4">
