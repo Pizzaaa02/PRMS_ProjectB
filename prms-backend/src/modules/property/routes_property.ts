@@ -22,5 +22,7 @@ router.post('/:id/videos', authenticate, ctrl.requireManagedProperty, uploadProp
 router.delete('/:id/videos', authenticate, ctrl.deleteVideo);
 router.post('/:id/documents', authenticate, ctrl.requireManagedProperty, uploadProperty.single('document'), ctrl.addDocument);
 router.delete('/:id/documents', authenticate, ctrl.deleteDocument);
+router.get('/:id/reviews', ctrl.getReviews);
+router.post('/:id/reviews', authenticate, ctrl.addReview);
 
 export default router;

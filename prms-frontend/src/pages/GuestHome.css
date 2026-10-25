@@ -495,6 +495,9 @@
   border: 1px solid var(--border-color);
   box-shadow: var(--shadow-sm);
   transition: box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .guest-home-image {
@@ -502,12 +505,14 @@
   border-radius: var(--radius-md);
   overflow: hidden;
   position: relative;
+  flex-shrink: 0;
 }
 
 .guest-home-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .guest-home-image span {
@@ -526,16 +531,24 @@
   margin: var(--spacing-md) var(--spacing-xs) var(--spacing-xs);
   font-size: 16px;
   color: var(--on-surface);
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .guest-home-card p {
   margin: 0 var(--spacing-xs);
   color: var(--text-secondary);
   font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .guest-home-meta {
-  margin: var(--spacing-md) var(--spacing-xs) var(--spacing-xs);
+  margin: auto var(--spacing-xs) var(--spacing-xs);
+  padding-top: var(--spacing-sm);
   display: flex;
   align-items: center;
   justify-content: space-between;

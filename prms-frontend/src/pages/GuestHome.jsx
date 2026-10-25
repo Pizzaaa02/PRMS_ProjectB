@@ -17,6 +17,7 @@ import {
   UserRoundCheck,
 } from 'lucide-react'
 import { getImageUrl } from '../config/imageHelper';
+import { propertyApi } from '../api';
 import './GuestHome.css';
 
 function GuestHome() {
@@ -27,6 +28,26 @@ function GuestHome() {
      light_ or dark_ customizer field — without this, a light-only override
      (e.g. a white header) stayed pinned on regardless of dark mode. */
   const [theme, setTheme] = useState(() => document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light')
+  const [liveHomes, setLiveHomes] = useState([])
+
+  useEffect(() => {
+    propertyApi.list({ limit: 4, status: 'AVAILABLE' })
+      .then((res) => {
+        const list = res?.data?.data || []
+        if (list.length > 0) {
+          setLiveHomes(list.map((p) => ({
+            id: p.id,
+            title: p.title,
+            location: p.city ? `${p.city}${p.state ? `, ${p.state}` : ''}` : p.address,
+            price: `RM ${Number(p.rent || 0).toLocaleString()} / month`,
+            rating: p.rating ? Number(p.rating).toFixed(1) : '4.8',
+            image: p.images?.[0]?.url || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=900&q=80',
+          })))
+        }
+      })
+      .catch(() => {})
+  }, [])
+
   useEffect(() => {
     const observer = new MutationObserver(() => {
       setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light')
@@ -382,16 +403,18 @@ function GuestHome() {
           </div>
 
           <div className="guest-home-row">
-            {homes.map((home, index) => (
+            {(liveHomes.length > 0 ? liveHomes : homes).map((home, index) => (
               <motion.article
                 className="guest-home-card"
                 data-customize-id="component.property-card"
-                key={home.title}
+                key={home.id || home.title}
                 initial={{ opacity: 0, y: 26 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.08, duration: 0.4 }}
                 whileHover={{ y: -7 }}
+                onClick={() => navigate(home.id ? `/properties/${home.id}` : '/properties')}
+                style={{ cursor: 'pointer' }}
               >
                 <div className="guest-home-image">
                   <img src={getImageUrl(home.image)} alt={home.title} />
