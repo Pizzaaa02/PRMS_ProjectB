@@ -4,19 +4,15 @@ import { ROUTES } from '../config/routes'
 import { bookingApi } from '../api/booking'
 import { favoritesApi } from '../api/favorites'
 import { maintenanceApi } from '../api/maintenance'
+import { paymentApi } from '../api/payment'
 import { getImageUrl } from '../config/imageHelper'
 import {
   ArrowUp,
-  CalendarDays,
   CheckCircle2,
   Clock,
-  Download,
   Heart,
   Home,
-  Loader,
   Minus,
-  Search,
-  SlidersHorizontal,
   WalletCards,
   Wrench,
 } from 'lucide-react'
@@ -36,7 +32,37 @@ function isActiveBooking(b) {
   const start = new Date(b.start_date)
   const end = new Date(b.end_date)
   return !Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime()) && start <= now && now <= end
+}
 
+/* ---- KPI Card helper ---- */
+function KpiCard({ icon: Icon, iconBg, label, value, sublabel, trend, trendDir }) {
+  const TrendIcon =
+    trendDir === 'up' ? (
+      <ArrowUp size={14} className="text-status-success" />
+    ) : (
+      <Minus size={14} className="text-text-secondary" />
+    )
+
+  return (
+    <div className="kpi-card">
+      <div className="kpi-card-top">
+        <div className={`kpi-icon-wrap ${iconBg}`}>
+          <Icon size={20} />
+        </div>
+        {trend && (
+          <span className={`trend-pill ${trendDir === 'up' ? 'positive' : 'neutral'}`}>
+            {TrendIcon}
+            {trend}
+          </span>
+        )}
+      </div>
+      <div className="kpi-card-body">
+        <span className="kpi-label">{label}</span>
+        <div className="kpi-value">{value}</div>
+        {sublabel && <span className="kpi-sublabel">{sublabel}</span>}
+      </div>
+    </div>
+  )
 }
 
 function TenantDashboard() {
@@ -45,6 +71,8 @@ function TenantDashboard() {
   const [rentals, setRentals] = useState([])
   const [savedProperties, setSavedProperties] = useState([])
   const [maintenance, setMaintenance] = useState([])
+  const [recentPayments, setRecentPayments] = useState([])
+  const [nextPayment, setNextPayment] = useState(null)
   const [dataError, setDataError] = useState('')
 
   useEffect(() => {
@@ -54,12 +82,20 @@ function TenantDashboard() {
 
     async function loadDashboardData() {
       try {
-        const [bookingsRes, favoritesRes, ticketsRes] = await Promise.all([
+        const [bookingsRes, favoritesRes, ticketsRes, paymentsRes] = await Promise.all([
           bookingApi.myBookings(),
           favoritesApi.getMyFavorites(),
           maintenanceApi.myTickets({ limit: 5 }),
+          paymentApi.myPayments({ limit: 10 }),
         ])
         if (cancelled) return
+
+        const payments = paymentsRes.data?.data || []
+        setRecentPayments(payments.slice(0, 4))
+        const nextDue = payments.find((p) =>
+          ['PENDING', 'UNPAID'].includes(String(p.status || '').toUpperCase())
+        )
+        setNextPayment(nextDue || null)
 
         const bookings = bookingsRes.data?.data || []
         setRentals(
@@ -102,37 +138,6 @@ function TenantDashboard() {
     return () => { cancelled = true }
   }, [])
 
-  /* ---- KPI Card helper ---- */
-  function KpiCard({ icon: Icon, iconBg, label, value, sublabel, trend, trendDir }) {
-    const TrendIcon =
-      trendDir === 'up' ? (
-        <ArrowUp size={14} className="text-status-success" />
-      ) : (
-        <Minus size={14} className="text-text-secondary" />
-      )
-
-    return (
-      <div className="kpi-card">
-        <div className="kpi-card-top">
-          <div className={`kpi-icon-wrap ${iconBg}`}>
-            <Icon size={20} />
-          </div>
-          {trend && (
-            <span className={`trend-pill ${trendDir === 'up' ? 'positive' : 'neutral'}`}>
-              {TrendIcon}
-              {trend}
-            </span>
-          )}
-        </div>
-        <div className="kpi-card-body">
-          <span className="kpi-label">{label}</span>
-          <div className="kpi-value">{value}</div>
-          {sublabel && <span className="kpi-sublabel">{sublabel}</span>}
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="tenant-dashboard-page" data-customize-id="global.content">
       {/* ---- Hero ---- */}
@@ -171,17 +176,18 @@ function TenantDashboard() {
           </>
         ) : (
           <>
-            {/* Next Payment - left as a placeholder rather than fake data;
-                there's no tenant-scoped payment listing endpoint on the
-                backend yet (adding one is payment-module work, out of
-                scope for this pass), so this can't show a real value. */}
+            {/* Next Payment Due KPI */}
             <KpiCard
               icon={WalletCards}
               iconBg="icon-purple"
               label="Next Payment Due"
-              value="—"
-              sublabel="See Payments for details"
-              trend={null}
+              value={nextPayment ? `RM ${Number(nextPayment.amount).toFixed(2)}` : '—'}
+              sublabel={
+                nextPayment
+                  ? `Due ${new Date(nextPayment.due_date).toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' })}`
+                  : 'No outstanding payments'
+              }
+              trend={nextPayment ? 'Due soon' : null}
               trendDir="neutral"
             />
 
@@ -301,12 +307,42 @@ function TenantDashboard() {
             </button>
           </div>
 
-          {/* Not wired to real data - see the Next Payment Due KPI note
-              above, same reason (no tenant-scoped payment list endpoint
-              yet). Left as an honest empty state pointing at the real
-              Payments page rather than showing fabricated transactions. */}
           <div className="payment-list">
-            <p className="panel-subtitle">Visit Payments for your full transaction history.</p>
+            {recentPayments.length > 0 ? (
+              recentPayments.map((p) => {
+                const isPaid = String(p.status || '').toUpperCase() === 'PAID'
+                const title = p.booking?.property?.title || p.booking?.property?.address || 'Property Payment'
+                return (
+                  <div
+                    className="payment-item"
+                    key={p.id}
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => navigate(`/tenant/payments/${p.id}`)}
+                    title="Click to view payment receipt and details"
+                  >
+                    <div className="payment-icon-sm">
+                      <WalletCards size={20} />
+                    </div>
+                    <div className="payment-info">
+                      <h4>{title}</h4>
+                      <p>
+                        {isPaid && p.paid_at
+                          ? `Paid on ${new Date(p.paid_at).toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' })}`
+                          : `Due on ${new Date(p.due_date).toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' })}`}
+                      </p>
+                    </div>
+                    <div className="payment-right">
+                      <strong>RM {Number(p.amount).toFixed(2)}</strong>
+                      <span className={`status-badge ${isPaid ? 'active' : 'pending'}`}>
+                        {isPaid ? 'Paid' : 'Due'}
+                      </span>
+                    </div>
+                  </div>
+                )
+              })
+            ) : (
+              <p className="panel-subtitle">No payments found yet. Visit Payments for full transaction history.</p>
+            )}
           </div>
         </div>
 

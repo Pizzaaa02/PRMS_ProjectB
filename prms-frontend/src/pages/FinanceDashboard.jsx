@@ -187,12 +187,12 @@ function FinanceDashboard() {
             <tbody>
               {filtered.slice(0, 10).map((p) => (
                 <tr key={p.id}>
-                  <td>{new Date(p.paid_at || p.due_date).toLocaleDateString()}</td>
+                  <td>{new Date(p.paid_at || p.due_date).toLocaleDateString('en-MY')}</td>
                   <td>{p.reference || '—'}</td>
                   <td>RM {Number(p.amount).toFixed(2)}</td>
                   <td>
-                    <span className={`payment-status-badge ${p.status.toLowerCase()}`}>
-                      {p.status}
+                    <span className={`payment-status-badge ${(p.status || '').toLowerCase()}`}>
+                      {p.status || '—'}
                     </span>
                   </td>
                   <td>{p.method || '—'}</td>

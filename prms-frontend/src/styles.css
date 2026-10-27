@@ -1447,19 +1447,28 @@ form label {
   .login-page,
   .role-page {
     grid-template-columns: 1fr;
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
   }
 
   .login-left,
   .role-left {
     min-height: 420px;
+    padding: 36px 24px;
+    box-sizing: border-box;
   }
 
   .login-hero-content {
     margin-top: 80px;
   }
 
-  .login-right {
+  .login-right,
+  .role-right {
     min-height: auto;
+    padding: 36px 24px;
+    box-sizing: border-box;
+    width: 100%;
   }
 
   .role-left-content {
@@ -1471,11 +1480,14 @@ form label {
   }
 
   .role-card {
-    padding: 48px 28px;
+    padding: 40px 24px;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 600px;
   }
 
   .step-line {
-    width: 140px;
+    width: 120px;
   }
 
   .admin-shell {
@@ -1526,6 +1538,86 @@ form label {
 
   .login-error {
     max-width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .login-page,
+  .role-page {
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
+  }
+
+  .login-left,
+  .login-right,
+  .role-left,
+  .role-right {
+    padding: 24px 16px;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .login-hero-content,
+  .role-left-content {
+    margin-top: 32px;
+    max-width: 100%;
+  }
+
+  .login-hero-content h1,
+  .role-left-content h1 {
+    font-size: 24px;
+  }
+
+  .login-hero-content p,
+  .role-left-content p {
+    font-size: 15px;
+  }
+
+  .trusted-card {
+    padding: 14px 16px;
+    gap: 12px;
+    font-size: 15px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .role-card {
+    padding: 24px 14px;
+    box-sizing: border-box;
+    width: 100%;
+  }
+
+  .step span {
+    width: 38px;
+    height: 38px;
+    font-size: 16px;
+  }
+
+  .step-line {
+    width: 50px;
+    margin: 18px 6px 0;
+  }
+
+  .role-option {
+    grid-template-columns: 48px 1fr 28px;
+    padding: 12px 10px;
+    min-height: auto;
+    gap: 10px;
+  }
+
+  .role-icon {
+    width: 44px;
+    height: 44px;
+  }
+
+  .role-option h3 {
+    font-size: 16px;
+  }
+
+  .role-option p {
+    font-size: 13px;
   }
 }
 

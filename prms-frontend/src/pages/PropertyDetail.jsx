@@ -391,17 +391,6 @@ function PropertyDetail() {
   const description = property?.description || '';
   const shortDesc = description.length > 350 ? description.slice(0, 350) + '...' : description;
 
-  /* Star rating and reviews */
-  const reviewsList = property?.reviews?.length ? property.reviews : sampleReviews;
-  const totalReviewsCount = property?.reviewsCount ?? reviewsList.length;
-  const rating = property?.rating ? Number(property.rating).toFixed(1) : '4.8';
-
-  /* Status badge */
-  const statusConfig = propertyStatusInfo(property?.status);
-
-  /* Amenities */
-  const amenities = property?.amenities || [];
-
   /* Reviews placeholder */
   const sampleReviews = [
     {
@@ -417,6 +406,17 @@ function PropertyDetail() {
       rating: 5,
     },
   ];
+
+  /* Star rating and reviews */
+  const reviewsList = property?.reviews?.length ? property.reviews : sampleReviews;
+  const totalReviewsCount = property?.reviewsCount ?? reviewsList.length;
+  const rating = property?.rating ? Number(property.rating).toFixed(1) : '4.8';
+
+  /* Status badge */
+  const statusConfig = propertyStatusInfo(property?.status);
+
+  /* Amenities */
+  const amenities = property?.amenities || [];
 
   /* Loading */
   if (loading) {
