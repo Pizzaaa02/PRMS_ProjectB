@@ -11,7 +11,9 @@ import {
   Search,
   SlidersHorizontal,
   X,
+  Flag,
 } from 'lucide-react'
+import ReportListingModal from '../components/ReportListingModal'
 import './SearchPage.css'
 
 function SearchPage() {
@@ -23,6 +25,7 @@ function SearchPage() {
   const [sort, setSort] = useState('relevance')
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [results, setResults] = useState([])
+  const [reportProperty, setReportProperty] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [total, setTotal] = useState(0)
@@ -248,6 +251,18 @@ function SearchPage() {
                   {isPropertyAvailable(property.status) && (
                     <span className="status-badge available">Available</span>
                   )}
+                  <button
+                    type="button"
+                    className="result-flag-btn"
+                    title="Report this listing"
+                    aria-label="Report this listing"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setReportProperty(property)
+                    }}
+                  >
+                    <Flag size={14} />
+                  </button>
                 </div>
 
                 <div className="result-info">
@@ -262,6 +277,18 @@ function SearchPage() {
                     {property.area && <span>{property.area} sqft</span>}
                   </div>
                   <div className="result-card-footer">
+                    <button
+                      type="button"
+                      className="result-report-link"
+                      title="Report this listing"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setReportProperty(property)
+                      }}
+                    >
+                      <Flag size={12} />
+                      <span>Report</span>
+                    </button>
                     <span className="tenant-book-tag">Tenant Account to Book</span>
                   </div>
                 </div>
@@ -270,6 +297,13 @@ function SearchPage() {
           </div>
         </section>
       </main>
+
+      {/* Report Listing Modal */}
+      <ReportListingModal
+        isOpen={!!reportProperty}
+        onClose={() => setReportProperty(null)}
+        property={reportProperty}
+      />
     </div>
   )
 }

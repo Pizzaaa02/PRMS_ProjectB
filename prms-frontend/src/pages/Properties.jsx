@@ -16,8 +16,10 @@ import {
   Star,
   Trash2,
   AlertTriangle,
+  Flag,
 } from 'lucide-react'
 import Modal from '../components/Modal'
+import ReportListingModal from '../components/ReportListingModal'
 import { getImageUrl } from '../config/imageHelper';
 import { propertyApi, getApiError } from '../api'
 import { favoritesApi } from '../api/favorites'
@@ -57,6 +59,7 @@ function Properties() {
   const isAdmin = role.includes('admin')
   const isLandlord = role.includes('landlord')
   const [favoriteIds, setFavoriteIds] = useState(new Set())
+  const [reportProperty, setReportProperty] = useState(null)
   const [propertyToDelete, setPropertyToDelete] = useState(null)
   const [deleting, setDeleting] = useState(false)
 
@@ -399,6 +402,18 @@ function Properties() {
                           </span>
                           <button
                             type="button"
+                            className="property-card-flag"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setReportProperty(p)
+                            }}
+                            title="Report this listing"
+                            aria-label="Report this listing"
+                          >
+                            <Flag size={15} />
+                          </button>
+                          <button
+                            type="button"
                             className={`property-card-heart ${favoriteIds.has(pid) ? 'favorited' : ''}`}
                             onClick={(e) => handleToggleFavorite(e, pid)}
                             aria-label="Save to favorites"
@@ -433,17 +448,32 @@ function Properties() {
                                 /mo
                               </span>
                             </div>
-                            {(isAdmin || isLandlord) && (
+                            <div className="property-footer-actions">
                               <button
                                 type="button"
-                                className="btn-property-delete"
-                                title="Delete Property"
-                                onClick={(e) => handleDeleteClick(e, p)}
-                                aria-label="Delete Property"
+                                className="btn-property-report"
+                                title="Report this listing"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setReportProperty(p)
+                                }}
+                                aria-label="Report this listing"
                               >
-                                <Trash2 size={15} />
+                                <Flag size={13} />
+                                <span>Report</span>
                               </button>
-                            )}
+                              {(isAdmin || isLandlord) && (
+                                <button
+                                  type="button"
+                                  className="btn-property-delete"
+                                  title="Delete Property"
+                                  onClick={(e) => handleDeleteClick(e, p)}
+                                  aria-label="Delete Property"
+                                >
+                                  <Trash2 size={15} />
+                                </button>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -525,6 +555,13 @@ function Properties() {
           </div>
         </div>
       </Modal>
+
+      {/* Report Listing Modal */}
+      <ReportListingModal
+        isOpen={!!reportProperty}
+        onClose={() => setReportProperty(null)}
+        property={reportProperty}
+      />
     </div>
   )
 }

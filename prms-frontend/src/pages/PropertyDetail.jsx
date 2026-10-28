@@ -24,8 +24,7 @@ import {
   AlertTriangle,
   Trash2,
   UserCheck,
-  CheckCircle2,
-  AlertCircle,
+  Flag,
 } from 'lucide-react';
 import { propertyApi, viewingApi } from '../api';
 import { favoritesApi } from '../api/favorites';
@@ -34,6 +33,7 @@ import { useAuth } from '../contexts/AuthContext';
 import TenantBookingModal from '../components/TenantBookingModal';
 import ImageGallery from '../components/ImageGallery';
 import Modal from '../components/Modal';
+import ReportListingModal from '../components/ReportListingModal';
 import { VideoUploader, DocumentUploader } from '../components/MediaUploader';
 import { getPropertyRoute, getMessagesRoute } from '../config/routes';
 import { isPropertyAvailable, propertyStatusInfo } from '../config/propertyStatus';
@@ -55,7 +55,7 @@ function amenityIcon(name) {
 }
 
 /* ================= BOOKING CARD (RIGHT SIDEBAR) ================= */
-function BookingCard({ property, onBookClick }) {
+function BookingCard({ property, onBookClick, onReportClick }) {
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -71,14 +71,6 @@ function BookingCard({ property, onBookClick }) {
 
   // Tenant account requirement modal state
   const [showTenantRequiredModal, setShowTenantRequiredModal] = useState(false);
-
-  // Report this listing modal state
-  const [showReportModal, setShowReportModal] = useState(false);
-  const [reportReason, setReportReason] = useState('Inaccurate or misleading information');
-  const [reportDetails, setReportDetails] = useState('');
-  const [reportEmail, setReportEmail] = useState('');
-  const [reportSubmitting, setReportSubmitting] = useState(false);
-  const [reportResult, setReportResult] = useState(null);
 
   const isTenant = user && (user.role || '').toLowerCase() === 'tenant';
 
@@ -124,31 +116,6 @@ function BookingCard({ property, onBookClick }) {
       setViewingResult({ success: false, message: err.response?.data?.error?.message || 'Failed to request viewing' });
     } finally {
       setViewingSubmitting(false);
-    }
-  }
-
-  async function handleSubmitReport() {
-    if (!reportReason) return;
-    setReportSubmitting(true);
-    setReportResult(null);
-    try {
-      const res = await propertyApi.report(property.id, {
-        reason: reportReason,
-        details: reportDetails || undefined,
-        email: reportEmail || undefined,
-      });
-      setReportResult({
-        success: true,
-        message: res.data?.message || 'Listing report submitted successfully. Our moderation team has been notified.',
-      });
-      setReportDetails('');
-    } catch (err) {
-      setReportResult({
-        success: false,
-        message: err.response?.data?.error?.message || 'Failed to submit report. Please try again.',
-      });
-    } finally {
-      setReportSubmitting(false);
     }
   }
 
@@ -365,127 +332,13 @@ function BookingCard({ property, onBookClick }) {
         </div>
       </Modal>
 
-      {/* Report this Listing Modal */}
-      <Modal
-        isOpen={showReportModal}
-        onOpenChange={(open) => {
-          if (!open) {
-            setShowReportModal(false);
-            setReportResult(null);
-          }
-        }}
-        title="Report This Listing"
-        footer={!reportResult?.success ? (
-          <div className="report-modal-actions">
-            <button
-              type="button"
-              className="btn btn-outline"
-              onClick={() => setShowReportModal(false)}
-              disabled={reportSubmitting}
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              className="btn btn-danger-confirm"
-              onClick={handleSubmitReport}
-              disabled={reportSubmitting || !reportReason}
-            >
-              {reportSubmitting ? 'Submitting Report...' : 'Submit Report'}
-            </button>
-          </div>
-        ) : (
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={() => {
-              setShowReportModal(false);
-              setReportResult(null);
-            }}
-          >
-            Done
-          </button>
-        )}
-      >
-        {reportResult ? (
-          <div className="report-result-box">
-            {reportResult.success ? (
-              <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                <CheckCircle2 size={24} style={{ color: 'var(--status-success, #10b981)', flexShrink: 0 }} />
-                <div>
-                  <h4 style={{ margin: '0 0 6px 0', fontSize: 15, fontWeight: 700 }}>Thank you for your report</h4>
-                  <p style={{ margin: 0, fontSize: 13, color: 'var(--text-secondary)' }}>
-                    {reportResult.message}
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                <AlertCircle size={24} style={{ color: 'var(--status-error, #ef4444)', flexShrink: 0 }} />
-                <p style={{ margin: 0, color: 'var(--status-error, #ef4444)' }}>{reportResult.message}</p>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="report-modal-content">
-            <p className="report-modal-intro">
-              Help us maintain safety and transparency. Why are you reporting <strong>{property.title}</strong>?
-            </p>
-
-            <label className="report-field">
-              <span className="report-field-label">Reason for reporting *</span>
-              <select
-                className="report-field-select"
-                value={reportReason}
-                onChange={(e) => setReportReason(e.target.value)}
-              >
-                <option value="Inaccurate or misleading information">Inaccurate or misleading information</option>
-                <option value="Fraudulent or suspicious listing / Scam">Fraudulent or suspicious listing / Scam</option>
-                <option value="Property no longer available / already rented">Property no longer available / already rented</option>
-                <option value="Offensive or inappropriate content">Offensive or inappropriate content</option>
-                <option value="Duplicate listing">Duplicate listing</option>
-                <option value="Wrong pricing or unauthorized landlord">Wrong pricing or unauthorized landlord</option>
-                <option value="Other">Other</option>
-              </select>
-            </label>
-
-            {!user && (
-              <label className="report-field">
-                <span className="report-field-label">Your email (optional)</span>
-                <input
-                  type="email"
-                  className="report-field-input"
-                  placeholder="name@example.com"
-                  value={reportEmail}
-                  onChange={(e) => setReportEmail(e.target.value)}
-                />
-              </label>
-            )}
-
-            <label className="report-field">
-              <span className="report-field-label">Additional details (optional)</span>
-              <textarea
-                rows={3}
-                className="report-field-textarea"
-                placeholder="Describe the issue to help our moderation team investigate..."
-                value={reportDetails}
-                onChange={(e) => setReportDetails(e.target.value)}
-              />
-            </label>
-          </div>
-        )}
-      </Modal>
-
       {/* Report this listing button */}
       <button
         type="button"
         className="report-listing-btn"
-        onClick={() => {
-          setShowReportModal(true);
-          setReportResult(null);
-        }}
+        onClick={onReportClick}
       >
-        <AlertTriangle size={13} />
+        <Flag size={13} />
         Report this listing
       </button>
     </>
@@ -518,6 +371,7 @@ function PropertyDetail() {
   const [reviewSuccess, setReviewSuccess] = useState(null);
   const canApplyToRent = !user || (user.role || '').toLowerCase() === 'tenant';
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDeleteProperty = async () => {
@@ -791,15 +645,27 @@ function PropertyDetail() {
               </span>
             </div>
           </div>
-          <button
-            type="button"
-            className={`pd-favorite-btn ${liked ? 'is-liked' : ''}`}
-            onClick={handleToggleFavorite}
-            aria-label={liked ? 'Remove from favorites' : 'Save to favorites'}
-          >
-            <Heart size={18} fill={liked ? '#ef4444' : 'none'} stroke={liked ? '#ef4444' : 'currentColor'} />
-            <span>{liked ? 'Saved' : 'Save'}</span>
-          </button>
+          <div className="pd-header-actions">
+            <button
+              type="button"
+              className={`pd-favorite-btn ${liked ? 'is-liked' : ''}`}
+              onClick={handleToggleFavorite}
+              aria-label={liked ? 'Remove from favorites' : 'Save to favorites'}
+            >
+              <Heart size={18} fill={liked ? '#ef4444' : 'none'} stroke={liked ? '#ef4444' : 'currentColor'} />
+              <span>{liked ? 'Saved' : 'Save'}</span>
+            </button>
+            <button
+              type="button"
+              className="pd-report-header-btn"
+              onClick={() => setShowReportModal(true)}
+              title="Report this listing"
+              aria-label="Report this listing"
+            >
+              <Flag size={15} />
+              <span>Report</span>
+            </button>
+          </div>
         </div>
 
         {/* ── Image Gallery ── */}
@@ -1125,6 +991,7 @@ function PropertyDetail() {
               <BookingCard
                 property={property}
                 onBookClick={() => setShowBookingModal(true)}
+                onReportClick={() => setShowReportModal(true)}
               />
             </div>
           )}
@@ -1238,6 +1105,13 @@ function PropertyDetail() {
           </div>
         </div>
       </Modal>
+
+      {/* Report Listing Modal */}
+      <ReportListingModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        property={property}
+      />
     </main>
   );
 }

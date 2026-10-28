@@ -207,6 +207,36 @@
   background: rgba(239, 68, 68, 0.06);
 }
 
+.pd-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pd-report-header-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 18px;
+  border-radius: var(--radius-full, 999px);
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
+  white-space: nowrap;
+}
+
+.pd-report-header-btn:hover {
+  color: var(--status-error, #ef4444);
+  border-color: rgba(239, 68, 68, 0.4);
+  background: var(--error-state-background, #fee2e2);
+  transform: translateY(-1px);
+}
+
 /* ── Image Gallery (Airbnb-style) ── */
 .property-image-gallery {
   display: flex;
