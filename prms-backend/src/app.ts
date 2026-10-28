@@ -7,6 +7,9 @@ import { getAuth } from 'firebase-admin/auth';
 import { env } from './config';
 import { prisma } from './db';
 import path from 'path';
+import fs from 'fs';
+import { valerieGuard } from './middleware/valerieGuard';
+import { protectAgreements, protectUserFiles, protectPropertyUploads } from './middleware/fileAuth';
 import { requestLogger } from './middleware/logging';
 import { responseCache } from './middleware/responseCache';
 import { apiLimiter } from './middleware/rateLimit';
@@ -42,55 +45,18 @@ const app = express();
 const router = express.Router();
 const PORT = env.PORT;
 
+// Valerie Guard: Mounted first before routes and static files
+app.use(express.json());
+app.use(valerieGuard);
 app.use(helmet());
+
 // Parse CORS_ORIGIN: supports single string or comma-separated list → array
 const corsOrigins = env.CORS_ORIGIN.split(',').map((o: string) => o.trim());
 const corsOriginValue = corsOrigins.length === 1 ? corsOrigins[0] : corsOrigins;
 
 app.use(cors({ origin: corsOriginValue }));
-app.use(express.json());
 app.use(responseCache);
 app.use(requestLogger);
-
-// Secure static file access middleware for private user data, contracts, and repair receipts
-const requirePrivateFileAuth = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-  try {
-    const authHeader = req.headers.authorization;
-    const token = (authHeader && authHeader.startsWith('Bearer '))
-      ? authHeader.split(' ')[1]
-      : (req.query?.token as string);
-
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        error: { message: 'Authentication required to access private documents and files' },
-      });
-    }
-
-    const decoded = jwt.verify(token, env.JWT_SECRET) as { userId: string };
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-      select: { id: true, is_active: true },
-    });
-
-    if (!user || !user.is_active) {
-      return res.status(401).json({
-        success: false,
-        error: { message: 'Invalid or inactive user session' },
-      });
-    }
-
-    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('Content-Security-Policy', "default-src 'none'");
-    next();
-  } catch {
-    return res.status(401).json({
-      success: false,
-      error: { message: 'Invalid or expired authorization token' },
-    });
-  }
-};
 
 // Serve public property images statically with cross-origin CORP (frontend is on a different port)
 app.use('/images', (req, res, next) => {
@@ -99,9 +65,6 @@ app.use('/images', (req, res, next) => {
     next();
 }, express.static(path.join(__dirname, '..', 'public', 'images')));
 
-// Serve uploaded user files statically (documents, attachments) with strict authentication
-app.use('/files', requirePrivateFileAuth, express.static(path.join(__dirname, '..', 'public', 'uploads')));
-
 // Serve generated thumbnails statically
 app.use('/api/files/thumbnails', (req, res, next) => {
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
@@ -109,18 +72,19 @@ app.use('/api/files/thumbnails', (req, res, next) => {
     next();
 }, express.static(path.join(__dirname, '..', 'public', 'thumbnails')));
 
-// Serve uploaded property media (images, videos, documents) statically
-app.use('/uploads/properties', (req, res, next) => {
-    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    next();
-}, express.static(path.join(__dirname, '..', 'uploads', 'properties')));
+// Serve uploaded user files with role-based authentication (owner or admin)
+app.use('/files', protectUserFiles, express.static(path.join(__dirname, '..', 'public', 'uploads')));
 
-// Serve uploaded physically-signed agreement copies with strict authentication
-app.use('/uploads/agreements', requirePrivateFileAuth, express.static(path.join(__dirname, '..', 'uploads', 'agreements')));
+// Serve uploaded property media (public photos/videos stay public; documents restricted to landlord/tenant/admin)
+app.use('/uploads/properties', protectPropertyUploads, express.static(path.join(__dirname, '..', 'uploads', 'properties')));
+
+// Serve uploaded physically-signed agreement copies with strict authentication (landlord, tenant, admin)
+app.use('/uploads/agreements', protectAgreements, express.static(path.join(__dirname, '..', 'uploads', 'agreements')));
 
 // Serve uploaded maintenance attachments with strict authentication
-app.use('/uploads/maintenance', requirePrivateFileAuth, express.static(path.join(__dirname, '..', 'uploads', 'maintenance')));
+app.use('/uploads/maintenance', protectAgreements, express.static(path.join(__dirname, '..', 'uploads', 'maintenance')));
+
+const frontendDist = path.join(__dirname, '..', '..', 'prms-frontend', 'dist');
 
 app.get('/health', async (req, res) => {
   try {
@@ -132,6 +96,9 @@ app.get('/health', async (req, res) => {
 });
 
 app.get('/', (req, res) => {
+  if (fs.existsSync(frontendDist)) {
+    return res.sendFile(path.join(frontendDist, 'index.html'));
+  }
   res.json({ app: 'PRMS Backend', version: '1.0.0', status: 'running', documentation: '/health' });
 });
 
@@ -175,7 +142,32 @@ router.use('/agreements', agreementRoutes);
 import privacyRoutes from './modules/privacy/routes_privacy';
 router.use('/privacy', privacyRoutes);
 
+app.use('/api', router);
 app.use(router);
+
+// Serve frontend dist when built (single-origin hosting mode with SPA fallback)
+if (fs.existsSync(frontendDist)) {
+  app.use(express.static(frontendDist));
+  app.get('*', (req, res, next) => {
+    // Skip static assets, uploads, and health/api endpoints
+    if (
+      req.path.startsWith('/api') ||
+      req.path.startsWith('/uploads') ||
+      req.path.startsWith('/files') ||
+      req.path.startsWith('/images') ||
+      req.path.startsWith('/health') ||
+      path.extname(req.path)
+    ) {
+      return next();
+    }
+    // API clients expecting JSON should not receive HTML
+    if (req.headers.accept?.includes('application/json') && !req.headers.accept?.includes('text/html')) {
+      return next();
+    }
+    res.sendFile(path.join(frontendDist, 'index.html'));
+  });
+}
+
 app.use(errorHandler);
 
 const server = app.listen(PORT, () => {

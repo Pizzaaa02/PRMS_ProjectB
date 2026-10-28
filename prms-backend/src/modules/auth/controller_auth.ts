@@ -289,7 +289,7 @@ export class AuthController {
           role: user.UserRole[0]?.role.name || 'Tenant',
         },
         tokens,
-        isNewUser: !!isNewUser,
+        isNewUser: false,
       }));
     } catch (error: any) {
       HELPERS(req).log({ action: 'GOOGLE_LOGIN', entity: 'User', description: `Google login failed: ${error.message}`, status: 'Failed', level: 'error', errorMessage: error.message });
