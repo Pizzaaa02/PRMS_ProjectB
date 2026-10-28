@@ -10,12 +10,12 @@ import {
   User,
   UserPlus,
   Phone,
-  MapPin,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useRegistration } from '../contexts/RegistrationContext';
 import { ROUTES } from '../config/routes';
-import { privacyApi } from '../api';
+import PasswordStrengthMeter from '../components/PasswordStrengthMeter';
+import { isValidEmail, isValidPhoneNumber, isPasswordStrong } from '../utils/validators';
 import {
   PRIVACY_NOTICE_ACK_TEXT, PRIVACY_NOTICE_VERSION,
   MARKETING_CONSENT_TEXT, MARKETING_CONSENT_VERSION,
@@ -61,6 +61,24 @@ function Register() {
     setSubmitting(true);
     clearError();
     setFormError('');
+
+    if (!isValidEmail(formData.email)) {
+      setSubmitting(false);
+      setFormError('Please enter a valid email address.');
+      return;
+    }
+
+    if (!formData.phone || !isValidPhoneNumber(formData.phone)) {
+      setSubmitting(false);
+      setFormError('Please enter a valid phone number (e.g., 012-345 6789 or +60123456789).');
+      return;
+    }
+
+    if (!isPasswordStrong(formData.password)) {
+      setSubmitting(false);
+      setFormError('Password must be strong. It must include at least 8 characters, an uppercase letter, a lowercase letter, a number, and a special character.');
+      return;
+    }
 
     if (formData.password !== formData.confirmPassword) {
       setSubmitting(false);
@@ -264,7 +282,7 @@ function Register() {
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.52, duration: 0.35 }}
             >
-              <label>Phone</label>
+              <label>Phone Number</label>
               <div className="input-box">
                 <Phone size={22} />
                 <input
@@ -272,8 +290,12 @@ function Register() {
                   placeholder="+60 12-345 6789"
                   value={formData.phone}
                   onChange={(e) => handleChange('phone', e.target.value)}
+                  required
                 />
               </div>
+              <span className="field-hint" style={{ fontSize: '0.75rem', color: 'var(--text-tertiary, #94a3b8)', marginTop: '0.25rem', display: 'block' }}>
+                Valid formats: e.g. 012-345 6789, 011-1234567, or +60123456789
+              </span>
             </motion.div>
 
             <motion.div
@@ -286,11 +308,10 @@ function Register() {
                 <LockKeyhole size={22} />
                 <input
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Min 6 characters"
+                  placeholder="Strong password (min 8 chars, A-Z, a-z, 0-9, symbol)"
                   value={formData.password}
                   onChange={(e) => handleChange('password', e.target.value)}
                   required
-                  minLength={6}
                 />
                 <span
                   className="input-right-icon"
@@ -301,6 +322,7 @@ function Register() {
                   {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
                 </span>
               </div>
+              <PasswordStrengthMeter password={formData.password} />
             </motion.div>
 
             <motion.div
@@ -313,11 +335,10 @@ function Register() {
                 <LockKeyhole size={22} />
                 <input
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Re-enter password"
+                  placeholder="Re-enter strong password"
                   value={formData.confirmPassword}
                   onChange={(e) => handleChange('confirmPassword', e.target.value)}
                   required
-                  minLength={6}
                 />
               </div>
             </motion.div>
@@ -373,7 +394,8 @@ function Register() {
             <motion.button
               type="submit"
               className="primary-btn"
-              disabled={submitting}
+              disabled={submitting || !isPasswordStrong(formData.password)}
+              title={!isPasswordStrong(formData.password) ? 'Password must be strong to create an account' : 'Create Account'}
               initial={{ y: 18, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.72, duration: 0.35 }}

@@ -24,6 +24,8 @@ import {
   Trash2,
   AlertTriangle,
 } from 'lucide-react'
+import PasswordStrengthMeter from '../components/PasswordStrengthMeter'
+import { isValidPhoneNumber, isPasswordStrong } from '../utils/validators'
 import './UserManagement.css'
 
 /* ── Roles & filter defaults ── */
@@ -187,9 +189,15 @@ export default function UserManagement() {
   async function handleSubmit() {
     setFormError('')
     if (!formEmail.trim()) { setFormError('Email is required'); return }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formEmail)) { setFormError('Invalid email'); return }
     if (mode === 'add' && !formPassword) { setFormError('Password is required'); return }
-    if (mode === 'add' && formPassword.length < 6) { setFormError('Password must be at least 6 characters'); return }
+    if (formPassword && !isPasswordStrong(formPassword)) {
+      setFormError('Password must be strong (at least 8 characters, uppercase, lowercase, number, and special character)');
+      return
+    }
+    if (formPhone.trim() && !isValidPhoneNumber(formPhone)) {
+      setFormError('Please enter a valid phone number (e.g. 012-345 6789 or +60123456789)');
+      return
+    }
 
     setSaving(true)
     try {
@@ -509,15 +517,16 @@ export default function UserManagement() {
                     </label>
 
                     <label>
-                      <span>{mode === 'add' ? 'Password' : 'New Password (optional)'}</span>
+                      <span>{mode === 'add' ? 'Password (Strong)' : 'New Password (optional)'}</span>
                       <input
                         type="password"
                         className="form-input"
                         value={formPassword}
                         onChange={(e) => setFormPassword(e.target.value)}
-                        placeholder={mode === 'add' ? 'Min 6 characters' : 'Leave blank to keep current'}
+                        placeholder={mode === 'add' ? 'Strong password required' : 'Leave blank to keep current'}
                       />
                     </label>
+                    {formPassword && <PasswordStrengthMeter password={formPassword} />}
 
                     <label>
                       <span>Full Name</span>

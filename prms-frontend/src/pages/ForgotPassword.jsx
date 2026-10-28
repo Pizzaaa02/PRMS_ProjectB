@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Mail, LockKeyhole, CheckCircle2 } from 'lucide-react';
 import { authApi } from '../api/auth';
+import PasswordStrengthMeter from '../components/PasswordStrengthMeter';
+import { isPasswordStrong } from '../utils/validators';
 import './ForgotPassword.css';
 
 function ForgotPassword() {
@@ -61,6 +63,17 @@ function ForgotPassword() {
   async function handlePasswordSubmit(e) {
     e.preventDefault();
     setError('');
+
+    if (!isPasswordStrong(newPassword)) {
+      setError('Password must be strong. It must include at least 8 characters, an uppercase letter, a lowercase letter, a number, and a special character.');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError('New password and confirmation do not match.');
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await authApi.resetPassword({
@@ -187,27 +200,33 @@ function ForgotPassword() {
                 <LockKeyhole size={22} />
                 <input
                   type="password"
-                  placeholder="••••••••"
+                  placeholder="Strong password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   required
                   autoComplete="new-password"
                 />
               </div>
+              <PasswordStrengthMeter password={newPassword} />
 
               <label>Confirm Password</label>
               <div className="input-box">
                 <LockKeyhole size={22} />
                 <input
                   type="password"
-                  placeholder="••••••••"
+                  placeholder="Re-enter strong password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                   autoComplete="new-password"
                 />
               </div>
-              <button type="submit" className="primary-btn" disabled={loading}>
+              <button
+                type="submit"
+                className="primary-btn"
+                disabled={loading || !isPasswordStrong(newPassword)}
+                title={!isPasswordStrong(newPassword) ? 'Password must be strong' : 'Reset Password'}
+              >
                 {loading ? 'Saving...' : 'Reset Password'}
               </button>
             </motion.form>

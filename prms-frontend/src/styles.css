@@ -2176,3 +2176,62 @@ body.customization-mode [data-customize-id].customization-hover {
     justify-content: center;
   }
 }
+
+/* ================= GLOBAL PRINT & REPORT STATEMENT STYLES ================= */
+
+@media print {
+  /* Hide all web application chrome, navbars, sidebars, search bars, and controls */
+  nav,
+  aside,
+  header,
+  .admin-layout-topbar,
+  .admin-layout-sidebar,
+  .admin-layout-search,
+  .admin-layout-search-dropdown,
+  .admin-layout-top-actions,
+  .admin-simple-hero,
+  .admin-simple-primary-btn,
+  .admin-simple-search,
+  .agent-layout-sidebar,
+  .agent-layout-topbar,
+  .agent-sidebar,
+  .landlord-layout-sidebar,
+  .landlord-layout-topbar,
+  .tenant-layout-sidebar,
+  .tenant-layout-topbar,
+  .theme-switcher,
+  .notification-dropdown,
+  .profile-dropdown,
+  .no-print,
+  .admin-error-banner,
+  input[type="search"],
+  button:not(.statement-keep-btn) {
+    display: none !important;
+  }
+
+  body,
+  #root,
+  .admin-layout-shell,
+  .admin-layout-main,
+  .admin-layout-content,
+  .agent-layout-shell,
+  .agent-layout-main,
+  .agent-layout-content,
+  .landlord-layout-shell,
+  .landlord-layout-main,
+  .landlord-layout-content {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    box-shadow: none !important;
+  }
+
+  /* Page margins */
+  @page {
+    size: A4 portrait;
+    margin: 1.2cm 1.5cm;
+  }
+}
+

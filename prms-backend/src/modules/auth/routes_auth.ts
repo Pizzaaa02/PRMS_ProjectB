@@ -1,5 +1,5 @@
 import express from 'express';
-import { registerBody, loginBody, refreshBody, verifyOtpBody, resetPasswordBody } from './dto';
+import { registerBody, loginBody, refreshBody, verifyOtpBody, resetPasswordBody, checkEmailBody } from './dto';
 import { authenticate } from '../../middleware/auth';
 import { AuthController } from './controller_auth';
 import { authLimiter } from '../../middleware/rateLimit';
@@ -8,6 +8,7 @@ import upload from '../../middleware/upload';
 const router = express.Router();
 const auth = new AuthController();
 
+router.post('/check-email', authLimiter, checkEmailBody, auth.checkEmail);
 router.post('/register', authLimiter, registerBody, auth.register);
 router.post('/login', authLimiter, loginBody, auth.login);
 router.post('/refresh', refreshBody, auth.refresh);

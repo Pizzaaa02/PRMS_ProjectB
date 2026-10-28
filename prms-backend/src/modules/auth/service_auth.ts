@@ -84,7 +84,7 @@ export async function loginUser(email: string, password: string) {
     include: { UserRole: { include: { role: true } } },
   });
 
-  if (!user) throw new Error('Email not registered');
+  if (!user) throw new Error('This email is not registered. Please sign up for an account first.');
   if (!user.passwordHash) throw new Error('Please use Firebase login for this account');
   if (!user.is_active) throw new Error('Account is suspended');
 
