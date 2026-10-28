@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import jwt from 'jsonwebtoken';
 import { initializeApp, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { env } from './config';
@@ -8,6 +9,7 @@ import { prisma } from './db';
 import path from 'path';
 import { requestLogger } from './middleware/logging';
 import { responseCache } from './middleware/responseCache';
+import { apiLimiter } from './middleware/rateLimit';
 import { errorHandler } from './middleware/errorHandler';
 import authRoutes from './modules/auth/routes_auth';
 import userRoutes from './modules/user/routes_user';
@@ -50,40 +52,75 @@ app.use(express.json());
 app.use(responseCache);
 app.use(requestLogger);
 
-// Serve uploaded images statically with cross-origin CORP (frontend is on a different port)
+// Secure static file access middleware for private user data, contracts, and repair receipts
+const requirePrivateFileAuth = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  try {
+    const authHeader = req.headers.authorization;
+    const token = (authHeader && authHeader.startsWith('Bearer '))
+      ? authHeader.split(' ')[1]
+      : (req.query?.token as string);
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        error: { message: 'Authentication required to access private documents and files' },
+      });
+    }
+
+    const decoded = jwt.verify(token, env.JWT_SECRET) as { userId: string };
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      select: { id: true, is_active: true },
+    });
+
+    if (!user || !user.is_active) {
+      return res.status(401).json({
+        success: false,
+        error: { message: 'Invalid or inactive user session' },
+      });
+    }
+
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Content-Security-Policy', "default-src 'none'");
+    next();
+  } catch {
+    return res.status(401).json({
+      success: false,
+      error: { message: 'Invalid or expired authorization token' },
+    });
+  }
+};
+
+// Serve public property images statically with cross-origin CORP (frontend is on a different port)
 app.use('/images', (req, res, next) => {
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
     next();
 }, express.static(path.join(__dirname, '..', 'public', 'images')));
 
-// Serve uploaded user files statically (documents, attachments)
-app.use('/files', (req, res, next) => {
-    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-    next();
-}, express.static(path.join(__dirname, '..', 'public', 'uploads')));
+// Serve uploaded user files statically (documents, attachments) with strict authentication
+app.use('/files', requirePrivateFileAuth, express.static(path.join(__dirname, '..', 'public', 'uploads')));
 
 // Serve generated thumbnails statically
 app.use('/api/files/thumbnails', (req, res, next) => {
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
     next();
 }, express.static(path.join(__dirname, '..', 'public', 'thumbnails')));
 
 // Serve uploaded property media (images, videos, documents) statically
 app.use('/uploads/properties', (req, res, next) => {
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
     next();
 }, express.static(path.join(__dirname, '..', 'uploads', 'properties')));
 
-// Serve uploaded physically-signed agreement copies statically
-app.use('/uploads/agreements', (req, res, next) => {
-    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-    next();
-}, express.static(path.join(__dirname, '..', 'uploads', 'agreements')));
+// Serve uploaded physically-signed agreement copies with strict authentication
+app.use('/uploads/agreements', requirePrivateFileAuth, express.static(path.join(__dirname, '..', 'uploads', 'agreements')));
 
-app.use('/uploads/maintenance', (req, res, next) => {
-    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-    next();
-}, express.static(path.join(__dirname, '..', 'uploads', 'maintenance')));
+// Serve uploaded maintenance attachments with strict authentication
+app.use('/uploads/maintenance', requirePrivateFileAuth, express.static(path.join(__dirname, '..', 'uploads', 'maintenance')));
 
 app.get('/health', async (req, res) => {
   try {
@@ -107,6 +144,7 @@ router.post('/auth/verify', async (req, res) => {
   } catch (error) { res.status(401).json({ error: 'Invalid Firebase token' }); }
 });
 
+router.use(apiLimiter);
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
 router.use('/properties', propertyRoutes);

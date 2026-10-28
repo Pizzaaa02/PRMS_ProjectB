@@ -8,7 +8,7 @@ export const apiLimiter = rateLimit({
     success: false,
     error: { message: 'Too many requests. Please try again later.' },
   },
-  skip: (req) => req.url.startsWith('/auth/login') || req.url.startsWith('/auth/register') || req.url.startsWith('/auth/refresh'),
+  skip: (req) => env.NODE_ENV === 'test' || req.url.startsWith('/auth/login') || req.url.startsWith('/auth/register') || req.url.startsWith('/auth/refresh'),
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -20,6 +20,8 @@ export const authLimiter = rateLimit({
     success: false,
     error: { message: 'Too many authentication attempts. Please try again in 15 minutes.' },
   },
+  skip: () => env.NODE_ENV === 'test',
   standardHeaders: true,
   legacyHeaders: false,
 });
+

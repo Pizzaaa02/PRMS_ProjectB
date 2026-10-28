@@ -313,9 +313,10 @@ export class AuthController {
         return res.status(400).json({ success: false, error: { message: errors.array()[0].msg } });
       }
       const { email } = req.body;
-      const code = await authService.generateOtpCode(email);
+      await authService.generateOtpCode(email);
       HELPERS(req).log({ username: email, action: 'FORGOT_PASSWORD', entity: 'User', description: `OTP generated for ${email}`, status: 'Success', level: 'info' });
-      res.json(successResponse({ code }, 'OTP generated'));
+      // Security fix: do not return OTP in response body
+      res.json(successResponse(null, 'If your email is registered, a 6-digit verification code has been dispatched.'));
     } catch (error: any) {
       HELPERS(req).log({ action: 'FORGOT_PASSWORD', entity: 'User', description: `Forgot password failed: ${error.message}`, status: 'Failed', level: 'error', errorMessage: error.message });
       res.status(400).json({ success: false, error: { message: error.message } });
@@ -331,7 +332,7 @@ export class AuthController {
       const { email, otp } = req.body;
       await authService.verifyOtpCode(email, otp);
       HELPERS(req).log({ username: email, action: 'VERIFY_OTP', entity: 'User', description: 'OTP verified successfully', status: 'Success', level: 'info' });
-      res.json(successResponse(null, 'OTP verified'));
+      res.json(successResponse(null, 'OTP verified successfully'));
     } catch (error: any) {
       HELPERS(req).log({ action: 'VERIFY_OTP', entity: 'User', description: `Verify OTP failed: ${error.message}`, status: 'Failed', level: 'error', errorMessage: error.message });
       res.status(400).json({ success: false, error: { message: error.message } });
@@ -345,13 +346,17 @@ export class AuthController {
         return res.status(400).json({ success: false, error: { message: errors.array()[0].msg } });
       }
       const { email, otp, newPassword, confirmPassword } = req.body;
+      if (!otp || typeof otp !== 'string' || !otp.trim()) {
+        return res.status(400).json({ success: false, error: { message: 'OTP verification code is required' } });
+      }
       if (!newPassword || newPassword.length < 6) {
         return res.status(400).json({ success: false, error: { message: 'New password must be at least 6 characters' } });
       }
       if (newPassword !== confirmPassword) {
         return res.status(400).json({ success: false, error: { message: 'Passwords do not match' } });
       }
-      await authService.resetPassword(email, newPassword);
+      // Critical fix: verify OTP before resetting password
+      await authService.resetPassword(email, newPassword, otp.trim());
       HELPERS(req).log({ username: email, action: 'PASSWORD_RESET', entity: 'User', description: 'Password reset successfully for ' + email, status: 'Success', level: 'info' });
       res.json(successResponse(null, 'Password reset successfully'));
     } catch (error: any) {
