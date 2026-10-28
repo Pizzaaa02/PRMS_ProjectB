@@ -148,7 +148,8 @@ app.use(router);
 // Serve frontend dist when built (single-origin hosting mode with SPA fallback)
 if (fs.existsSync(frontendDist)) {
   app.use(express.static(frontendDist));
-  app.get('*', (req, res, next) => {
+  app.use((req, res, next) => {
+    if (req.method !== 'GET') return next();
     // Skip static assets, uploads, and health/api endpoints
     if (
       req.path.startsWith('/api') ||
