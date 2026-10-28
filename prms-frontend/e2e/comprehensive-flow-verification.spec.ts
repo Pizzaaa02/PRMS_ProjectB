@@ -82,6 +82,69 @@ test.describe('Exhaustive Real User Flow & Button Verification', () => {
     }
   });
 
+  test('Admin Property Edit Flow: edit seeded property, save changes, and ensure no blank screen', async ({ page }) => {
+    const pageErrors: Error[] = [];
+    page.on('pageerror', (err) => pageErrors.push(err));
+
+    // Login as Admin
+    await page.goto('/login');
+    await page.fill('input[type="email"]', 'admin@prms.com');
+    await page.fill('input[type="password"]', 'Admin123!');
+    await page.click('button[type="submit"]');
+    await page.waitForURL(/\/admin/, { timeout: 15000 });
+
+    // Navigate to properties
+    await page.goto('/admin/properties');
+    await page.waitForTimeout(1000);
+    expect(pageErrors).toHaveLength(0);
+
+    // Verify property list container is rendered and not blank
+    const content = page.locator('.admin-layout-content');
+    await expect(content).toBeVisible();
+    const text = await content.textContent();
+    expect(text?.trim().length).toBeGreaterThan(20);
+
+    // Navigate to edit prop-002
+    await page.goto('/admin/properties/edit/prop-002');
+    await page.waitForTimeout(1000);
+    expect(pageErrors).toHaveLength(0);
+
+    // Verify edit page elements
+    await expect(page.locator('text=Edit Property')).toBeVisible();
+    await expect(page.locator('text=Rent (RM)')).toBeVisible();
+
+    // Verify no occurrences of literal MYR in the page text
+    const pageText = await page.locator('body').innerText();
+    expect(pageText).not.toContain('MYR');
+
+    // Modify rent
+    const rentInput = page.locator('#editRent');
+    await expect(rentInput).toBeVisible();
+    await rentInput.fill('2200');
+
+    // Click Save Changes
+    const saveBtn = page.locator('button:has-text("Save Changes")');
+    await expect(saveBtn).toBeVisible();
+    await saveBtn.click();
+
+    // Verify success toast
+    await expect(page.locator('text=Property updated successfully!')).toBeVisible({ timeout: 6000 });
+    expect(pageErrors).toHaveLength(0);
+
+    // Navigate between tabs to confirm no blank screen
+    await page.goto('/admin/dashboard');
+    await page.waitForTimeout(800);
+    const dashboardText = await page.locator('.admin-layout-content').textContent();
+    expect(dashboardText?.trim().length).toBeGreaterThan(20);
+
+    await page.goto('/admin/properties');
+    await page.waitForTimeout(800);
+    const propertiesText = await page.locator('.admin-layout-content').textContent();
+    expect(propertiesText?.trim().length).toBeGreaterThan(20);
+
+    expect(pageErrors).toHaveLength(0);
+  });
+
   test('Landlord Flow: login, landlord dashboard tabs, and buttons work with zero errors', async ({ page }) => {
     const pageErrors: Error[] = [];
     page.on('pageerror', (err) => pageErrors.push(err));

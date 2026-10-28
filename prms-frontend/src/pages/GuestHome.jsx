@@ -401,7 +401,7 @@ function GuestHome() {
               </p>
 
               <div className="guest-revenue-card">
-                <p>Total Revenue MYR</p>
+                <p>Total Revenue (RM)</p>
                 <h4>RM 142,500.00</h4>
                 <div className="guest-bars">
                   <span></span>

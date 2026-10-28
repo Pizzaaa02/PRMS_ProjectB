@@ -46,7 +46,7 @@ function validateField(fieldName, value) {
       if (!value || value === '') errors.push('Rent is required.');
       else if (isNaN(num)) errors.push('Rent must be a valid number.');
       else if (num <= 0) errors.push('Rent must be greater than zero.');
-      else if (num > 9999999) errors.push('Rent must be under 9,999,999 MYR.');
+      else if (num > 9999999) errors.push('Rent must be under 9,999,999 RM.');
       break;
     }
     case 'city':
@@ -498,6 +498,20 @@ function PropertyEdit() {
   /* ---- Fetch property data ---- */
   useEffect(() => {
     let cancelled = false;
+    if (!id) {
+      setError('No property ID specified.');
+      setLoading(false);
+      return;
+    }
+    const safeDate = (val) => {
+      if (!val) return '';
+      try {
+        const d = new Date(val);
+        return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
+      } catch {
+        return '';
+      }
+    };
     async function fetch() {
       try {
         const res = await propertyApi.getById(id);
@@ -509,8 +523,8 @@ function PropertyEdit() {
           setPropertyType(prop.property_type || prop.propertyType || '');
           setRent(prop.rent ? String(prop.rent) : '');
           setStatus(prop.status || 'AVAILABLE');
-          setAvailableFrom(prop.availableFrom ? new Date(prop.availableFrom).toISOString().slice(0, 10) : '');
-          setAvailableTo(prop.availableTo ? new Date(prop.availableTo).toISOString().slice(0, 10) : '');
+          setAvailableFrom(safeDate(prop.availableFrom));
+          setAvailableTo(safeDate(prop.availableTo));
           setCity(prop.city || '');
           setState(prop.state || '');
           setDescription(prop.description || '');
@@ -701,7 +715,7 @@ function PropertyEdit() {
         <div className="pe-topbar-center">
           <h1 className="pe-topbar-title" data-customize-id="edit.title">Edit Property</h1>
           <span className="pe-topbar-sub">
-            {property ? property.property_type || property.propertyType : 'Property'} &middot; {property ? property.rent || 0 : 0} MYR
+            {property ? property.property_type || property.propertyType : 'Property'} &middot; RM {property ? property.rent || 0 : 0}
           </span>
         </div>
         <div className="pe-topbar-actions" data-customize-id="edit.actions">
@@ -833,7 +847,7 @@ function PropertyEdit() {
               <div className="pe-group">
                 <label htmlFor="editRent" className="pe-field-label">
                   <DollarSign size={18} />
-                  Rent (MYR)
+                  Rent (RM)
                 </label>
                 <input
                   id="editRent"
@@ -849,7 +863,7 @@ function PropertyEdit() {
                   aria-required="true"
                   aria-describedby={validationResults.rent?.length > 0 ? 'rentErr' : 'rentHelp'}
                 />
-                <span id="rentHelp" className="pe-field-help">Monthly rent in MYR.</span>
+                <span id="rentHelp" className="pe-field-help">Monthly rent in RM.</span>
                 {validationResults.rent?.length > 0 && (
                   <span id="rentErr" className="pe-validation-msg" role="alert">
                     {validationResults.rent.join(' ')}
@@ -1051,7 +1065,7 @@ function PropertyEdit() {
               <div className="pe-summary-row">
                 <span className="pe-summary-label">Rent</span>
                 <span className="pe-summary-value">
-                  {rent ? `${Number(rent).toLocaleString()} MYR/mo` : '---'}
+                  {rent ? `RM ${Number(rent).toLocaleString()}/mo` : '---'}
                 </span>
               </div>
               <div className="pe-summary-row">
