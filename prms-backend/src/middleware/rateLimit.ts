@@ -8,7 +8,11 @@ export const apiLimiter = rateLimit({
     success: false,
     error: { message: 'Too many requests. Please try again later.' },
   },
-  skip: (req) => env.NODE_ENV === 'test' || req.url.startsWith('/auth/login') || req.url.startsWith('/auth/register') || req.url.startsWith('/auth/refresh'),
+  skip: (req) => {
+    if (env.NODE_ENV === 'test') return true;
+    const path = req.originalUrl || req.url || '';
+    return path.includes('/auth') || path.includes('/health');
+  },
   standardHeaders: true,
   legacyHeaders: false,
 });
