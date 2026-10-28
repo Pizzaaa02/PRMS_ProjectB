@@ -45,16 +45,33 @@ const app = express();
 const router = express.Router();
 const PORT = env.PORT;
 
-// Valerie Guard: Mounted first before routes and static files
-app.use(express.json());
-app.use(valerieGuard);
-app.use(helmet());
-
 // Parse CORS_ORIGIN: supports single string or comma-separated list → array
 const corsOrigins = env.CORS_ORIGIN.split(',').map((o: string) => o.trim());
-const corsOriginValue = corsOrigins.length === 1 ? corsOrigins[0] : corsOrigins;
 
-app.use(cors({ origin: corsOriginValue }));
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+      return callback(null, true);
+    }
+    if (/^https:\/\/[a-zA-Z0-9-]+\.trycloudflare\.com$/.test(origin)) {
+      return callback(null, true);
+    }
+    if (corsOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(null, true);
+  },
+  credentials: true,
+}));
+
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+}));
+
+// Valerie Guard: Mounted before routes and static files
+app.use(express.json());
+app.use(valerieGuard);
 app.use(responseCache);
 app.use(requestLogger);
 
