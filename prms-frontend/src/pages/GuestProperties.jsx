@@ -1,10 +1,9 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Building2,
   CalendarDays,
-  ChevronDown,
   Globe2,
   Heart,
   Home,
@@ -21,7 +20,7 @@ import {
   X,
 } from 'lucide-react';
 import { getImageUrl } from '../config/imageHelper';
-import { propertyApi, searchApi } from '../api';
+import { propertyApi } from '../api';
 import { favoritesApi } from '../api/favorites';
 import { useAuth } from '../contexts/AuthContext';
 import { PROPERTY_STATUSES, propertyStatusInfo } from '../config/propertyStatus';
@@ -86,7 +85,8 @@ function GuestProperties() {
   };
 
   /* Issue #14: Filter state */
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchParams] = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState(() => searchParams.get('search') || searchParams.get('q') || '');
   const [priceFilter, setPriceFilter] = useState(null);
   const [typeFilter, setTypeFilter] = useState(null);
   const [statusFilter, setStatusFilter] = useState(null);
@@ -111,9 +111,8 @@ function GuestProperties() {
     }
   }, [statusFilter]);
 
-   
   useEffect(() => {
-    fetchProperties();
+    Promise.resolve().then(fetchProperties);
   }, [fetchProperties]);
 
   /* Issue #14: Apply filters */
@@ -259,7 +258,7 @@ function GuestProperties() {
       {/* Filter bar with area tabs */}
       <section className="guest-filter-bar" data-customize-id="search.filters">
         <div className="guest-area-tabs">
-          {cities.map((city, index) => (
+          {cities.map((city) => (
             <button
               type="button"
               className={searchQuery === city ? 'active' : ''}
@@ -479,7 +478,10 @@ function GuestProperties() {
                           (property.property_type || 'Apartment').slice(1)}
                       </p>
 
-                      <strong>{formatRent(property.rent)} / month</strong>
+                      <div className="guest-property-footer">
+                        <strong>{formatRent(property.rent)} / month</strong>
+                        <span className="tenant-book-tag">Tenant Account to Book</span>
+                      </div>
                     </div>
                   </motion.article>
                 );

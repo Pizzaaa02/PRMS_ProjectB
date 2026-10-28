@@ -1,13 +1,11 @@
-import { useState, useCallback, useMemo, useEffect } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { getImageUrl } from '../config/imageHelper';
 import { searchApi } from '../api/search'
 import { ROUTES } from '../config/routes'
 import { isPropertyAvailable } from '../config/propertyStatus'
 import {
-  ArrowRight,
   Building2,
-  ChevronDown,
   Filter,
   MapPin,
   Search,
@@ -73,7 +71,9 @@ function SearchPage() {
   // from the sidebar search box) - otherwise landing here just shows the
   // empty filter panel with no results until the user re-submits.
   useEffect(() => {
-    if (searchParams.get('q')) handleSearch()
+    if (searchParams.get('q')) {
+      Promise.resolve().then(() => handleSearch())
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -260,6 +260,9 @@ function SearchPage() {
                   <div className="result-meta">
                     <span>{property.rent && `RM ${property.rent}/month`}</span>
                     {property.area && <span>{property.area} sqft</span>}
+                  </div>
+                  <div className="result-card-footer">
+                    <span className="tenant-book-tag">Tenant Account to Book</span>
                   </div>
                 </div>
               </article>

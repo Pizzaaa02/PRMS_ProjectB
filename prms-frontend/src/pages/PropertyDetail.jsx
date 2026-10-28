@@ -22,6 +22,10 @@ import {
   Wifi,
   Wind,
   AlertTriangle,
+  Trash2,
+  UserCheck,
+  CheckCircle2,
+  AlertCircle,
 } from 'lucide-react';
 import { propertyApi, viewingApi } from '../api';
 import { favoritesApi } from '../api/favorites';
@@ -65,6 +69,38 @@ function BookingCard({ property, onBookClick }) {
   const [viewingSubmitting, setViewingSubmitting] = useState(false);
   const [viewingResult, setViewingResult] = useState(null);
 
+  // Tenant account requirement modal state
+  const [showTenantRequiredModal, setShowTenantRequiredModal] = useState(false);
+
+  // Report this listing modal state
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState('Inaccurate or misleading information');
+  const [reportDetails, setReportDetails] = useState('');
+  const [reportEmail, setReportEmail] = useState('');
+  const [reportSubmitting, setReportSubmitting] = useState(false);
+  const [reportResult, setReportResult] = useState(null);
+
+  const isTenant = user && (user.role || '').toLowerCase() === 'tenant';
+
+  function handleApplyClick() {
+    if (!isPropertyAvailable(property.status)) return;
+
+    if (!user || !isTenant) {
+      setShowTenantRequiredModal(true);
+      return;
+    }
+
+    onBookClick();
+  }
+
+  function handleViewingClick() {
+    if (!user || !isTenant) {
+      setShowTenantRequiredModal(true);
+      return;
+    }
+    setShowViewingModal(true);
+  }
+
   async function handleRequestViewing() {
     if (!viewingPreferred) return;
     setViewingSubmitting(true);
@@ -88,6 +124,31 @@ function BookingCard({ property, onBookClick }) {
       setViewingResult({ success: false, message: err.response?.data?.error?.message || 'Failed to request viewing' });
     } finally {
       setViewingSubmitting(false);
+    }
+  }
+
+  async function handleSubmitReport() {
+    if (!reportReason) return;
+    setReportSubmitting(true);
+    setReportResult(null);
+    try {
+      const res = await propertyApi.report(property.id, {
+        reason: reportReason,
+        details: reportDetails || undefined,
+        email: reportEmail || undefined,
+      });
+      setReportResult({
+        success: true,
+        message: res.data?.message || 'Listing report submitted successfully. Our moderation team has been notified.',
+      });
+      setReportDetails('');
+    } catch (err) {
+      setReportResult({
+        success: false,
+        message: err.response?.data?.error?.message || 'Failed to submit report. Please try again.',
+      });
+    } finally {
+      setReportSubmitting(false);
     }
   }
 
@@ -130,32 +191,40 @@ function BookingCard({ property, onBookClick }) {
 
         {/* Applying banner */}
         <div className="booking-payment-banner">
-          NO PAYMENT REQUIRED TO APPLY
+          {!user ? 'SIGN IN AS TENANT TO APPLY' : isTenant ? 'NO PAYMENT REQUIRED TO APPLY' : 'TENANT ACCOUNT REQUIRED'}
         </div>
 
         {/* Apply button */}
         <button
+          type="button"
           className="book-now-btn"
-          onClick={() => {
-            if (!isPropertyAvailable(property.status)) return;
-            onBookClick();
-          }}
+          onClick={handleApplyClick}
           disabled={!isPropertyAvailable(property.status)}
         >
           {isPropertyAvailable(property.status) ? 'Apply to Rent' : propertyStatusInfo(property.status).label}
         </button>
 
         <div className="booking-approximate">
-          Applying does not require payment.
+          {!user ? (
+            <span style={{ color: 'var(--status-warning, #d97706)', fontWeight: 600 }}>
+              * Must have a Tenant account to book
+            </span>
+          ) : isTenant ? (
+            'Applying does not require payment.'
+          ) : (
+            <span style={{ color: 'var(--status-error, #ef4444)', fontWeight: 600 }}>
+              * Logged in as {user.role} (Only Tenants can book)
+            </span>
+          )}
         </div>
 
         {/* Request Viewing */}
-        {!isOwnProperty && user?.role?.toLowerCase() === 'tenant' && (
+        {!isOwnProperty && (
           <button
             type="button"
             className="message-owner-btn"
             style={{ marginBottom: 8 }}
-            onClick={() => setShowViewingModal(true)}
+            onClick={handleViewingClick}
           >
             <Clock size={16} />
             Request a Viewing
@@ -176,17 +245,18 @@ function BookingCard({ property, onBookClick }) {
         )}
       </div>
 
+      {/* Viewing Modal */}
       <Modal
         isOpen={showViewingModal}
         onOpenChange={(open) => { if (!open) { setShowViewingModal(false); setViewingResult(null); } }}
         title="Request a Viewing"
         footer={(
-          <>
+          <div className="viewing-modal-actions">
             <button type="button" className="btn btn-outline" onClick={() => setShowViewingModal(false)}>Cancel</button>
             <button type="button" className="btn btn-primary" onClick={handleRequestViewing} disabled={viewingSubmitting || !viewingPreferred}>
               {viewingSubmitting ? 'Requesting…' : 'Request Viewing'}
             </button>
-          </>
+          </div>
         )}
       >
         {viewingResult ? (
@@ -209,11 +279,215 @@ function BookingCard({ property, onBookClick }) {
         )}
       </Modal>
 
-      {/* Report this listing */}
-      <a href="#" className="report-listing">
+      {/* Tenant Account Required Modal */}
+      <Modal
+        isOpen={showTenantRequiredModal}
+        onOpenChange={(open) => !open && setShowTenantRequiredModal(false)}
+        title="Tenant Account Required"
+        footer={(
+          <div className="tenant-required-footer-btns">
+            {!user ? (
+              <>
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={() => setShowTenantRequiredModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={() => {
+                    navigate('/login', { state: { returnUrl: `/properties/${property.id}`, role: 'tenant' } });
+                  }}
+                >
+                  Sign In
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => {
+                    navigate('/register?role=Tenant', { state: { returnUrl: `/properties/${property.id}` } });
+                  }}
+                >
+                  Register as Tenant
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={() => setShowTenantRequiredModal(false)}
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => {
+                    navigate('/login', { state: { returnUrl: `/properties/${property.id}` } });
+                  }}
+                >
+                  Switch to Tenant Account
+                </button>
+              </>
+            )}
+          </div>
+        )}
+      >
+        <div className="tenant-required-modal-content">
+          <div className="tenant-required-icon-box">
+            <UserCheck size={36} className="tenant-required-icon" />
+          </div>
+          <div className="tenant-required-info">
+            {!user ? (
+              <>
+                <h4 className="tenant-required-title">
+                  You must have a <strong>Tenant account</strong> to apply or book.
+                </h4>
+                <p className="tenant-required-desc">
+                  To rent <strong>{property.title}</strong>, please sign in to your Tenant profile or create a new Tenant account. Tenancy applications are linked directly to your verified tenant credentials.
+                </p>
+              </>
+            ) : (
+              <>
+                <h4 className="tenant-required-title">
+                  You are currently logged in as <strong>{user.role}</strong> ({user.email}).
+                </h4>
+                <p className="tenant-required-desc">
+                  Tenancy applications and bookings are strictly restricted to <strong>Tenant accounts</strong>. Please log in with a registered Tenant account to apply for this listing.
+                </p>
+              </>
+            )}
+          </div>
+        </div>
+      </Modal>
+
+      {/* Report this Listing Modal */}
+      <Modal
+        isOpen={showReportModal}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowReportModal(false);
+            setReportResult(null);
+          }
+        }}
+        title="Report This Listing"
+        footer={!reportResult?.success ? (
+          <div className="report-modal-actions">
+            <button
+              type="button"
+              className="btn btn-outline"
+              onClick={() => setShowReportModal(false)}
+              disabled={reportSubmitting}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="btn btn-danger-confirm"
+              onClick={handleSubmitReport}
+              disabled={reportSubmitting || !reportReason}
+            >
+              {reportSubmitting ? 'Submitting Report...' : 'Submit Report'}
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => {
+              setShowReportModal(false);
+              setReportResult(null);
+            }}
+          >
+            Done
+          </button>
+        )}
+      >
+        {reportResult ? (
+          <div className="report-result-box">
+            {reportResult.success ? (
+              <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                <CheckCircle2 size={24} style={{ color: 'var(--status-success, #10b981)', flexShrink: 0 }} />
+                <div>
+                  <h4 style={{ margin: '0 0 6px 0', fontSize: 15, fontWeight: 700 }}>Thank you for your report</h4>
+                  <p style={{ margin: 0, fontSize: 13, color: 'var(--text-secondary)' }}>
+                    {reportResult.message}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                <AlertCircle size={24} style={{ color: 'var(--status-error, #ef4444)', flexShrink: 0 }} />
+                <p style={{ margin: 0, color: 'var(--status-error, #ef4444)' }}>{reportResult.message}</p>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="report-modal-content">
+            <p className="report-modal-intro">
+              Help us maintain safety and transparency. Why are you reporting <strong>{property.title}</strong>?
+            </p>
+
+            <label className="report-field">
+              <span className="report-field-label">Reason for reporting *</span>
+              <select
+                className="report-field-select"
+                value={reportReason}
+                onChange={(e) => setReportReason(e.target.value)}
+              >
+                <option value="Inaccurate or misleading information">Inaccurate or misleading information</option>
+                <option value="Fraudulent or suspicious listing / Scam">Fraudulent or suspicious listing / Scam</option>
+                <option value="Property no longer available / already rented">Property no longer available / already rented</option>
+                <option value="Offensive or inappropriate content">Offensive or inappropriate content</option>
+                <option value="Duplicate listing">Duplicate listing</option>
+                <option value="Wrong pricing or unauthorized landlord">Wrong pricing or unauthorized landlord</option>
+                <option value="Other">Other</option>
+              </select>
+            </label>
+
+            {!user && (
+              <label className="report-field">
+                <span className="report-field-label">Your email (optional)</span>
+                <input
+                  type="email"
+                  className="report-field-input"
+                  placeholder="name@example.com"
+                  value={reportEmail}
+                  onChange={(e) => setReportEmail(e.target.value)}
+                />
+              </label>
+            )}
+
+            <label className="report-field">
+              <span className="report-field-label">Additional details (optional)</span>
+              <textarea
+                rows={3}
+                className="report-field-textarea"
+                placeholder="Describe the issue to help our moderation team investigate..."
+                value={reportDetails}
+                onChange={(e) => setReportDetails(e.target.value)}
+              />
+            </label>
+          </div>
+        )}
+      </Modal>
+
+      {/* Report this listing button */}
+      <button
+        type="button"
+        className="report-listing-btn"
+        onClick={() => {
+          setShowReportModal(true);
+          setReportResult(null);
+        }}
+      >
         <AlertTriangle size={13} />
         Report this listing
-      </a>
+      </button>
     </>
   );
 }
@@ -243,6 +517,27 @@ function PropertyDetail() {
   const [reviewError, setReviewError] = useState(null);
   const [reviewSuccess, setReviewSuccess] = useState(null);
   const canApplyToRent = !user || (user.role || '').toLowerCase() === 'tenant';
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDeleteProperty = async () => {
+    setIsDeleting(true);
+    try {
+      await propertyApi.deactivate(id);
+      setShowDeleteModal(false);
+      const lower = (user?.role || '').toLowerCase();
+      const dest = lower.includes('admin')
+        ? '/admin/properties'
+        : lower.includes('landlord')
+        ? '/landlord/properties'
+        : '/properties';
+      navigate(dest);
+    } catch (err) {
+      alert(err?.response?.data?.error?.message || 'Failed to delete property');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   useEffect(() => {
     if (!id || !user) return;
@@ -546,25 +841,39 @@ function PropertyDetail() {
                     </div>
                   )}
                   {canManageProperty && (
-                    <motion.button
-                      className="pd-edit-btn"
-                      onClick={() => {
-                        const lower = (user?.role || '').toLowerCase();
-                        const prefix = lower.includes('agent')
-                          ? `/agent/properties/${id}/edit`
-                          : lower.includes('admin')
-                          ? '/admin/properties/edit'
-                          : lower.includes('landlord')
-                            ? '/landlord/properties/edit'
-                            : '/properties/edit';
-                        navigate(lower.includes('agent') ? prefix : `${prefix}/${id}`);
-                      }}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.97 }}
-                    >
-                      <Edit3 size={16} />
-                      {(user?.role || '').toLowerCase().includes('agent') ? 'Manage Listing' : 'Edit Property'}
-                    </motion.button>
+                    <div className="pd-owner-actions">
+                      <motion.button
+                        className="pd-edit-btn"
+                        onClick={() => {
+                          const lower = (user?.role || '').toLowerCase();
+                          const prefix = lower.includes('agent')
+                            ? `/agent/properties/${id}/edit`
+                            : lower.includes('admin')
+                            ? '/admin/properties/edit'
+                            : lower.includes('landlord')
+                              ? '/landlord/properties/edit'
+                              : '/properties/edit';
+                          navigate(lower.includes('agent') ? prefix : `${prefix}/${id}`);
+                        }}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.97 }}
+                      >
+                        <Edit3 size={16} />
+                        {(user?.role || '').toLowerCase().includes('agent') ? 'Manage Listing' : 'Edit Property'}
+                      </motion.button>
+                      {isPropertyOwner && (
+                        <motion.button
+                          type="button"
+                          className="pd-delete-btn"
+                          onClick={() => setShowDeleteModal(true)}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.97 }}
+                        >
+                          <Trash2 size={16} />
+                          Delete Property
+                        </motion.button>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
@@ -888,6 +1197,47 @@ function PropertyDetail() {
           onClose={() => setShowBookingModal(false)}
         />
       )}
+
+      {/* Delete Property Modal */}
+      <Modal
+        isOpen={showDeleteModal}
+        onOpenChange={(open) => !open && setShowDeleteModal(false)}
+        title="Delete Property"
+        footer={(
+          <div className="delete-modal-actions">
+            <button
+              type="button"
+              className="btn btn-outline"
+              onClick={() => setShowDeleteModal(false)}
+              disabled={isDeleting}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="btn-danger-confirm"
+              onClick={handleDeleteProperty}
+              disabled={isDeleting}
+            >
+              {isDeleting ? 'Deleting...' : 'Delete Property'}
+            </button>
+          </div>
+        )}
+      >
+        <div className="delete-modal-content">
+          <div className="delete-modal-warning">
+            <AlertTriangle size={24} className="delete-warning-icon" />
+            <div>
+              <p style={{ margin: 0, fontWeight: 600 }}>
+                Are you sure you want to delete {property?.title || property?.name || 'this property'}?
+              </p>
+              <p className="delete-modal-hint" style={{ margin: '6px 0 0 0', color: 'var(--text-secondary)', fontSize: '13px' }}>
+                This will deactivate the property listing and remove it from public search results.
+              </p>
+            </div>
+          </div>
+        </div>
+      </Modal>
     </main>
   );
 }

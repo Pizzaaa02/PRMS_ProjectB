@@ -14,7 +14,10 @@ import {
   ChevronRight,
   Heart,
   Star,
+  Trash2,
+  AlertTriangle,
 } from 'lucide-react'
+import Modal from '../components/Modal'
 import { getImageUrl } from '../config/imageHelper';
 import { propertyApi, getApiError } from '../api'
 import { favoritesApi } from '../api/favorites'
@@ -54,6 +57,28 @@ function Properties() {
   const isAdmin = role.includes('admin')
   const isLandlord = role.includes('landlord')
   const [favoriteIds, setFavoriteIds] = useState(new Set())
+  const [propertyToDelete, setPropertyToDelete] = useState(null)
+  const [deleting, setDeleting] = useState(false)
+
+  const handleDeleteClick = (e, prop) => {
+    e.stopPropagation()
+    setPropertyToDelete(prop)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!propertyToDelete) return
+    setDeleting(true)
+    try {
+      const pid = propertyToDelete._id || propertyToDelete.id
+      await propertyApi.deactivate(pid)
+      setProperties((prev) => prev.filter((item) => (item._id || item.id) !== pid))
+      setPropertyToDelete(null)
+    } catch (err) {
+      alert(getApiError(err) || 'Failed to delete property')
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   useEffect(() => {
     if (!user) return
@@ -408,6 +433,17 @@ function Properties() {
                                 /mo
                               </span>
                             </div>
+                            {(isAdmin || isLandlord) && (
+                              <button
+                                type="button"
+                                className="btn-property-delete"
+                                title="Delete Property"
+                                onClick={(e) => handleDeleteClick(e, p)}
+                                aria-label="Delete Property"
+                              >
+                                <Trash2 size={15} />
+                              </button>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -448,6 +484,47 @@ function Properties() {
           )}
         </>
       )}
+
+      {/* ── Delete Property Confirmation Modal ── */}
+      <Modal
+        isOpen={!!propertyToDelete}
+        onOpenChange={(open) => !open && setPropertyToDelete(null)}
+        title="Delete Property"
+        footer={(
+          <div className="delete-modal-actions">
+            <button
+              type="button"
+              className="btn-outline"
+              onClick={() => setPropertyToDelete(null)}
+              disabled={deleting}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="btn-danger-confirm"
+              onClick={handleConfirmDelete}
+              disabled={deleting}
+            >
+              {deleting ? 'Deleting...' : 'Delete Property'}
+            </button>
+          </div>
+        )}
+      >
+        <div className="delete-modal-content">
+          <div className="delete-modal-warning">
+            <AlertTriangle size={24} className="delete-warning-icon" />
+            <div>
+              <p style={{ margin: 0, fontWeight: 600 }}>
+                Are you sure you want to delete {propertyToDelete?.name || propertyToDelete?.title || 'this property'}?
+              </p>
+              <p className="delete-modal-hint">
+                This will deactivate the property listing and remove it from public search results.
+              </p>
+            </div>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

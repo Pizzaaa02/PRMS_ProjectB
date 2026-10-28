@@ -434,10 +434,28 @@
 
 .guest-property-body strong {
   display: block;
-  margin-top: auto;
-  padding-top: var(--spacing-sm);
   color: var(--on-surface);
   font-size: 15px;
+}
+
+.guest-property-footer {
+  margin-top: auto;
+  padding-top: var(--spacing-sm);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border-top: 1px solid var(--border-low, #f1f5f9);
+}
+
+.tenant-book-tag {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--secondary-accent, #6366f1);
+  background: var(--secondary-fixed, #eef2ff);
+  padding: 3px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
 }
 
 .weekend {
