@@ -216,6 +216,11 @@
 }
 
 /* ---- Maintenance list ---- */
+.tenant-payment-activity-item { position: relative; padding-right: 38px; }
+.payment-activity-dismiss { position: absolute; top: 6px; right: 6px; display: grid; place-items: center; width: 26px; height: 26px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--text-secondary); cursor: pointer; }
+.payment-activity-dismiss:hover { background: var(--surface-container); color: var(--text-primary); }
+.payment-activity-dismiss:disabled { opacity: .5; cursor: default; }
+
 .maintenance-list {
   display: grid;
   gap: var(--spacing-md);
