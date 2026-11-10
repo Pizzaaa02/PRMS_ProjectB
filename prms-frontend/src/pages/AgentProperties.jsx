@@ -1,3 +1,4 @@
+import PrivateImage from '../components/PrivateImage';
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Building2 } from 'lucide-react';
@@ -42,7 +43,7 @@ export default function AgentProperties() {
     : properties;
 
   return (
-    <div className="page-shell">
+    <div className="page-shell agent-properties-page">
       <div className="page-header">
         <h1 className="page-title">Assigned Properties</h1>
         <p>Properties you manage on behalf of their landlords.</p>
@@ -59,7 +60,7 @@ export default function AgentProperties() {
               <div key={p.id} className="booking-property-card" onClick={() => navigate(`/agent/properties/${p.id}`)} style={{ cursor: 'pointer' }}>
                 <div className="booking-property-card-header">
                   {p.images?.[0]?.url ? (
-                    <img className="booking-property-card-img" src={getImageUrl(p.images[0].url)} alt={p.title} />
+                    <PrivateImage className="booking-property-card-img" src={getImageUrl(p.images[0].url)} alt={p.title} />
                   ) : (
                     <div className="booking-property-card-img-placeholder">
                       <Building2 size={32} />

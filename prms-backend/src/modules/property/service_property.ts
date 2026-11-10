@@ -1,3 +1,4 @@
+import { catalogueOrder, photoOrder } from '../../utils/catalogueOrder';
 import { prisma } from '../../db';
 
 /** Convert date-only strings (YYYY-MM-DD) to Date objects for Prisma DateTime fields */
@@ -8,8 +9,13 @@ export function normalizeDate(val: any): Date | undefined {
   return isNaN(d.getTime()) ? undefined : d;
 }
 
-export async function getAllProperties(page = 1, limit = 10, filters: { type?: string; search?: string; status?: string } = {}) {
+export async function getAllProperties(page = 1, limit = 10, filters: { type?: string; search?: string; status?: string; minRent?: number; maxRent?: number; publicOnly?: boolean } = {}) {
   const where: any = {};
+  if (filters.publicOnly) where.AND = [{ status: { not: 'INACTIVE' } }];
+  if (filters.minRent !== undefined || filters.maxRent !== undefined) where.rent = {
+    ...(filters.minRent !== undefined ? { gte: filters.minRent } : {}),
+    ...(filters.maxRent !== undefined ? { lte: filters.maxRent } : {}),
+  };
 
   // SQLite has no case-insensitive `mode` option, and stored property_type
   // values have inconsistent casing from older data — match common variants.
@@ -25,6 +31,8 @@ export async function getAllProperties(page = 1, limit = 10, filters: { type?: s
       { title: { contains: s } },
       { address: { contains: s } },
       { city: { contains: s } },
+      { state: { contains: s } },
+      { property_type: { contains: s } },
     ];
   }
 
@@ -33,7 +41,7 @@ export async function getAllProperties(page = 1, limit = 10, filters: { type?: s
   }
 
   const [properties, total] = await Promise.all([
-    prisma.property.findMany({ where, skip: (page - 1) * limit, take: limit, orderBy: { id: 'desc' }, include: { owner: { select: { id: true, full_name: true, email: true } }, amenities: true, images: true, category: true } }),
+    prisma.property.findMany({ where, skip: (page - 1) * limit, take: limit, orderBy: catalogueOrder, include: { owner: { select: { id: true, full_name: true, email: true } }, amenities: true, images: { orderBy: photoOrder }, category: true } }),
     prisma.property.count({ where }),
   ]);
   return { properties, total };
@@ -45,7 +53,7 @@ export async function getPropertyById(id: string) {
     include: {
       owner: { select: { id: true, full_name: true, email: true, phone: true, profile_img_url: true } },
       amenities: true,
-      images: true,
+      images: { orderBy: photoOrder },
       category: true,
       reviews: { orderBy: { created_at: 'desc' } },
     },
@@ -76,10 +84,10 @@ export async function createProperty(data: any, ownerId: string) {
     await prisma.amenity.createMany({ data: amenitiesList.map((a: any) => ({ ...a, propertyId: property.id })) });
   }
   if (imagesList && imagesList.length > 0) {
-    await prisma.propertyImage.createMany({ data: imagesList.map((img: any) => ({ ...img, propertyId: property.id })) });
+    await prisma.propertyImage.createMany({ data: imagesList.map((img: any, sortOrder: number) => ({ ...img, propertyId: property.id, sortOrder })) });
   }
 
-  return prisma.property.findUnique({ where: { id: property.id }, include: { amenities: true, images: true, owner: { select: { id: true, full_name: true, email: true, phone: true, profile_img_url: true } }, category: true } });
+  return prisma.property.findUnique({ where: { id: property.id }, include: { amenities: true, images: { orderBy: photoOrder }, owner: { select: { id: true, full_name: true, email: true, phone: true, profile_img_url: true } }, category: true } });
 }
 
 export async function updateProperty(id: string, data: any) {
@@ -99,7 +107,7 @@ export async function updateProperty(id: string, data: any) {
   const updated = await prisma.property.update({
     where: { id },
     data,
-    include: { amenities: true, images: true, owner: { select: { id: true, full_name: true, email: true, phone: true, profile_img_url: true } }, category: true },
+    include: { amenities: true, images: { orderBy: photoOrder }, owner: { select: { id: true, full_name: true, email: true, phone: true, profile_img_url: true } }, category: true },
   });
 
   // Sync media (images + videos)
@@ -117,12 +125,12 @@ export async function updateProperty(id: string, data: any) {
 
   return prisma.property.findUnique({
     where: { id },
-    include: { amenities: true, images: true, owner: { select: { id: true, full_name: true, email: true, phone: true, profile_img_url: true } }, category: true },
+    include: { amenities: true, images: { orderBy: photoOrder }, owner: { select: { id: true, full_name: true, email: true, phone: true, profile_img_url: true } }, category: true },
   });
 }
 
 async function syncImages(propertyId: string, incomingImages: any[]) {
-  const existing = await prisma.propertyImage.findMany({ where: { propertyId } });
+  const existing = await prisma.propertyImage.findMany({ where: { propertyId, type: 'image' } });
   const existingMap = new Map(existing.map((img) => [img.id, img]));
 
   const idsToAdd: string[] = [];
@@ -146,13 +154,18 @@ async function syncImages(propertyId: string, incomingImages: any[]) {
     await prisma.propertyImage.createMany({
       data: incomingImages
         .filter((img) => idsToAdd.includes(img.id))
-        .map((img) => ({ ...img, propertyId })),
+        .map((img) => ({ ...img, propertyId, sortOrder: incomingImages.indexOf(img) })),
     });
   }
   if (idsToRemove.length > 0) {
     await prisma.propertyImage.deleteMany({
       where: { id: { in: idsToRemove } },
     });
+  }
+  for (const [sortOrder, image] of incomingImages.entries()) {
+    if (existingMap.has(image.id)) {
+      await prisma.propertyImage.update({ where: { id: image.id }, data: { sortOrder } });
+    }
   }
 }
 
@@ -239,8 +252,10 @@ export async function deactivateProperty(id: string) {
 }
 
 export async function addImage(propertyId: string, url: string, thumbnailUrl?: string) {
+  const current = await prisma.propertyImage.findMany({ where: { propertyId }, select: { sortOrder: true } });
+  const sortOrder = current.reduce((maximum, image) => Math.max(maximum, image.sortOrder), -1) + 1;
   return prisma.propertyImage.create({
-    data: { propertyId, url, thumbnailUrl: thumbnailUrl || undefined, type: 'image' },
+    data: { propertyId, url, thumbnailUrl: thumbnailUrl || undefined, type: 'image', sortOrder },
   });
 }
 
@@ -299,7 +314,8 @@ export async function removeDocumentFromProperty(propertyId: string, url: string
 export async function getLandlordProperties(landlordId: string) {
   const properties = await prisma.property.findMany({
     where: { ownerId: landlordId },
-    include: { amenities: true, images: true, category: true, agentProperties: { include: { agent: true } } },
+    orderBy: catalogueOrder,
+    include: { amenities: true, images: { orderBy: photoOrder }, category: true, agentProperties: { include: { agent: true } } },
   });
   return properties.map((p) => ({
     ...p,

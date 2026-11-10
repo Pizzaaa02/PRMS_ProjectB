@@ -20,6 +20,7 @@ jest.mock('../../../db', () => ({
       count: (...args: any[]) => mockCount(...args),
     },
     propertyImage: {
+      update: (...args: any[]) => mockUpdate(...args),
       findMany: (...args: any[]) => mockFindMany(...args),
       findUnique: (...args: any[]) => mockFindUnique(...args),
       create: (...args: any[]) => mockCreate(...args),
@@ -72,6 +73,16 @@ function stubPropertyData(overrides = {}) {
 beforeEach(clearAll);
 
 describe('getAllProperties - status filtering', () => {
+  test('public filtering and rent bounds apply before pagination and counting', async () => {
+    await service.getAllProperties(3, 12, { publicOnly: true, minRent: 1000, maxRent: 2000, search: 'studio' });
+    const query = mockFindMany.mock.calls[0][0];
+    expect(query.skip).toBe(24);
+    expect(query.where.AND).toEqual([{ status: { not: 'INACTIVE' } }]);
+    expect(query.where.rent).toEqual({ gte: 1000, lte: 2000 });
+    expect(query.where.OR).toContainEqual({ property_type: { contains: 'studio' } });
+    expect(query.where.OR).toContainEqual({ state: { contains: 'studio' } });
+    expect(mockCount).toHaveBeenCalledWith({ where: query.where });
+  });
   test('applies the canonical status to both the property query and total count', async () => {
     await service.getAllProperties(2, 12, { status: 'MAINTENANCE' });
 
@@ -301,6 +312,14 @@ describe('updateProperty - combined', () => {
    updateProperty  -  media (images)
    ============================================================ */
 describe('updateProperty - media images', () => {
+  test('reordering existing photos persists the new order without selecting videos or documents', async () => {
+    mockFindMany.mockResolvedValueOnce([{ id: 'img1' }, { id: 'img2' }]);
+    await service.updateProperty(PROP_ID, { images: [{ id: 'img2' }, { id: 'img1' }] });
+    expect(mockFindMany).toHaveBeenCalledWith({ where: { propertyId: PROP_ID, type: 'image' } });
+    expect(mockUpdate).toHaveBeenCalledWith({ where: { id: 'img2' }, data: { sortOrder: 0 } });
+    expect(mockUpdate).toHaveBeenCalledWith({ where: { id: 'img1' }, data: { sortOrder: 1 } });
+    expect(mockDeleteMany).not.toHaveBeenCalled();
+  });
   test('adds new image', async () => {
     const img = { id: 'img1', url: '/photo.jpg' };
     mockUpdate.mockResolvedValueOnce({});
@@ -309,7 +328,7 @@ describe('updateProperty - media images', () => {
     mockFindUnique.mockResolvedValueOnce({});
     await service.updateProperty(PROP_ID, { images: [img] });
     expect(mockCreateMany).toHaveBeenCalledWith({
-      data: expect.arrayContaining([{ ...img, propertyId: PROP_ID }]),
+      data: expect.arrayContaining([{ ...img, propertyId: PROP_ID, sortOrder: 0 }]),
     });
   });
 
@@ -352,5 +371,20 @@ describe('getLandlordProperties', () => {
     const result = await service.getLandlordProperties('landlord-1');
     expect(result).toHaveLength(1);
     expect(result[0].agentProperties).toEqual([{ id: 'ag1', name: 'Zain' }]);
+  });
+});
+
+describe('property delete-button behavior', () => {
+  test('deactivation keeps the property record and sets INACTIVE', async () => {
+    mockUpdate.mockResolvedValueOnce({ id: 'delete-check', status: 'INACTIVE' });
+    await expect(service.deactivateProperty('delete-check')).resolves.toEqual({ id: 'delete-check', status: 'INACTIVE' });
+    expect(mockUpdate).toHaveBeenCalledWith({ where: { id: 'delete-check' }, data: { status: 'INACTIVE' } });
+    expect(mockDelete).not.toHaveBeenCalled();
+  });
+  test('reloading the Landlord portfolio includes inactive listings', async () => {
+    mockFindMany.mockResolvedValueOnce([{ id: 'delete-check', status: 'INACTIVE', agentProperties: [] }]);
+    const result = await service.getLandlordProperties('landlord-1');
+    expect(result[0].status).toBe('INACTIVE');
+    expect(mockFindMany.mock.calls[mockFindMany.mock.calls.length - 1][0].where).toEqual({ ownerId: 'landlord-1' });
   });
 });

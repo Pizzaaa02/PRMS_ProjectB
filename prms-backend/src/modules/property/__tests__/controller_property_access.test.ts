@@ -7,6 +7,7 @@ const getLandlordProperties = jest.fn();
 const getAllProperties = jest.fn();
 const getPropertyById = jest.fn();
 const recordAudit = jest.fn();
+const createAuditLog = jest.fn().mockResolvedValue({ id: 'report-1' });
 
 jest.mock('../../../db', () => ({
   prisma: {
@@ -26,6 +27,7 @@ jest.mock('../service_property', () => ({
 }));
 jest.mock('../../admin/service_audit', () => ({
   recordAudit: (...args: any[]) => recordAudit(...args),
+  createAuditLog: (...args: any[]) => createAuditLog(...args),
 }));
 jest.mock('../../../middleware/responseCache', () => ({ clearCache: jest.fn() }));
 
@@ -54,6 +56,34 @@ beforeEach(() => {
   updateProperty.mockResolvedValue({ id: 'property-1', title: 'Updated title' });
   getLandlordProperties.mockResolvedValue([{ id: 'property-1', ownerId: 'landlord-1' }]);
   getAllProperties.mockResolvedValue({ properties: [], total: 0 });
+});
+
+test('anonymous property listings always use public visibility and bound pagination', async () => {
+  const req = request({}); delete req.user;
+  req.query = { page: '-4', limit: '999', minRent: '1000', maxRent: '2000' };
+  await new PropertyController().list(req, response());
+  expect(getAllProperties).toHaveBeenCalledWith(1, 100, expect.objectContaining({ publicOnly: true, minRent: 1000, maxRent: 2000 }));
+});
+test('anonymous visitors cannot retrieve an inactive property by ID', async () => {
+  getPropertyById.mockResolvedValue({ id: 'property-1', status: 'INACTIVE' });
+  const req = request({}); delete req.user;
+  const res = response();
+  await new PropertyController().getById(req, res);
+  expect(res.status).toHaveBeenCalledWith(404);
+});
+test('signed-in management access can still retrieve inactive properties', async () => {
+  getPropertyById.mockResolvedValue({ id: 'property-1', status: 'INACTIVE' });
+  const res = response();
+  await new PropertyController().getById(request({}, 'Landlord'), res);
+  expect(res.status).not.toHaveBeenCalled();
+  expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ status: 'INACTIVE' }) }));
+});
+test('invalid rent ranges never reach the property query', async () => {
+  const req = request({}); req.query = { minRent: '3000', maxRent: '1000' };
+  const res = response();
+  await new PropertyController().list(req, res);
+  expect(res.status).toHaveBeenCalledWith(400);
+  expect(getAllProperties).not.toHaveBeenCalled();
 });
 
 test('assigned Agents cannot change protected commercial fields', async () => {
@@ -117,6 +147,9 @@ test('property listing normalizes and forwards a valid status filter', async () 
     type: undefined,
     search: undefined,
     status: 'MAINTENANCE',
+      minRent: undefined,
+      maxRent: undefined,
+      publicOnly: false,
   });
   expect(res.json).toHaveBeenCalled();
 });
@@ -144,7 +177,7 @@ test('reportListing succeeds with valid reason, logs audit, and notifies admins'
   await new PropertyController().reportListing(req, res);
 
   expect(getPropertyById).toHaveBeenCalledWith('property-1');
-  expect(recordAudit).toHaveBeenCalledWith(expect.objectContaining({
+  expect(createAuditLog).toHaveBeenCalledWith(expect.objectContaining({
     action: 'REPORT_PROPERTY_LISTING',
     entity: 'Property',
     entityId: 'property-1',

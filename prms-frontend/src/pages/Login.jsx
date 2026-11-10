@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { rememberPropertyReturn } from '../utils/publicJourney';
 import { motion } from 'framer-motion';
 import { Building2, Eye, EyeOff, LockKeyhole, LogIn, Mail, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -10,6 +11,8 @@ import { isValidEmail } from '../utils/validators';
 
 function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
+  useEffect(() => { rememberPropertyReturn(location.state?.returnUrl); }, [location.state]);
   const { login, googleLogin, error, clearError, loading } = useAuth();
 
   const [email, setEmail] = useState('');
@@ -152,7 +155,7 @@ function Login() {
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.45, duration: 0.55 }}
           >
-            Master Your Real Estate Ecosystem.
+            Manage rentals in one place.
           </motion.h1>
 
           <motion.p
@@ -160,8 +163,9 @@ function Login() {
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.55, duration: 0.55 }}
           >
-            Join over 5,000 property managers and investors who trust PRMS for
-            secure, automated, and high-yield property management across Southeast Asia.
+            PRMS is a property rental management project that brings together listings,
+            viewing appointments, rental applications and maintenance requests.
+            Payments are simulated for demonstration and testing.
           </motion.p>
 
           <motion.div
@@ -171,21 +175,8 @@ function Login() {
             transition={{ delay: 0.75, duration: 0.5 }}
             whileHover={{ y: -4, scale: 1.02 }}
           >
-            <div className="avatar-group">
-              <motion.div className="avatar" whileHover={{ y: -4 }}>
-                JD
-              </motion.div>
-
-              <motion.div className="avatar" whileHover={{ y: -4 }}>
-                MC
-              </motion.div>
-
-              <motion.div className="avatar" whileHover={{ y: -4 }}>
-                SA
-              </motion.div>
-            </div>
-
-            <span>Trusted by regional leaders</span>
+            <Building2 size={28} aria-hidden="true" />
+            <span>For Admins, Landlords, Agents and Tenants</span>
           </motion.div>
         </div>
       </motion.section>
@@ -353,7 +344,7 @@ function Login() {
             </motion.div>
 
             <motion.div
-              className="social-row"
+              className="social-row login-google-row"
               initial={false}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.88, duration: 0.35 }}
