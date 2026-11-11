@@ -1,6 +1,28 @@
 # PRMS - Property Rental Management System
 
+## Updating for personal archives
+
+After pulling the archive feature, run these commands from `prms-backend` before starting the server:
+
+```sh
+npx prisma migrate deploy
+npx prisma generate
+```
+
+This adds the `record_archives` table without deleting existing tickets or appointments. Each user can archive cancelled, completed, or no-show viewings and closed maintenance tickets independently. Restore removes only that user's archive marker. Reopened maintenance tickets automatically reappear in the main list. The `/viewings/records` and `/maintenance/records` endpoints enforce role scopes and accept `page`, `limit` (maximum 100), and `tab` filters. Existing reporting endpoints continue to include shared history.
+
 How To Start
+
+### Ratings and reviews update
+
+After pulling the ratings/reviews integration fix, run once from `prms-backend`:
+
+```sh
+npx prisma migrate deploy
+npx prisma generate
+```
+
+Then start the frontend and backend normally with `npm run dev`. No database reset or reseeding is required. If this database was already updated using `prisma db push`, check that both property columns (`rating`, `reviewsCount`), the `reviews` table, its property foreign key, and `reviews_propertyId_idx` exist before marking `20261026090000_add_property_reviews` as applied with `prisma migrate resolve --applied`. Do not resolve it as applied on a database that is missing those changes.
 
 ----------------------------------
 windows
