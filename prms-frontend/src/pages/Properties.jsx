@@ -1,6 +1,6 @@
 import { usePropertyGridPageSize } from '../hooks/usePropertyGridPageSize';
 import PrivateImage from '../components/PrivateImage';
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { motion } from 'framer-motion'
@@ -43,20 +43,45 @@ const STATUS_FILTERS = [
 function Properties() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  const initialPage = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1)
+  const initialType = searchParams.get('type') || 'all'
+  const initialStatus = searchParams.get('status') || 'all'
+  const initialSearch = searchParams.get('search') || ''
+
   const [properties, setProperties] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [viewMode, setViewMode] = useState('grid')
-  const [activeType, setActiveType] = useState('all')
-  const [activeStatus, setActiveStatus] = useState('all')
-  // Pre-fill from ?search=... so the topbar search box (which navigates
-  // here rather than filtering in place) actually lands on a filtered view.
-  const [searchTerm, setSearchTerm] = useState(() => searchParams.get('search') || '')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
-  const [currentPage, setCurrentPage] = useState(1)
+  const [activeType, setActiveType] = useState(initialType)
+  const [activeStatus, setActiveStatus] = useState(initialStatus)
+  const [searchTerm, setSearchTerm] = useState(initialSearch)
+  const [debouncedSearch, setDebouncedSearch] = useState(initialSearch)
+  const [currentPage, setCurrentPage] = useState(initialPage)
   const [totalCount, setTotalCount] = useState(0)
   const { gridRef, pageSize: perPage } = usePropertyGridPageSize()
+  const isFirstRender = useRef(true)
+
+  const updateUrlParams = useCallback((updates) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      Object.entries(updates).forEach(([key, value]) => {
+        if (!value || value === 'all' || (key === 'page' && Number(value) <= 1)) {
+          next.delete(key)
+        } else {
+          next.set(key, String(value))
+        }
+      })
+      return next
+    }, { replace: true })
+  }, [setSearchParams])
+
+  const handlePageChange = (newPage) => {
+    const validPage = Math.max(1, newPage)
+    setCurrentPage(validPage)
+    updateUrlParams({ page: validPage })
+  }
   const role = (user?.role || '').toLowerCase()
   const isAdmin = role.includes('admin')
   const isLandlord = role.includes('landlord')
@@ -155,18 +180,35 @@ function Properties() {
     }
   }, [activeStatus, activeType, currentPage, debouncedSearch, isLandlord, perPage])
 
+  // Synchronize state if URL search parameters change (e.g. back/forward navigation)
   useEffect(() => {
-    Promise.resolve().then(() => setSearchTerm(searchParams.get('search') || ''))
+    const pageFromUrl = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1)
+    const typeFromUrl = searchParams.get('type') || 'all'
+    const statusFromUrl = searchParams.get('status') || 'all'
+    const searchFromUrl = searchParams.get('search') || ''
+
+    if (pageFromUrl !== currentPage) setCurrentPage(pageFromUrl)
+    if (typeFromUrl !== activeType) setActiveType(typeFromUrl)
+    if (statusFromUrl !== activeStatus) setActiveStatus(statusFromUrl)
+    if (searchFromUrl !== searchTerm) {
+      setSearchTerm(searchFromUrl)
+      setDebouncedSearch(searchFromUrl)
+    }
   }, [searchParams])
 
   // Debounce the raw search input into `debouncedSearch`
   useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
+    }
     const timer = setTimeout(() => {
       setDebouncedSearch(searchTerm.trim())
       setCurrentPage(1)
+      updateUrlParams({ search: searchTerm.trim(), page: 1 })
     }, 400)
     return () => clearTimeout(timer)
-  }, [searchTerm])
+  }, [searchTerm, updateUrlParams])
 
   // Fetch whenever the page, type filter, or committed search term changes
   useEffect(() => {
@@ -177,6 +219,7 @@ function Properties() {
     if (e) e.preventDefault()
     setDebouncedSearch(searchTerm.trim())
     setCurrentPage(1)
+    updateUrlParams({ search: searchTerm.trim(), page: 1 })
   }
 
   function statusColor(status) {
@@ -263,6 +306,7 @@ function Properties() {
                 onClick={() => {
                   setActiveType(t.key)
                   setCurrentPage(1)
+                  updateUrlParams({ type: t.key, page: 1 })
                 }}
               >
                 {t.label}
@@ -279,6 +323,7 @@ function Properties() {
                 onClick={() => {
                   setActiveStatus(s.key)
                   setCurrentPage(1)
+                  updateUrlParams({ status: s.key, page: 1 })
                 }}
               >
                 <span className={`status-dot status-${statusColor(s.key)}`} />
@@ -496,7 +541,7 @@ function Properties() {
                     type="button"
                     className="btn-outline"
                     disabled={currentPage <= 1}
-                    onClick={() => setCurrentPage((c) => Math.max(c - 1, 1))}
+                    onClick={() => handlePageChange(currentPage - 1)}
                   >
                     <ChevronLeft size={16} /> Prev
                   </button>
@@ -509,9 +554,7 @@ function Properties() {
                     type="button"
                     className="btn-outline"
                     disabled={currentPage >= totalPages}
-                    onClick={() =>
-                      setCurrentPage((c) => Math.min(c + 1, totalPages))
-                    }
+                    onClick={() => handlePageChange(currentPage + 1)}
                   >
                     Next <ChevronRight size={16} />
                   </button>
