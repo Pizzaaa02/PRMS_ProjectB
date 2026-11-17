@@ -103,22 +103,27 @@ async function main() {
   }
 
   if (!sessionId || !sessionKey) {
-    const reachable = await isValerieReachable();
-    if (!reachable) {
-      console.warn(`[Valerie Guard] Valerie is currently unreachable at ${VALERIE_URL}`);
-      const answer = await askQuestion('Host without Valerie? (y/N): ');
-      if (answer.toLowerCase() !== 'y' && answer.toLowerCase() !== 'yes') {
-        console.log('Exiting.');
-        process.exit(0);
-      }
+    if (process.env.UNGUARDED === '1' || process.argv.includes('--unguarded')) {
       isUnguarded = true;
       console.log('[Valerie Guard] Hosting in unguarded mode (local rate limits only).');
     } else {
-      const code = await askQuestion('Enter 6-digit Valerie code: ');
-      if (!code) {
-        console.error('No code entered. Exiting.');
-        process.exit(1);
-      }
+      const reachable = await isValerieReachable();
+      if (!reachable) {
+        console.warn(`[Valerie Guard] Valerie is currently unreachable at ${VALERIE_URL}`);
+        const answer = await askQuestion('Host without Valerie? (y/N): ');
+        if (answer.toLowerCase() !== 'y' && answer.toLowerCase() !== 'yes') {
+          console.log('Exiting.');
+          process.exit(0);
+        }
+        isUnguarded = true;
+        console.log('[Valerie Guard] Hosting in unguarded mode (local rate limits only).');
+      } else {
+        const codeArg = process.env.VALERIE_CODE || process.argv.find((a) => /^\d{6}$/.test(a));
+        const code = codeArg || await askQuestion('Enter 6-digit Valerie code: ');
+        if (!code) {
+          console.error('No code entered. Exiting.');
+          process.exit(1);
+        }
 
       console.log('[Valerie Guard] Checking the code with Valerie...');
       try {
@@ -156,6 +161,7 @@ async function main() {
       }
     }
   }
+}
 
   // 2. Build frontend for single-origin serving
   console.log('\n[PRMS Host] Building prms-frontend (npm run build)...');
