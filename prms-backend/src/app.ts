@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import helmet from 'helmet';
+import { createWebSecurity } from './middleware/webSecurity';
 import { initializeApp, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { env } from './config';
@@ -45,7 +45,7 @@ const app = express();
 const router = express.Router();
 const PORT = env.PORT;
 
-// Trust local reverse proxies (such as cloudflared quick tunnels on loopback)
+// Trust local reverse proxies (such as cloudflared quick tunnels or scheduled gateway on loopback)
 app.set('trust proxy', 'loopback');
 
 // Parse CORS_ORIGIN: supports single string or comma-separated list → array
@@ -58,8 +58,8 @@ app.use((req, res, next) => {
       const isSameTunnelOrigin = Boolean(
         origin &&
         tunnelHost &&
-        /^[a-zA-Z0-9-]+\.trycloudflare\.com$/.test(tunnelHost) &&
-        origin === `https://${tunnelHost}`
+        (/^[a-zA-Z0-9-]+\.trycloudflare\.com$/.test(tunnelHost) || /^[a-zA-Z0-9-.]+\.ts\.net$/.test(tunnelHost)) &&
+        (origin === `https://${tunnelHost}` || origin === `http://${tunnelHost}`)
       );
       return callback(null, isSameTunnelOrigin || isAllowedOrigin(origin, corsOrigins, env.NODE_ENV));
     },
@@ -67,32 +67,7 @@ app.use((req, res, next) => {
   })(req, res, next);
 });
 
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: 'cross-origin' },
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https://apis.google.com", "https://www.gstatic.com"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
-      imgSrc: ["'self'", "data:", "blob:", "https:"],
-      mediaSrc: ["'self'", "data:", "blob:"],
-      connectSrc: [
-        "'self'",
-        "https://identitytoolkit.googleapis.com",
-        "https://securetoken.googleapis.com",
-        "https://*.googleapis.com",
-        "https://*.firebaseio.com",
-        "https://*.firebaseapp.com",
-        ...(env.NODE_ENV === 'development' ? ["http://localhost:*", "ws://localhost:*", "http://127.0.0.1:*"] : []),
-      ],
-      frameSrc: ["'self'", "https://www.google.com", "https://*.firebaseapp.com", "https://accounts.google.com"],
-      frameAncestors: ["'self'"],
-      objectSrc: ["'none'"],
-      upgradeInsecureRequests: null,
-    },
-  },
-}));
+app.use(createWebSecurity(process.env.FIREBASE_AUTH_DOMAIN || `${env.FIREBASE_PROJECT_ID || 'project-prms-149c6'}.firebaseapp.com`));
 
 // Valerie Guard: Mounted before routes and static files
 app.use(express.json());
@@ -123,6 +98,9 @@ app.use('/uploads/agreements', protectAgreements, express.static(path.join(__dir
 app.use('/uploads/maintenance', protectMaintenance, express.static(path.join(__dirname, '..', 'uploads', 'maintenance')));
 
 const frontendDist = path.join(__dirname, '..', '..', 'prms-frontend', 'dist');
+
+// Vite bundles are static files, not API calls; serve them before the root API router.
+if (fs.existsSync(frontendDist)) app.use('/assets', express.static(path.join(frontendDist, 'assets'), { index: false }));
 
 app.get('/health', async (req, res) => {
   try {
@@ -204,6 +182,7 @@ if (fs.existsSync(frontendDist)) {
 app.use('/api', router);
 app.use(router);
 
+// Fallback SPA routing for any remaining client-side GET paths
 if (fs.existsSync(frontendDist)) {
   app.use((req, res, next) => {
     if (req.method !== 'GET' || !isSpaPagePath(req.path)) return next();
@@ -216,13 +195,15 @@ if (fs.existsSync(frontendDist)) {
 
 app.use(errorHandler);
 
-// Bootstrap database: connect, create tables if missing, seed default admin
+// Check the configured database before accepting requests.
 bootstrap()
-  .then(async () => {
-    const server = app.listen(PORT, () => {
+  .then(() => {
+    const ready = () => {
       console.log(`PRMS Backend running on http://localhost:${PORT} (${env.NODE_ENV})`);
-      startValerieGuard();   // check in with Valerie from the start, not only after the first visitor
-    });
+      startValerieGuard(); // check in with Valerie from the start, not only after the first visitor
+    };
+    if (process.env.DEMO_LOOPBACK_ONLY === 'true') app.listen(Number(PORT), '127.0.0.1', ready);
+    else app.listen(PORT, ready);
   })
   .catch((err: Error) => {
     console.error('[Startup] Database bootstrap failed:', err);

@@ -762,6 +762,40 @@ form label {
   gap: 24px;
 }
 
+/* The role card stays white in both themes; its consent needs dark ink. */
+.role-card .role-consent {
+  margin: 1rem 0;
+  color: #1f2937;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.role-consent label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: inherit;
+}
+
+.role-consent input[type="checkbox"] {
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  margin: 3px 0 0;
+  accent-color: #6b21a8;
+}
+
+.role-card .role-consent a {
+  color: #6b21a8;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.role-consent a:focus-visible {
+  outline: 2px solid #6b21a8;
+  outline-offset: 3px;
+}
+
 .role-option {
   width: 100%;
   min-height: 104px;
@@ -1912,6 +1946,7 @@ body.customization-mode [data-customize-id].customization-hover {
   margin-top: var(--spacing-md);
 }
 .modal .modal-footer {
+  flex-wrap: wrap;
   margin-top: var(--spacing-lg);
   padding-top: var(--spacing-md);
   border-top: 1px solid var(--border-color);
@@ -1923,6 +1958,13 @@ body.customization-mode [data-customize-id].customization-hover {
 .modal .input {
   width: 100%;
   box-sizing: border-box;
+}
+
+@media (max-width: 600px) {
+  .modal.modal { padding: 16px; }
+  .modal .flex, .modal .step-progress, .modal .modal-footer { flex-wrap: wrap; }
+  .modal input:not([type="checkbox"]):not([type="radio"]), .modal select, .modal textarea { min-width: 0; max-width: 100%; font-size: 16px; }
+  .modal button, .modal [role="button"] { min-height: 44px; }
 }
 
 /* Maintenance ticket form's step tabs (Details / Photos / Location) —
