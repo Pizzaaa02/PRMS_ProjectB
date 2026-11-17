@@ -158,6 +158,13 @@
   color: var(--text-color, #1a1a1a);
   font-weight: 600;
   flex-wrap: wrap;
+  line-height: 1.2;
+}
+
+.pd-rating svg {
+  flex-shrink: 0;
+  display: inline-block;
+  vertical-align: middle;
 }
 
 .pd-rating-val {
@@ -382,6 +389,19 @@
   font-weight: 600;
   margin: 0 0 16px;
   color: var(--text-color, #1a1a1a);
+}
+
+.pd-reviews-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.2;
+}
+
+.pd-reviews-heading svg {
+  flex-shrink: 0;
+  display: inline-block;
+  vertical-align: middle;
 }
 
 /* ── Hosted by section ── */

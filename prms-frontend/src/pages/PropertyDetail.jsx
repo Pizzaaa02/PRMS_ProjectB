@@ -596,8 +596,8 @@ function PropertyDetail() {
             <h1 className="pd-title">{property.title}</h1>
             <div className="pd-rating">
               <Star size={16} fill="#F59E0B" color="#F59E0B" />
-              <span className="pd-rating-val">{rating}</span>
-              <span className="pd-rating-count">({totalReviewsCount} reviews)</span>
+              {reviewsList.length > 0 && <span className="pd-rating-val">{rating}</span>}
+              <span className="pd-rating-count">({totalReviewsCount} {totalReviewsCount === 1 ? 'review' : 'reviews'})</span>
               <span className="pd-rating-loc">
                 <MapPin size={13} />
                 {property.city ? `${property.city}${property.state ? `, ${property.state}` : ''}` : property.address}
@@ -874,9 +874,9 @@ function PropertyDetail() {
 
             {/* Reviews */}
             <div className="pd-section">
-              <h3 className="pd-section-title">
+              <h3 className="pd-section-title pd-reviews-heading">
                 <Star size={18} fill="#F59E0B" color="#F59E0B" />
-                {' '}{rating} · {totalReviewsCount} reviews
+                <span>{reviewsList.length ? `${rating} · ${totalReviewsCount} ${totalReviewsCount === 1 ? 'review' : 'reviews'}` : `${totalReviewsCount} reviews`}</span>
               </h3>
 
               {/* Review submit form for authenticated tenants / guests */}
