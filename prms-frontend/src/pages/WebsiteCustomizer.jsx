@@ -19,11 +19,20 @@ const DEFAULTS = {
   light_sidebar_bg: '#0f172a',
   light_body_bg: '#f3f6fb',
   light_footer_bg: '#0f172a',
-  light_accent_color: '#ef4444',
+  light_accent_color: '#8a2be2',
   light_card_bg: '#ffffff',
 };
 
 const THEME_PRESETS = [
+  {
+    name: 'Default (Navy & Purple)',
+    accent: '#8a2be2',
+    body: '#f3f6fb',
+    card: '#ffffff',
+    header: '#0f172a',
+    sidebar: '#0f172a',
+    footer: '#0f172a',
+  },
   {
     name: 'Ruby Red',
     accent: '#ef4444',
@@ -169,7 +178,7 @@ function ColorsSection({ colors, onChange, onApplyPreset, disabled }) {
 function PreviewPanel({ config }) {
   const active = { ...pick(DEFAULTS, 'light_'), ...pick(config, 'light_') };
   const logoSrc = config.logo_url ? getFullUrl(config.logo_url) : null;
-  const accentColor = active.accent_color || '#ef4444';
+  const accentColor = active.accent_color || '#8a2be2';
   const cardBg = active.card_bg || '#ffffff';
   const bodyBg = active.body_bg || '#f3f6fb';
 

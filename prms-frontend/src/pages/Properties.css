@@ -202,8 +202,8 @@
 .filter-count {
   padding: 8px 16px;
   margin: 0;
-  background: var(--secondary-fixed, rgba(239, 68, 68, 0.08));
-  border: 1px solid var(--secondary-fixed-dim, rgba(239, 68, 68, 0.2));
+  background: var(--secondary-fixed, rgba(138, 43, 226, 0.08));
+  border: 1px solid var(--secondary-fixed-dim, rgba(138, 43, 226, 0.2));
   border-radius: var(--radius-md);
   color: var(--primary-color, var(--secondary-accent));
   font-size: 13px;
