@@ -158,21 +158,15 @@ router.use('/agreements', agreementRoutes);
 import privacyRoutes from './modules/privacy/routes_privacy';
 router.use('/privacy', privacyRoutes);
 
-const isSpaPagePath = (reqPath: string) => (
-  !reqPath.startsWith('/api') &&
-  !reqPath.startsWith('/uploads') &&
-  !reqPath.startsWith('/files') &&
-  !reqPath.startsWith('/images') &&
-  !reqPath.startsWith('/health') &&
-  !path.extname(reqPath)
-);
+import { isSpaPagePath, isExplicitJsonRequest } from './middleware/spaFallback';
 
 // Serve built frontend and browser page navigations before bare-path API router
-// so refreshing SPA routes like /properties returns the UI instead of raw JSON.
+// so refreshing or opening SPA routes like /properties returns the UI instead of raw JSON.
 if (fs.existsSync(frontendDist)) {
   app.use(express.static(frontendDist));
   app.use((req, res, next) => {
-    if (req.method === 'GET' && req.headers.accept?.includes('text/html') && isSpaPagePath(req.path)) {
+    if (req.method !== 'GET' || !isSpaPagePath(req.path)) return next();
+    if (!isExplicitJsonRequest(req.headers.accept)) {
       return res.sendFile(path.join(frontendDist, 'index.html'));
     }
     next();
