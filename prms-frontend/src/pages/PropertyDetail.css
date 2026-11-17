@@ -327,7 +327,7 @@
 
 .pd-review-submit-btn {
   padding: 8px 18px;
-  background: var(--secondary-accent, #4f46e5);
+  background: var(--primary-color, var(--secondary-accent, #ef4444));
   color: white;
   border: none;
   border-radius: var(--radius-md, 8px);

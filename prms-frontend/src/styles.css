@@ -48,16 +48,16 @@
 }
 
 :root {
-  --primary-color:       #8a2be2;
+  --primary-color:       #ef4444;
   --secondary-color:     #0f172a;
-  --accent-color:        #b84cff;
+  --accent-color:        #ef4444;
   --background-color:    #f3f6fb;
   --text-color:          #111827;
   --font-family:         Inter, Arial, sans-serif;
   --border-radius:       10px;
   --header-background-color: #0f172a;
   --header-text-color:   #ffffff;
-  --header-cta-button-color: #8a2be2;
+  --header-cta-button-color: #ef4444;
   --footer-background-color: #0f172a;
   --footer-text-color:   #94a3b8;
 
@@ -122,22 +122,22 @@ input {
 :root,
 [data-theme="light"] {
   /* Core palette */
-  --primary-color: #8a2be2;
+  --primary-color: #ef4444;
   --secondary-color: #0f172a;
-  --accent-color: #b84cff;
+  --accent-color: #ef4444;
 
   /* Page & surface levels */
-  --page-bg: #f8f9ff;
-  --surface: #f8f9ff;
+  --page-bg: #f3f6fb;
+  --surface: #f3f6fb;
   --surface-main: #ffffff;
   --surface-subtle: #f8fafc;
-  --surface-container-low: #eff4ff;
-  --surface-container: #e5eeff;
-  --surface-container-high: #dce9ff;
-  --surface-container-highest: #d3e4fe;
+  --surface-container-low: #f8fafc;
+  --surface-container: #f1f5f9;
+  --surface-container-high: #e2e8f0;
+  --surface-container-highest: #cbd5e1;
   --surface-container-lowest: #ffffff;
-  --surface-dim: #cbdbf5;
-  --surface-hover: #e8ecf4;
+  --surface-dim: #cbd5e1;
+  --surface-hover: #e2e8f0;
   --navbar-bg-glass: rgba(255, 255, 255, 0.75);
 
   /* Text colors */
@@ -147,20 +147,20 @@ input {
   --text-secondary: #6b7280;
   --text-secondary-light: #cbd5e1;
 
-  /* Accent colors (aligned with reference design) */
-  --secondary-accent: #812bca;
-  --secondary-container: #9c4ae5;
-  --secondary-fixed: #f1dbff;
-  --secondary-fixed-dim: #deb7ff;
+  /* Accent colors */
+  --secondary-accent: var(--primary-color, #ef4444);
+  --secondary-container: #dc2626;
+  --secondary-fixed: #fee2e2;
+  --secondary-fixed-dim: #fecaca;
   --on-secondary: #ffffff;
-  --on-secondary-fixed: #2d0050;
-  --on-secondary-fixed-variant: #6a00b2;
+  --on-secondary-fixed: #7f1d1d;
+  --on-secondary-fixed-variant: #991b1b;
 
-  /* Dark containers */
-  --primary-container: #131b2e;
-  --on-primary-container: #7c839b;
+  /* Dark containers / primary buttons */
+  --primary-container: var(--primary-color, #ef4444);
+  --on-primary-container: #ffffff;
   --on-primary: #ffffff;
-  --primary-fixed: #dae2fd;
+  --primary-fixed: #fee2e2;
 
   /* Borders & outlines */
   --border-color: #e5e7eb;
@@ -728,7 +728,7 @@ form label {
 }
 
 .step.active span {
-  background: #8a2be2;
+  background: var(--primary-color, #ef4444);
   color: white;
 }
 
@@ -816,8 +816,8 @@ form label {
 }
 
 .role-option.selected {
-  border-color: #8a2be2;
-  background: #f3d8ff;
+  border-color: var(--primary-color, #ef4444);
+  background: var(--secondary-fixed, #fee2e2);
 }
 
 .role-icon {
@@ -827,7 +827,7 @@ form label {
   display: grid;
   place-items: center;
   background: #eaf1ff;
-  color: #8a2be2;
+  color: var(--primary-color, #ef4444);
 }
 
 .role-option h3 {
@@ -855,11 +855,11 @@ form label {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #8a2be2;
+  background: var(--primary-color, #ef4444);
 }
 
 .role-option.selected .radio-circle {
-  border-color: #8a2be2;
+  border-color: var(--primary-color, #ef4444);
 }
 
 .continue-btn {
