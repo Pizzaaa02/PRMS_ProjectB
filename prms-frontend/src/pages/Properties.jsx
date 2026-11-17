@@ -61,7 +61,7 @@ function Properties() {
   const [currentPage, setCurrentPage] = useState(initialPage)
   const [totalCount, setTotalCount] = useState(0)
   const { gridRef, pageSize: perPage } = usePropertyGridPageSize()
-  const isFirstRender = useRef(true)
+  const lastSearchTermRef = useRef(initialSearch)
 
   const updateUrlParams = useCallback((updates) => {
     setSearchParams((prev) => {
@@ -76,12 +76,6 @@ function Properties() {
       return next
     }, { replace: true })
   }, [setSearchParams])
-
-  const handlePageChange = (newPage) => {
-    const validPage = Math.max(1, newPage)
-    setCurrentPage(validPage)
-    updateUrlParams({ page: validPage })
-  }
   const role = (user?.role || '').toLowerCase()
   const isAdmin = role.includes('admin')
   const isLandlord = role.includes('landlord')
@@ -193,22 +187,30 @@ function Properties() {
     if (searchFromUrl !== searchTerm) {
       setSearchTerm(searchFromUrl)
       setDebouncedSearch(searchFromUrl)
+      lastSearchTermRef.current = searchFromUrl
     }
   }, [searchParams])
 
-  // Debounce the raw search input into `debouncedSearch`
+  // Debounce the raw search input into `debouncedSearch` ONLY when user changes search input
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false
-      return
-    }
+    const trimmed = searchTerm.trim()
+    if (trimmed === lastSearchTermRef.current) return
+
     const timer = setTimeout(() => {
-      setDebouncedSearch(searchTerm.trim())
+      lastSearchTermRef.current = trimmed
+      setDebouncedSearch(trimmed)
       setCurrentPage(1)
-      updateUrlParams({ search: searchTerm.trim(), page: 1 })
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev)
+        if (trimmed) next.set('search', trimmed)
+        else next.delete('search')
+        next.delete('page')
+        return next
+      }, { replace: true })
     }, 400)
+
     return () => clearTimeout(timer)
-  }, [searchTerm, updateUrlParams])
+  }, [searchTerm, setSearchParams])
 
   // Fetch whenever the page, type filter, or committed search term changes
   useEffect(() => {
@@ -217,9 +219,11 @@ function Properties() {
 
   function handleSearch(e) {
     if (e) e.preventDefault()
-    setDebouncedSearch(searchTerm.trim())
+    const trimmed = searchTerm.trim()
+    lastSearchTermRef.current = trimmed
+    setDebouncedSearch(trimmed)
     setCurrentPage(1)
-    updateUrlParams({ search: searchTerm.trim(), page: 1 })
+    updateUrlParams({ search: trimmed, page: 1 })
   }
 
   function statusColor(status) {
@@ -252,6 +256,14 @@ function Properties() {
   const displayedProperties = isLandlord
     ? filteredProperties.slice((currentPage - 1) * perPage, currentPage * perPage)
     : filteredProperties
+
+  const handlePageChange = (newPage) => {
+    const maxPage = Math.max(1, totalPages)
+    const validPage = Math.max(1, Math.min(newPage, maxPage))
+    if (validPage === currentPage) return
+    setCurrentPage(validPage)
+    updateUrlParams({ page: validPage })
+  }
 
   return (
     <div className="properties-page">
